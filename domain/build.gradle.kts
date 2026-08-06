@@ -33,6 +33,10 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    // Flow et suspend font partie du vocabulaire du domaine ; ce n'est pas
+    // une dépendance Android.
+    api(libs.kotlinx.coroutines.core)
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(testFixtures(project(":domain")))

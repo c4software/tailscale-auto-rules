@@ -50,6 +50,19 @@ android {
         compose = true
     }
 
+    lint {
+        // Android Lint (AGP 9.3.1) plante sur ses propres composants d'analyse
+        // Kotlin lorsqu'il visite nos sources de test :
+        // SymbolLightClassForClassOrObject.isRecord lève une exception. Le code
+        // concerné compile et s'exécute sans problème.
+        //
+        // Les sources de production restent analysées ; c'est là que se
+        // trouvent les règles qui comptent (API dépréciées, permissions,
+        // compatibilité de version). À réactiver dès qu'une version d'AGP
+        // corrige ce plantage — voir TASKS.md.
+        ignoreTestSources = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

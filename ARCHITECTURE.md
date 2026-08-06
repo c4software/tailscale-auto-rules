@@ -196,6 +196,8 @@ n'ajouterait qu'un chemin de code à maintenir.
 Le canal de commande retenu et ses trois contraintes sont établis et justifiés
 dans [SPECS.md](./SPECS.md) §10.1.
 
+---
+
 ## 5. Observation du réseau
 
 `ConnectivityManager.NetworkCallback` est enveloppé dans un `Flow` par la couche
@@ -213,10 +215,23 @@ graph LR
 
 - **`debounce`** absorbe les rafales d'événements d'une même transition réseau.
 - **`distinctUntilChanged`** garantit qu'un contexte identique ne provoque pas
-  de nouvelle évaluation.
+  de nouvelle évaluation ; il repose sur l'égalité structurelle de
+  `NetworkContext`.
 - La fenêtre de debounce est **injectée**, jamais codée en dur : les tests la
   pilotent via l'ordonnanceur virtuel de `kotlinx-coroutines-test`.
-- La synchronisation manuelle contourne le debounce.
+- La synchronisation manuelle passe par `NetworkObserver.current()` et
+  contourne donc le debounce.
+
+Point de conception : la stabilisation est un **opérateur du domaine**
+(`Flow<NetworkContext>.stabilized(window)`), pas un détail de la couche `data`.
+La couche Android se contente de produire des contextes bruts et d'appliquer
+l'opérateur. Le comportement le plus délicat du projet après le moteur se teste
+ainsi en JVM pur, en temps virtuel, sans Robolectric.
+
+La lecture du SSID emprunte deux chemins selon la plateforme :
+`NetworkCapabilities.getTransportInfo()` à partir d'Android 12, `WifiManager`
+avant. Sans permission de localisation, le système renvoie une valeur de repli,
+traitée comme une indisponibilité — jamais comme un SSID valide.
 
 Le temps est abstrait derrière une interface `Clock` du domaine. Aucun appel à
 `System.currentTimeMillis()` en dehors de son implémentation.

@@ -3,6 +3,15 @@
 
     <!-- Observation du réseau : indispensable au moteur de règles. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!--
+      Lecture du SSID courant. Déclarée ici, mais demandée à l'utilisateur
+      uniquement lorsqu'une règle Wi-Fi est activée (SPECS.md §8). Sans elle, le
+      système renvoie un SSID de repli, traité comme indisponible.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!--
       Sans cette déclaration, Android 11+ répond « paquet introuvable » et

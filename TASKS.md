@@ -84,16 +84,32 @@ Matérialiser les couches, sans logique métier.
 
 ---
 
-## 5. Observation réseau `[ ]`
+## 5. Observation réseau `[x]`
 
-- [ ] `NetworkObserver` (interface domaine) + implémentation
-      `ConnectivityManager.NetworkCallback` en `callbackFlow`
-- [ ] Prise en compte : Wi-Fi, cellulaire, Ethernet, validation Internet
-- [ ] Observation du mode avion
-- [ ] Lecture du SSID, avec gestion explicite de l'indisponibilité
-- [ ] Debounce à fenêtre **injectée** + `distinctUntilChanged`
-- [ ] `FakeNetworkObserver`
-- [ ] Tests du debounce en temps virtuel
+- [x] `NetworkObserver` (domaine) : `observe()` stabilisé et `current()` pour la
+      synchronisation manuelle, qui ne doit jamais être retardée
+- [x] `AndroidNetworkObserver` — `NetworkCallback` en `callbackFlow`, valeur
+      initiale émise, désinscription dans `awaitClose`
+- [x] Wi-Fi, cellulaire, Ethernet, validation Internet
+- [x] Mode avion : `Settings.Global` + `ACTION_AIRPLANE_MODE_CHANGED`
+- [x] SSID : `NetworkCapabilities.transportInfo` (API 31+), repli
+      `WifiManager` avant ; valeur système de repli traitée comme indisponible
+- [x] `stabilized(window)` — opérateur **du domaine**, fenêtre injectée,
+      `debounce` + `distinctUntilChanged`
+- [x] `FakeNetworkObserver` dans `testFixtures`, flux volontairement non
+      stabilisé pour que les tests gardent la main sur la fenêtre
+- [x] 13 tests (7 en temps virtuel sur le debounce, 6 Robolectric)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test assembleDebug` → succès,
+39 tests, 0 échec.
+
+### Suivi ouvert
+
+- [ ] **Réactiver `lint` sur les sources de test.** Android Lint (AGP 9.3.1)
+      plante sur ses propres composants d'analyse Kotlin en visitant nos tests
+      (`SymbolLightClassForClassOrObject.isRecord`). `ignoreTestSources = true`
+      dans `app/build.gradle.kts` le contourne ; les sources de production
+      restent analysées. À lever dès qu'une version d'AGP corrige le plantage.
 
 ---
 

@@ -96,7 +96,10 @@ class AndroidTailscaleController @Inject constructor(
         }
     }
 
-    internal companion object {
+    // Volontairement public : marquer ce companion `internal` fait planter
+    // l'analyse Kotlin d'Android Lint (AGP 9.3.1) dès qu'un test y accède —
+    // SymbolLightClassForClassOrObject.isRecord lève alors une exception.
+    companion object {
         const val TAILSCALE_PACKAGE = "com.tailscale.ipn"
         const val IPN_RECEIVER = "com.tailscale.ipn.IPNReceiver"
         const val ACTION_CONNECT = "com.tailscale.ipn.CONNECT_VPN"
