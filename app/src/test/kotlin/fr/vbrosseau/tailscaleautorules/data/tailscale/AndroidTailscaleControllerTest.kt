@@ -10,6 +10,7 @@ import fr.vbrosseau.tailscaleautorules.data.tailscale.AndroidTailscaleController
 import fr.vbrosseau.tailscaleautorules.data.tailscale.AndroidTailscaleController.Companion.IPN_RECEIVER
 import fr.vbrosseau.tailscaleautorules.data.tailscale.AndroidTailscaleController.Companion.TAILSCALE_PACKAGE
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleUnavailableException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -21,6 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class AndroidTailscaleControllerTest {
 

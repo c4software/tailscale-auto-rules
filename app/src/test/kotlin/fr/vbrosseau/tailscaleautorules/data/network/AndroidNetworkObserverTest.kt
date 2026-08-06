@@ -6,6 +6,7 @@ import android.net.NetworkCapabilities
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -25,6 +26,7 @@ import kotlin.test.assertTrue
  * Le debounce n'est pas testé ici : c'est un opérateur du domaine, éprouvé en
  * temps virtuel par `NetworkContextFlowTest`, sans Android.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class AndroidNetworkObserverTest {
 
