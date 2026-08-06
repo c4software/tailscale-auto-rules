@@ -82,7 +82,7 @@ d'architecture — est dans **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
 
 ## Compilation
 
-**Prérequis :** JDK 21 et le SDK Android (plateforme 36). Le wrapper Gradle et
+**Prérequis :** JDK 21 et le SDK Android (plateforme 37). Le wrapper Gradle et
 la toolchain sont fournis, rien d'autre à installer.
 
 ```bash

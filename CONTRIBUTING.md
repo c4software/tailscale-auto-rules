@@ -21,7 +21,7 @@ dans [AGENTS.md](./AGENTS.md) — lisez-le avant d'écrire du code.
 
 ## Mise en place
 
-**Prérequis :** JDK 21, SDK Android (plateforme 36). Android Studio est
+**Prérequis :** JDK 21, SDK Android (plateforme 37). Android Studio est
 recommandé mais pas requis.
 
 ```bash

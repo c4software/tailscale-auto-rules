@@ -14,22 +14,13 @@ Squelette Gradle et chaîne de qualité opérationnels.
 
 - [x] Wrapper Gradle 9.6.1, toolchain JDK 21 (Azul, via `gradle-daemon-jvm.properties`)
 - [x] Catalogue de versions `gradle/libs.versions.toml`
-- [x] Module `:app` — `minSdk 26`, `compileSdk 36`, `targetSdk 36`, JVM 17
+- [x] Module `:app` — `minSdk 26`, `compileSdk 37`, `targetSdk 37`, JVM 17
 - [x] Compose androidx (BOM) + Material 3, thème `AppTheme` avec couleur dynamique
 - [x] `MainActivity` affichant un écran d'attente, prévisualisable
 - [x] ktlint + Detekt (`config/detekt/detekt.yml`) + `.editorconfig`
 - [x] Documentation de travail (les 7 fichiers racine) et licence MIT
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test assembleDebug` → succès.
-
-### Suivi ouvert
-
-- [ ] **Passer à `compileSdk`/`targetSdk` 37.** Les versions récentes
-  d'AndroidX (`core-ktx` 1.19+, `activity` 1.13+) l'exigent. La plateforme
-  `android-37` n'était pas installée sur le poste d'initialisation ; `core-ktx`
-  et `activity` ont donc été fixés à des versions compatibles 36. À traiter
-  après installation via le SDK Manager, puis remonter les deux versions dans
-  le catalogue.
 
 ---
 
