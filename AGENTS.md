@@ -144,12 +144,23 @@ Exemple du style attendu :
 
 ## 5. Vérification
 
-Ce dépôt se construit avec le JDK embarqué d'Android Studio :
+Ce dépôt se construit avec le JDK embarqué d'Android Studio. `gradlew` lit
+`JAVA_HOME` en priorité et ne consulte le `PATH` que si elle est absente :
+**définir `JAVA_HOME` suffit, ne jamais bricoler le `PATH`.**
 
-```bash
-export JAVA_HOME=$HOME/.local/share/JetBrains/Toolbox/apps/android-studio/jbr
-export PATH="$JAVA_HOME/bin:$PATH"
-```
+- **Agents Claude Code** — rien à faire : `JAVA_HOME` est déclarée dans
+  `.claude/settings.local.json` (non versionné, car le chemin dépend de la
+  machine). Lancer `./gradlew …` directement.
+- **En shell interactif** :
+
+  ```bash
+  export JAVA_HOME=$HOME/.local/share/JetBrains/Toolbox/apps/android-studio/jbr
+  ```
+
+⚠️ Ne **jamais** préfixer une commande d'un `export PATH="$JAVA_HOME/bin:$PATH"`.
+La valeur n'étant résolue qu'à l'exécution, la commande devient impossible à
+rapprocher d'une règle d'autorisation : le harness redemande confirmation à
+chaque appel, et aucune règle réutilisable ne peut être enregistrée.
 
 Commande de vérification, à passer **avant tout commit** :
 

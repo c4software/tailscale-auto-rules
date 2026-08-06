@@ -10,6 +10,9 @@ captures
 .externalNativeBuild
 .cxx
 
+# Réglages Claude Code personnels (chemins machine, JAVA_HOME)
+.claude/settings.local.json
+
 # Signature Play Store — ne jamais versionner
 *.jks
 *.keystore
