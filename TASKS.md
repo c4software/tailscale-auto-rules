@@ -260,12 +260,28 @@ Deux commits : le cas d'usage, puis les ViewModels.
 
 ---
 
-## 12. Paramètres `[ ]`
+## 12. Paramètres `[x]`
 
-- [ ] Écran de paramètres complet ([SPECS.md](./SPECS.md) §6.3)
-- [ ] Exemption d'optimisation de batterie
-- [ ] Version et licence
-- [ ] Tests du ViewModel
+- [x] Écran complet ([SPECS.md](./SPECS.md) §6.3) : quatre bascules, avis
+      d'automatisation désactivée, à-propos
+- [x] `SystemStatus` — abstraction de ce que seule la plateforme sait
+      (permission de notification, exemption de batterie, version), pour que le
+      ViewModel reste testable hors Android
+- [x] `refreshSystemStatus()` — ces deux réglages se modifient **hors** de
+      l'application ; sans reconstat au retour, l'écran resterait sur un état
+      périmé
+- [x] Demande de permission de notification proposée **uniquement** une fois
+      l'option activée
+- [x] Exemption d'optimisation de batterie proposée seulement si elle manque
+- [x] Version et licence
+- [x] 18 tests (9 sur le ViewModel, 9 sur l'écran)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 220 tests, 0 échec.
+
+> L'écran n'est pas encore atteignable : la barre de navigation arrive avec
+> l'écran Journal (étape 13), les quatre destinations n'ayant de sens
+> qu'ensemble.
 
 ---
 
