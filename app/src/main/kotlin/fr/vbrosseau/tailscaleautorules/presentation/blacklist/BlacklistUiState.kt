@@ -13,10 +13,19 @@ data class BlacklistUiState(
     val entries: List<BlacklistedSsid> = emptyList(),
     val currentSsid: String? = null,
     val isCurrentSsidAlreadyListed: Boolean = false,
+    val canReadSsid: Boolean = true,
     val error: BlacklistError? = null,
 ) {
     val canAddCurrentSsid: Boolean
         get() = currentSsid != null && !isCurrentSsidAlreadyListed
+
+    /**
+     * L'explication de permission n'a de sens que sur cet écran, et seulement
+     * si la localisation manque : c'est ici que l'utilisateur découvre que ses
+     * réseaux de confiance ne pourront pas être reconnus.
+     */
+    val needsLocationPermission: Boolean
+        get() = !canReadSsid
 }
 
 /** Échecs qu'un écran doit savoir raconter à l'utilisateur. */

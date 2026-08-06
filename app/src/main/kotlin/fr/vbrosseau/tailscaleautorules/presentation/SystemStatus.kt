@@ -1,23 +1,38 @@
-package fr.vbrosseau.tailscaleautorules.presentation.settings
+package fr.vbrosseau.tailscaleautorules.presentation
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.PowerManager
+import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * État de la plateforme dont dépend l'écran des paramètres.
+ * État de la plateforme dont dépend l'interface.
  *
- * Abstrait derrière une interface pour que le ViewModel reste testable sans
- * Android : ce qu'il fait de ces informations est de la logique de
+ * Abstrait derrière une interface pour que les ViewModels restent testables
+ * sans Android : ce qu'ils font de ces informations est de la logique de
  * présentation, la façon de les obtenir n'en est pas.
+ *
+ * Les trois autorisations qu'il expose se modifient **hors** de l'application ;
+ * elles doivent donc être reconstatées au retour à l'écran.
  */
 interface SystemStatus {
 
     /** Vrai lorsque l'utilisateur a accordé la permission de notification. */
     fun canNotify(): Boolean
+
+    /**
+     * Vrai lorsque l'application peut lire le SSID du réseau courant.
+     *
+     * Android conditionne cette lecture à une permission de localisation. Sans
+     * elle, le système renvoie une valeur de repli, et les règles Wi-Fi ne
+     * peuvent pas distinguer un réseau de confiance d'un autre.
+     */
+    fun canReadSsid(): Boolean
 
     /**
      * Vrai lorsque l'application est exemptée des restrictions de batterie.
@@ -38,6 +53,11 @@ class AndroidSystemStatus @Inject constructor(
 ) : SystemStatus {
 
     override fun canNotify(): Boolean = notifier.canNotify()
+
+    override fun canReadSsid(): Boolean = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+    ) == PackageManager.PERMISSION_GRANTED
 
     override fun isIgnoringBatteryOptimizations(): Boolean =
         context.getSystemService(PowerManager::class.java)

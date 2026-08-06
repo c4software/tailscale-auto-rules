@@ -7,6 +7,8 @@ object BlacklistTestTags {
     const val ADD = "blacklist:add"
     const val ADD_CURRENT = "blacklist:add-current"
     const val ERROR = "blacklist:error"
+    const val LOCATION_RATIONALE = "blacklist:location-rationale"
+    const val LOCATION_GRANT = "blacklist:location-grant"
     const val DIALOG_FIELD = "blacklist:dialog-field"
     const val DIALOG_CONFIRM = "blacklist:dialog-confirm"
 

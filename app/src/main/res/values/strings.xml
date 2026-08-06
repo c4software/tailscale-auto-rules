@@ -41,6 +41,9 @@
     <string name="blacklist_error_duplicate">Ce réseau figure déjà dans la liste.</string>
     <string name="blacklist_error_blank">Le nom du réseau ne peut pas être vide.</string>
     <string name="blacklist_error_unknown">L\'enregistrement a échoué.</string>
+    <string name="blacklist_location_title">Autorisation de localisation requise</string>
+    <string name="blacklist_location_body">Android réserve la lecture du nom des réseaux Wi-Fi aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus. Cette application ne consulte que le nom du réseau : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
+    <string name="blacklist_location_grant">Autoriser</string>
 
     <!-- Journal -->
     <string name="journal_explanation">Les %1$d derniers changements d\'état du tunnel.</string>

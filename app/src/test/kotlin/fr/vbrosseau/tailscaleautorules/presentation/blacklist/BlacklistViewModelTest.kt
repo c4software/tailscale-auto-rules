@@ -4,6 +4,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
+import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -19,8 +20,9 @@ class BlacklistViewModelTest {
 
     private val repository = FakeBlacklistRepository()
     private val observer = FakeNetworkObserver()
+    private val systemStatus = FakeSystemStatus()
 
-    private fun viewModel() = BlacklistViewModel(repository, observer)
+    private fun viewModel() = BlacklistViewModel(repository, systemStatus, observer)
 
     private fun onWifi(ssid: String?) = observer.emit(
         NetworkContext(NetworkTransport.WIFI, isInternetValidated = true, ssid = ssid),
@@ -128,6 +130,32 @@ class BlacklistViewModelTest {
         model.rename(bureauId, "maison")
 
         assertEquals(BlacklistError.DUPLICATE, model.uiState.value.error)
+    }
+
+    @Test
+    fun aMissingLocationPermissionIsSurfaced() = runTest {
+        systemStatus.ssidReadable = false
+
+        assertTrue(viewModel().uiState.value.needsLocationPermission)
+    }
+
+    @Test
+    fun nothingIsAskedOnceTheSsidCanBeRead() = runTest {
+        assertTrue(!viewModel().uiState.value.needsLocationPermission)
+    }
+
+    @Test
+    fun aPermissionGrantedOutsideTheApplicationIsPickedUpOnRefresh() = runTest {
+        // Elle s'accorde dans les réglages système : sans reconstat au retour,
+        // l'explication resterait affichée à tort.
+        systemStatus.ssidReadable = false
+        val model = viewModel()
+        assertTrue(model.uiState.value.needsLocationPermission)
+
+        systemStatus.ssidReadable = true
+        model.refreshSystemStatus()
+
+        assertTrue(!model.uiState.value.needsLocationPermission)
     }
 
     @Test

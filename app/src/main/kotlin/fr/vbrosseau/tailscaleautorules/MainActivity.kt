@@ -60,6 +60,12 @@ private fun AppRoot(modifier: Modifier = Modifier) {
         ActivityResultContracts.RequestPermission(),
     ) { }
 
+    // La localisation grossière est demandée conjointement : Android refuse la
+    // permission fine seule depuis la version 12.
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -81,6 +87,14 @@ private fun AppRoot(modifier: Modifier = Modifier) {
             navController = navController,
             onRequestNotificationPermission = {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            },
+            onRequestLocationPermission = {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ),
+                )
             },
         )
     }

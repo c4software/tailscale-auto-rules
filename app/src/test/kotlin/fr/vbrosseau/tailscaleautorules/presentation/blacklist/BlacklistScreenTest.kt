@@ -25,6 +25,7 @@ class BlacklistScreenTest {
     private val recordedRenames = mutableListOf<Pair<Long, String>>()
     private val recordedRemovals = mutableListOf<Long>()
     private var quickAddCount = 0
+    private var locationRequests = 0
 
     private fun show(uiState: BlacklistUiState) {
         composeRule.setContent {
@@ -36,6 +37,7 @@ class BlacklistScreenTest {
                     onRemove = { recordedRemovals += it },
                     onAddCurrentSsid = { quickAddCount++ },
                     onDismissError = {},
+                    onRequestLocationPermission = { locationRequests++ },
                 )
             }
         }
@@ -155,5 +157,24 @@ class BlacklistScreenTest {
         show(BlacklistUiState())
 
         composeRule.onNodeWithTag(BlacklistTestTags.ERROR).assertDoesNotExist()
+    }
+
+    @Test
+    fun thePermissionIsExplainedBeforeBeingRequested() {
+        // Android impose la localisation pour lire un SSID sans le dire :
+        // une demande non expliquée serait à juste titre refusée.
+        show(BlacklistUiState(canReadSsid = false))
+
+        composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_RATIONALE).assertIsDisplayed()
+        composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_GRANT).performClick()
+
+        assertEquals(1, locationRequests)
+    }
+
+    @Test
+    fun nothingIsExplainedOnceTheSsidCanBeRead() {
+        show(BlacklistUiState(canReadSsid = true))
+
+        composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_RATIONALE).assertDoesNotExist()
     }
 }

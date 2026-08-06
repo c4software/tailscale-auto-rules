@@ -46,6 +46,7 @@ fun BlacklistScreen(
     onAddCurrentSsid: () -> Unit,
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
+    onRequestLocationPermission: () -> Unit = {},
 ) {
     var editing by remember { mutableStateOf<EditingState?>(null) }
 
@@ -59,6 +60,13 @@ fun BlacklistScreen(
             text = stringResource(R.string.blacklist_explanation),
             style = MaterialTheme.typography.bodyMedium,
         )
+
+        // L'explication précède la demande, comme l'exige le Play Store, et
+        // n'apparaît que sur cet écran : c'est ici que l'utilisateur découvre
+        // que ses réseaux de confiance ne pourront pas être reconnus.
+        if (uiState.needsLocationPermission) {
+            LocationRationaleCard(onGrant = onRequestLocationPermission)
+        }
 
         uiState.error?.let { error ->
             ErrorCard(message = stringResource(error.labelRes()), onDismiss = onDismissError)
@@ -135,6 +143,47 @@ private fun ActionRow(
                         uiState.currentSsid.orEmpty(),
                     ),
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Explique pourquoi la localisation est demandée, **avant** de la demander.
+ *
+ * Le texte dit aussi ce que l'application ne fait pas : Android impose cette
+ * permission pour lire un SSID, ce que rien n'indique à l'utilisateur, et une
+ * demande non expliquée serait à juste titre refusée — par lui comme par le
+ * Play Store.
+ */
+@Composable
+private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(BlacklistTestTags.LOCATION_RATIONALE),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                text = stringResource(R.string.blacklist_location_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(R.string.blacklist_location_body),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            TextButton(
+                onClick = onGrant,
+                modifier = Modifier.testTag(BlacklistTestTags.LOCATION_GRANT),
+            ) {
+                Text(stringResource(R.string.blacklist_location_grant))
             }
         }
     }

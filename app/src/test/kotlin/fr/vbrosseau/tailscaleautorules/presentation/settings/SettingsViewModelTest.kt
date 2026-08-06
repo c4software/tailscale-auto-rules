@@ -1,6 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.presentation.settings
 
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
+import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule

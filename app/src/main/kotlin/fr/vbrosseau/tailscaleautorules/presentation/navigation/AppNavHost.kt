@@ -35,6 +35,7 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     onRequestNotificationPermission: () -> Unit = {},
+    onRequestLocationPermission: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -61,6 +62,7 @@ fun AppNavHost(
                 onRemove = viewModel::remove,
                 onAddCurrentSsid = viewModel::addCurrentSsid,
                 onDismissError = viewModel::dismissError,
+                onRequestLocationPermission = onRequestLocationPermission,
             )
         }
 

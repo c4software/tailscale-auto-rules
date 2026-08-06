@@ -6,8 +6,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.vbrosseau.tailscaleautorules.automation.AutomationTrigger
 import fr.vbrosseau.tailscaleautorules.automation.NetworkCallbackTrigger
-import fr.vbrosseau.tailscaleautorules.presentation.settings.AndroidSystemStatus
-import fr.vbrosseau.tailscaleautorules.presentation.settings.SystemStatus
+import fr.vbrosseau.tailscaleautorules.presentation.AndroidSystemStatus
+import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import javax.inject.Singleton
 
 /** Relie les abstractions de plateforme à leurs implémentations Android. */

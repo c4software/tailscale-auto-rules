@@ -7,6 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.asSsidKey
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
+import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class BlacklistViewModel @Inject constructor(
     private val repository: BlacklistRepository,
+    private val systemStatus: SystemStatus,
     networkObserver: NetworkObserver,
 ) : ViewModel() {
 
@@ -45,6 +47,18 @@ class BlacklistViewModel @Inject constructor(
                     )
                 }
         }
+        refreshSystemStatus()
+    }
+
+    /**
+     * Relit l'autorisation de lecture du SSID.
+     *
+     * Elle s'accorde dans les réglages système : sans reconstat au retour à
+     * l'écran, l'explication resterait affichée alors que la permission vient
+     * d'être donnée.
+     */
+    fun refreshSystemStatus() {
+        _uiState.value = _uiState.value.copy(canReadSsid = systemStatus.canReadSsid())
     }
 
     fun add(ssid: String) {
