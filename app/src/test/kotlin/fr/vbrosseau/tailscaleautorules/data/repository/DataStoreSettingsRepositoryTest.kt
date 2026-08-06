@@ -59,16 +59,15 @@ class DataStoreSettingsRepositoryTest {
 
         assertTrue(settings.isServiceEnabled)
         assertTrue(settings.startOnBoot)
-        assertTrue(!settings.showPersistentNotification)
         assertTrue(!settings.verboseLogging)
     }
 
     @Test
     fun anUpdatedPreferenceIsPersistedAndLeavesTheOthersAlone() = runTest {
-        repository.updateAppSettings { it.copy(showPersistentNotification = true) }
+        repository.updateAppSettings { it.copy(verboseLogging = true) }
 
         val settings = repository.observeAppSettings().first()
-        assertTrue(settings.showPersistentNotification)
+        assertTrue(settings.verboseLogging)
         assertTrue(settings.isServiceEnabled)
         assertTrue(settings.startOnBoot)
     }

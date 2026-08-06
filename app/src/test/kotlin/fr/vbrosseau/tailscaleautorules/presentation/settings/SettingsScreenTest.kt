@@ -1,5 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.presentation.settings
 
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -33,8 +34,6 @@ class SettingsScreenTest {
                     uiState = uiState,
                     onServiceEnabledChange = { toggles += "service" to it },
                     onStartOnBootChange = { toggles += "boot" to it },
-                    onImmediateModeChange = { toggles += "immediate" to it },
-                    onPersistentNotificationChange = { toggles += "notification" to it },
                     onVerboseLoggingChange = { toggles += "logging" to it },
                     onRequestNotificationPermission = { permissionRequests++ },
                     onOpenBatterySettings = { batteryClicks++ },
@@ -50,7 +49,6 @@ class SettingsScreenTest {
                 settings = AppSettings(
                     isServiceEnabled = true,
                     startOnBoot = false,
-                    showPersistentNotification = true,
                     verboseLogging = false,
                 ),
             ),
@@ -58,8 +56,27 @@ class SettingsScreenTest {
 
         composeRule.onNodeWithTag(SettingsTestTags.SERVICE).assertIsOn()
         composeRule.onNodeWithTag(SettingsTestTags.START_ON_BOOT).assertIsOff()
-        composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION).assertIsOn()
-        composeRule.onNodeWithTag(SettingsTestTags.LOGGING).assertIsOff()
+        composeRule.onNodeWithTag(SettingsTestTags.LOGGING).performScrollTo().assertIsOff()
+    }
+
+    @Test
+    fun theNotificationIsExplainedRatherThanOffered() {
+        // Elle est imposée par Android au service qui observe le réseau. Un
+        // interrupteur — même grisé — laisserait croire à un choix inexistant,
+        // et coché-désactivé il se lit presque comme éteint.
+        show(SettingsUiState(settings = AppSettings(isServiceEnabled = true)))
+
+        composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION).assertHasNoClickAction()
+    }
+
+    @Test
+    fun nothingIsExplainedWhenTheAutomationIsOff() {
+        show(SettingsUiState(settings = AppSettings(isServiceEnabled = false)))
+
+        composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION).assertDoesNotExist()
     }
 
     @Test
@@ -88,10 +105,10 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun thePermissionIsOnlyOfferedOnceTheOptionIsEnabled() {
+    fun thePermissionIsOfferedWhileTheAutomationIsActive() {
         show(
             SettingsUiState(
-                settings = AppSettings(showPersistentNotification = true),
+                settings = AppSettings(isServiceEnabled = true),
                 canNotify = false,
             ),
         )
@@ -106,16 +123,13 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun nothingIsAskedWhenTheOptionIsOff() {
+    fun nothingIsAskedWhenTheAutomationIsOff() {
         show(
             SettingsUiState(
-                // En mode immédiat, la notification est imposée : la permission
-                // est donc bien réclamée. C'est le mode économe, sans option,
-                // qui ne doit rien demander.
-                settings = AppSettings(
-                    isImmediateModeEnabled = false,
-                    showPersistentNotification = false,
-                ),
+                // Sans automatisation, aucune notification n'est affichée : en
+                // réclamer la permission serait demander à l'utilisateur un
+                // droit dont l'application ne ferait rien.
+                settings = AppSettings(isServiceEnabled = false),
                 canNotify = false,
             ),
         )

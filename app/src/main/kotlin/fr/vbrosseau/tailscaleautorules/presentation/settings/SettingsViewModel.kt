@@ -27,11 +27,10 @@ data class SettingsUiState(
     val versionName: String = "",
 ) {
     /**
-     * Une notification doit être visible, mais la permission manque.
+     * L'automatisation est active, mais la permission de notification manque.
      *
-     * Le mode immédiat compte aussi : le service de premier plan démarre sans
-     * la permission, mais sa notification reste invisible — l'utilisateur ne
-     * verrait alors plus rien de l'état du tunnel.
+     * Le service démarre sans elle ; sa notification reste simplement
+     * invisible, et l'utilisateur ne voit alors plus rien de l'état du tunnel.
      */
     val needsNotificationPermission: Boolean
         get() = settings.notificationIsVisible && !canNotify
@@ -79,25 +78,18 @@ class SettingsViewModel @Inject constructor(
             )
         }
 
-        // L'utilisateur peut avoir activé la notification **avant** d'en
-        // accorder la permission : sans ce rappel, elle ne serait publiée qu'à
-        // la prochaine modification d'un réglage.
+        // L'utilisateur peut avoir accordé la permission depuis les réglages
+        // système : sans ce rappel, la notification ne serait publiée qu'à la
+        // prochaine modification d'un réglage.
         //
-        // Seule la notification est réalignée, jamais le réveil : le
-        // réenregistrer à chaque reprise d'écran le faisait churner auprès du
-        // système, au point de le voir relâché quelques secondes après son
-        // armement.
+        // Seule la notification est réalignée, jamais l'observation : relancer
+        // le service à chaque reprise d'écran n'aurait aucun effet utile.
         viewModelScope.launch { notificationRefresher.refreshNotificationIfEnabled() }
     }
 
     fun setServiceEnabled(enabled: Boolean) = update { it.copy(isServiceEnabled = enabled) }
 
     fun setStartOnBoot(enabled: Boolean) = update { it.copy(startOnBoot = enabled) }
-
-    fun setImmediateMode(enabled: Boolean) = update { it.copy(isImmediateModeEnabled = enabled) }
-
-    fun setPersistentNotification(enabled: Boolean) =
-        update { it.copy(showPersistentNotification = enabled) }
 
     fun setVerboseLogging(enabled: Boolean) = update { it.copy(verboseLogging = enabled) }
 

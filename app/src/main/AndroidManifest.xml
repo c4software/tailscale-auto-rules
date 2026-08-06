@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Observation du réseau : indispensable au moteur de règles. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -67,22 +66,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!--
-          WorkManager s'initialise seul par défaut, donc sans le graphe Hilt :
-          le worker ne pourrait alors pas recevoir ses dépendances. L'auto-
-          initialisation est retirée, l'application fournit la configuration.
-        -->
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
-                android:value="androidx.startup"
-                tools:node="remove" />
-        </provider>
 
         <!--
           Observe le réseau tant que le mode immédiat est actif. Non exporté :

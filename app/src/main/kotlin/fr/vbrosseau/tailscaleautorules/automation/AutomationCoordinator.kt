@@ -40,11 +40,7 @@ class AutomationCoordinator @Inject constructor(
      * et à chaque modification des paramètres.
      */
     suspend fun applySettings(settings: AppSettings) {
-        if (settings.isServiceEnabled) {
-            trigger.arm(immediate = settings.isImmediateModeEnabled)
-        } else {
-            trigger.disarm()
-        }
+        if (settings.isServiceEnabled) trigger.arm() else trigger.disarm()
 
         applyNotification(settings)
     }

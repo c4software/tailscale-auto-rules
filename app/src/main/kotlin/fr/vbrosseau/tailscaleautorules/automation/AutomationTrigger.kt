@@ -10,17 +10,13 @@ package fr.vbrosseau.tailscaleautorules.automation
 interface AutomationTrigger {
 
     /**
-     * Observe le réseau selon le mode demandé.
+     * Observe le réseau en continu.
      *
-     * L'appel est idempotent : réarmer dans le mode déjà actif ne doit rien
-     * perturber, réarmer dans l'autre mode doit basculer.
-     *
-     * @param immediate observation continue, qui réagit sans délai mais exige
-     *   un processus vivant — donc un service de premier plan et sa
-     *   notification permanente. Sinon, vérification périodique espacée.
+     * L'appel est idempotent : réarmer une observation déjà en place ne doit
+     * rien perturber.
      */
-    fun arm(immediate: Boolean)
+    fun arm()
 
-    /** Cesse toute observation, dans les deux modes. */
+    /** Cesse d'observer. */
     fun disarm()
 }

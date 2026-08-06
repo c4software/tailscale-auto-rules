@@ -145,8 +145,7 @@ class FakeRepositoriesTest {
 
             assertTrue(settings.isServiceEnabled)
             assertTrue(settings.startOnBoot)
-            assertTrue(!settings.showPersistentNotification, "Rien d'intrusif par défaut.")
-            assertTrue(!settings.verboseLogging)
+            assertTrue(!settings.verboseLogging, "Rien d'intrusif par défaut.")
         }
 
     @Test
@@ -154,10 +153,10 @@ class FakeRepositoriesTest {
         runTest {
             val repository = FakeSettingsRepository()
 
-            repository.updateAppSettings { it.copy(showPersistentNotification = true) }
+            repository.updateAppSettings { it.copy(verboseLogging = true) }
 
             val settings = repository.observeAppSettings().first()
-            assertTrue(settings.showPersistentNotification)
+            assertTrue(settings.verboseLogging)
             assertTrue(settings.isServiceEnabled, "Les autres préférences ne bougent pas.")
         }
 

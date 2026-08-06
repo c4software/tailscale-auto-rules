@@ -455,27 +455,21 @@ inacceptables.
 Conclusion : observer le réseau en arrière-plan exige un processus vivant. La
 décision d'architecture n°14 tombe.
 
-### Ce qui la remplace — arbitré avec le porteur du projet
+### Ce qui la remplace
 
-Un réglage « réactivité immédiate », laissé à l'utilisateur :
-
-- [x] **Activé** — `TunnelWatchService`, service de premier plan et notification
-      permanente. Bascule instantanée. La notification devient le prix explicite
-      de l'instantanéité.
-- [x] **Désactivé** — `PeriodicSyncWorker`, vérification toutes les 15 min
-      (minimum imposé par la plateforme), sans notification ni service.
-- [x] `AndroidAutomationTrigger` bascule entre les deux et n'en laisse jamais
-      deux actifs
-- [x] `AppSettings` porte le réglage, ainsi que les deux règles dérivées
-      `notificationIsUnavoidable` et `notificationIsVisible`
-- [x] `SPECS.md` §7.1 énonce le compromis au lieu de promettre une notification
-      toujours optionnelle ; §8 corrige le caractère des permissions
-- [x] `ARCHITECTURE.md` §9.1 et décision n°21 : cause mesurée consignée
+- [x] `TunnelWatchService`, service de premier plan, observe le réseau en
+      continu et bascule en quelques secondes
+- [x] `AndroidAutomationTrigger` le démarre et l'arrête selon l'automatisation
 - [x] `NetworkCallbackTrigger` et `NetworkChangeReceiver` retirés
 - [x] Le service consomme `NetworkObserver.observe()`, donc le debounce du
       domaine s'applique enfin — ce qui clôt le point ouvert de l'étape 11
-- [x] WorkManager reçoit la fabrique de workers de Hilt, son auto-initialisation
-      étant retirée du manifeste
+- [x] `SPECS.md` §7.1 et §8, `ARCHITECTURE.md` §9.1 et décisions n°21 / 21b :
+      cause mesurée consignée
+
+- [x] La notification n'est pas un réglage : elle est visible exactement quand
+      l'automatisation l'est. L'écran des paramètres l'**explique** au lieu de
+      l'offrir — un interrupteur grisé promettrait un choix inexistant, et
+      coché-désactivé il se lirait presque comme éteint
 
 **Vérifié sur Pixel 10 Pro**, processus tué par `am kill`, aller-retour
 Wi-Fi ↔ cellulaire :

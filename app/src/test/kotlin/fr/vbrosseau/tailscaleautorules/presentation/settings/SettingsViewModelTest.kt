@@ -37,7 +37,6 @@ class SettingsViewModelTest {
 
         assertTrue(settings.isServiceEnabled)
         assertTrue(settings.startOnBoot)
-        assertTrue(!settings.showPersistentNotification)
         assertTrue(!settings.verboseLogging)
     }
 
@@ -45,13 +44,12 @@ class SettingsViewModelTest {
     fun eachToggleAffectsOnlyItsOwnPreference() = runTest {
         val model = viewModel()
 
-        model.setPersistentNotification(true)
+        model.setVerboseLogging(true)
 
         val settings = model.uiState.value.settings
-        assertTrue(settings.showPersistentNotification)
+        assertTrue(settings.verboseLogging)
         assertTrue(settings.isServiceEnabled)
         assertTrue(settings.startOnBoot)
-        assertTrue(!settings.verboseLogging)
     }
 
     @Test
@@ -60,13 +58,11 @@ class SettingsViewModelTest {
 
         model.setServiceEnabled(false)
         model.setStartOnBoot(false)
-        model.setPersistentNotification(true)
         model.setVerboseLogging(true)
 
         val settings = model.uiState.value.settings
         assertTrue(!settings.isServiceEnabled)
         assertTrue(!settings.startOnBoot)
-        assertTrue(settings.showPersistentNotification)
         assertTrue(settings.verboseLogging)
     }
 
@@ -87,17 +83,17 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun thePermissionIsOnlyMissingOnceTheOptionIsEnabled() = runTest {
-        // Sans l'option, l'absence de permission n'est pas un manque : rien ne
-        // doit être demandé à l'utilisateur. Le mode immédiat est écarté, lui
-        // rendant la notification — donc la permission — indispensable.
+    fun thePermissionIsOnlyMissingWhileTheAutomationIsActive() = runTest {
+        // Automatisation coupée, aucune notification n'est affichée : l'absence
+        // de permission n'est alors pas un manque, et rien ne doit être demandé
+        // à l'utilisateur.
         systemStatus.notificationsAllowed = false
         val model = viewModel()
-        model.setImmediateMode(false)
+        model.setServiceEnabled(false)
 
         assertTrue(!model.uiState.value.needsNotificationPermission)
 
-        model.setPersistentNotification(true)
+        model.setServiceEnabled(true)
 
         assertTrue(model.uiState.value.needsNotificationPermission)
     }
@@ -105,7 +101,7 @@ class SettingsViewModelTest {
     @Test
     fun anAllowedNotificationNeedsNothing() = runTest {
         val model = viewModel()
-        model.setPersistentNotification(true)
+        model.setServiceEnabled(true)
 
         assertTrue(!model.uiState.value.needsNotificationPermission)
     }
@@ -116,7 +112,6 @@ class SettingsViewModelTest {
         // retour, l'écran resterait indéfiniment sur un état périmé.
         systemStatus.notificationsAllowed = false
         val model = viewModel()
-        model.setPersistentNotification(true)
         assertTrue(model.uiState.value.needsNotificationPermission)
 
         systemStatus.notificationsAllowed = true

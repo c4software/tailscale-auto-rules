@@ -7,36 +7,29 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Choisit le mécanisme d'observation selon le mode demandé.
+ * Démarre et arrête le service qui observe le réseau.
  *
- * Les deux modes s'excluent : laisser tourner le service *et* le travail
- * périodique doublerait les cycles sans rien apporter. Chaque armement arrête
- * donc explicitement l'autre, plutôt que de supposer qu'il ne tourne pas.
+ * Une seule mécanique, et c'est voulu. Un mode « économe » par travail
+ * périodique avait été envisagé pour éviter la notification permanente : il ne
+ * pouvait pas tenir la promesse de l'application, la plateforme n'acceptant pas
+ * de période plus courte que quinze minutes — un changement de réseau serait
+ * resté sans effet un quart d'heure durant.
  *
- * Toutes les opérations sont idempotentes : démarrer un service déjà démarré ne
- * fait que lui renvoyer une commande, et le travail périodique est enregistré
- * sous un nom unique.
+ * Les opérations sont idempotentes : démarrer un service déjà démarré ne fait
+ * que lui transmettre une commande de plus.
  */
 @Singleton
 class AndroidAutomationTrigger @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) : AutomationTrigger {
 
-    override fun arm(immediate: Boolean) {
-        if (immediate) {
-            PeriodicSyncWorker.cancel(context)
-            TunnelWatchService.start(context)
-        } else {
-            TunnelWatchService.stop(context)
-            PeriodicSyncWorker.schedule(context)
-        }
-
-        Timber.i("Observation armée (mode %s)", if (immediate) "immédiat" else "économe")
+    override fun arm() {
+        TunnelWatchService.start(context)
+        Timber.i("Observation armée")
     }
 
     override fun disarm() {
         TunnelWatchService.stop(context)
-        PeriodicSyncWorker.cancel(context)
         Timber.i("Observation désarmée")
     }
 }

@@ -31,8 +31,6 @@ fun SettingsScreen(
     uiState: SettingsUiState,
     onServiceEnabledChange: (Boolean) -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
-    onImmediateModeChange: (Boolean) -> Unit,
-    onPersistentNotificationChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
     onRequestNotificationPermission: () -> Unit,
     onOpenBatterySettings: () -> Unit,
@@ -70,17 +68,8 @@ fun SettingsScreen(
             testTag = SettingsTestTags.START_ON_BOOT,
         )
 
-        SwitchRow(
-            title = stringResource(R.string.settings_immediate_title),
-            summary = stringResource(R.string.settings_immediate_summary),
-            checked = uiState.settings.isImmediateModeEnabled,
-            onCheckedChange = onImmediateModeChange,
-            testTag = SettingsTestTags.IMMEDIATE_MODE,
-        )
-
         NotificationSection(
             uiState = uiState,
-            onPersistentNotificationChange = onPersistentNotificationChange,
             onRequestNotificationPermission = onRequestNotificationPermission,
         )
 
@@ -106,16 +95,17 @@ fun SettingsScreen(
 }
 
 /**
- * Bascule de notification et demande de permission associée.
+ * Explication de la notification permanente, et demande de permission associée.
  *
- * Les deux sont regroupées parce qu'elles ne se comprennent qu'ensemble : la
- * permission n'est demandée qu'une fois l'option activée (SPECS.md §8), jamais
- * au premier lancement.
+ * **Ce n'est délibérément pas une bascule.** La notification est imposée par
+ * Android au service qui observe le réseau : offrir un interrupteur — fût-il
+ * grisé — laisserait croire à un choix qui n'existe pas. Un interrupteur coché
+ * et désactivé se lit d'ailleurs mal, son rendu étant presque celui d'un
+ * interrupteur éteint.
  */
 @Composable
 private fun NotificationSection(
     uiState: SettingsUiState,
-    onPersistentNotificationChange: (Boolean) -> Unit,
     onRequestNotificationPermission: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -123,25 +113,12 @@ private fun NotificationSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        // En mode immédiat, la notification est imposée par la plateforme : la
-        // laisser modifiable ferait promettre à l'utilisateur ce que
-        // l'application ne peut pas tenir.
-        val forced = uiState.settings.notificationIsUnavoidable
-
-        SwitchRow(
-            title = stringResource(R.string.settings_notification_title),
-            summary = stringResource(
-                if (forced) {
-                    R.string.settings_notification_forced
-                } else {
-                    R.string.settings_notification_summary
-                },
-            ),
-            checked = forced || uiState.settings.showPersistentNotification,
-            onCheckedChange = onPersistentNotificationChange,
-            enabled = !forced,
-            testTag = SettingsTestTags.NOTIFICATION,
-        )
+        if (uiState.settings.notificationIsVisible) {
+            NoticeCard(
+                message = stringResource(R.string.settings_notification_notice),
+                testTag = SettingsTestTags.NOTIFICATION,
+            )
+        }
 
         if (uiState.needsNotificationPermission) {
             ActionCard(
@@ -162,7 +139,6 @@ private fun SwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     testTag: String,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -177,7 +153,6 @@ private fun SwitchRow(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                enabled = enabled,
                 modifier = Modifier.testTag(testTag),
             )
         }
@@ -266,15 +241,13 @@ private fun SettingsScreenPreview() {
     AppTheme(dynamicColor = false) {
         SettingsScreen(
             uiState = SettingsUiState(
-                settings = AppSettings(showPersistentNotification = true),
+                settings = AppSettings(),
                 canNotify = false,
                 isIgnoringBatteryOptimizations = false,
                 versionName = "0.1.0",
             ),
             onServiceEnabledChange = {},
             onStartOnBootChange = {},
-            onImmediateModeChange = {},
-            onPersistentNotificationChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
             onOpenBatterySettings = {},

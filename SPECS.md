@@ -224,25 +224,27 @@ Persistante lorsqu'elle est visible, elle affiche :
 - **Raison :** libellé court de la règle ayant décidé (« Réseau mobile »,
   « Wi-Fi de confiance », « Mode avion »…)
 
-### 7.1 Sa visibilité dépend du mode d'observation
+### 7.1 Elle n'est pas un réglage
 
-Observer le réseau en continu exige un processus vivant, donc un service de
-premier plan, auquel Android impose une notification depuis la version 8. Cette
-contrainte n'est pas contournable : le seul mécanisme qui l'aurait permis —
+Elle est visible exactement lorsque l'automatisation est active, et se retire
+avec elle.
+
+Observer le réseau exige un processus vivant, donc un service de premier plan,
+auquel Android impose une notification depuis la version 8. Cette contrainte
+n'est pas contournable : le seul mécanisme qui l'aurait permis —
 `registerNetworkCallback(NetworkRequest, PendingIntent)` — ne délivre qu'un
 réveil unique avant que le système ne relâche l'inscription. Mesuré sur
 appareil ; les relevés sont à l'étape 17 de `TASKS.md`.
 
-L'utilisateur arbitre donc lui-même, par le réglage **Réactivité immédiate** :
+Une vérification périodique sans service a été envisagée pour s'en dispenser.
+Elle est écartée : la plateforme n'accepte pas de période plus courte que
+quinze minutes, et une application censée suivre le réseau qui réagirait un
+quart d'heure plus tard ne rendrait pas le service promis.
 
-| Mode | Réaction | Notification |
-|---|---|---|
-| Immédiat (par défaut) | dès le changement de réseau | **imposée** par la plateforme |
-| Économe | vérification toutes les 15 min | optionnelle, désactivée par défaut |
-
-Quinze minutes est le minimum qu'Android accepte pour un travail périodique :
-en mode économe, un changement de réseau peut rester sans effet pendant ce
-laps de temps. Le réglage énonce ce compromis plutôt que de le masquer.
+L'écran des paramètres **explique** donc la notification au lieu de l'offrir.
+Un interrupteur, fût-il grisé, laisserait croire à un choix qui n'existe pas —
+et un interrupteur coché puis désactivé se lit presque comme un interrupteur
+éteint.
 
 ---
 
@@ -252,8 +254,8 @@ laps de temps. Le réglage énonce ce compromis plutôt que de le masquer.
 |---|---|---|
 | `ACCESS_NETWORK_STATE` | Observer le réseau | Indispensable |
 | `RECEIVE_BOOT_COMPLETED` | Redémarrer le service après un boot | Indispensable si l'option est activée |
-| `POST_NOTIFICATIONS` | Notification persistante (API 33+) | Demandée dès que la notification est visible, donc toujours en mode immédiat |
-| `FOREGROUND_SERVICE_SPECIAL_USE` | Observation continue du réseau (mode immédiat) | Indispensable à ce mode |
+| `POST_NOTIFICATIONS` | Notification d'état (API 33+) | Demandée dès que l'automatisation est active |
+| `FOREGROUND_SERVICE_SPECIAL_USE` | Observation continue du réseau | Indispensable |
 | `FOREGROUND_SERVICE_LOCATION` | Lire le SSID depuis le service : Android le classe comme donnée de localisation, et un service n'y accède que de ce type | Employée uniquement si la localisation est accordée |
 | `ACCESS_FINE_LOCATION` | Lecture du SSID courant | Demandée **uniquement** lorsqu'une règle Wi-Fi est activée, avec écran d'explication préalable |
 | `FOREGROUND_SERVICE` + type | Service d'observation | Selon l'architecture retenue à l'étape correspondante |

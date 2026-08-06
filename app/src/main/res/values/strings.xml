@@ -70,11 +70,7 @@
     <string name="settings_service_summary">Applique les règles à chaque changement de réseau.</string>
     <string name="settings_boot_title">Démarrage automatique</string>
     <string name="settings_boot_summary">Réarme l\'automatisation après un redémarrage du téléphone.</string>
-    <string name="settings_immediate_title">Réactivité immédiate</string>
-    <string name="settings_immediate_summary">Bascule dès le changement de réseau. Sans cette option, la vérification n\'a lieu que toutes les quinze minutes.</string>
-    <string name="settings_notification_title">Notification permanente</string>
-    <string name="settings_notification_summary">Affiche l\'état du tunnel et la règle appliquée.</string>
-    <string name="settings_notification_forced">Imposée par Android tant que la réactivité immédiate est active : observer le réseau en continu demande un service visible.</string>
+    <string name="settings_notification_notice">Une notification permanente affiche l\'état du tunnel et la règle appliquée. Android l\'impose : observer le réseau en continu demande un service visible.</string>
     <string name="settings_notification_permission">Autorisation de notification requise.</string>
     <string name="settings_notification_grant">Autoriser</string>
     <string name="settings_logging_title">Journalisation détaillée</string>

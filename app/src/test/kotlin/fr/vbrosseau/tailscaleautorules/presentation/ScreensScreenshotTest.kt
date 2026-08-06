@@ -185,8 +185,6 @@ class ScreensScreenshotTest : ScreenshotTest() {
             uiState = SettingsUiState(versionName = "0.1.0"),
             onServiceEnabledChange = {},
             onStartOnBootChange = {},
-            onImmediateModeChange = {},
-            onPersistentNotificationChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
             onOpenBatterySettings = {},
@@ -195,22 +193,20 @@ class ScreensScreenshotTest : ScreenshotTest() {
 
     @Test
     fun parametresAvecAvertissements() = capture("parametres-avertissements") {
-        // Trois cartes conditionnelles à la fois : avis d'automatisation
-        // désactivée, permission manquante, exemption de batterie.
+        // Les cartes conditionnelles réunies : explication de la notification,
+        // permission manquante, exemption de batterie.
+        //
+        // L'automatisation reste active, et c'est nécessaire : une permission
+        // de notification ne manque que si une notification doit être affichée.
         SettingsScreen(
             uiState = SettingsUiState(
-                settings = AppSettings(
-                    isServiceEnabled = false,
-                    showPersistentNotification = true,
-                ),
+                settings = AppSettings(isServiceEnabled = true),
                 canNotify = false,
                 isIgnoringBatteryOptimizations = false,
                 versionName = "0.1.0",
             ),
             onServiceEnabledChange = {},
             onStartOnBootChange = {},
-            onImmediateModeChange = {},
-            onPersistentNotificationChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
             onOpenBatterySettings = {},

@@ -34,8 +34,6 @@ class DataStoreSettingsRepository @Inject constructor(
             val updated = transform(preferences.toAppSettings())
             preferences[SettingsKeys.ServiceEnabled] = updated.isServiceEnabled
             preferences[SettingsKeys.StartOnBoot] = updated.startOnBoot
-            preferences[SettingsKeys.ImmediateMode] = updated.isImmediateModeEnabled
-            preferences[SettingsKeys.PersistentNotification] = updated.showPersistentNotification
             preferences[SettingsKeys.VerboseLogging] = updated.verboseLogging
         }
     }
@@ -65,10 +63,6 @@ class DataStoreSettingsRepository @Inject constructor(
         return AppSettings(
             isServiceEnabled = this[SettingsKeys.ServiceEnabled] ?: defaults.isServiceEnabled,
             startOnBoot = this[SettingsKeys.StartOnBoot] ?: defaults.startOnBoot,
-            isImmediateModeEnabled = this[SettingsKeys.ImmediateMode]
-                ?: defaults.isImmediateModeEnabled,
-            showPersistentNotification = this[SettingsKeys.PersistentNotification]
-                ?: defaults.showPersistentNotification,
             verboseLogging = this[SettingsKeys.VerboseLogging] ?: defaults.verboseLogging,
         )
     }

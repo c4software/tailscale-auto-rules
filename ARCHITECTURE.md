@@ -82,7 +82,7 @@ réutilisables indépendamment.
 │   ├── network/    Observation de la connectivité, lecture du SSID
 │   ├── tailscale/  Implémentations de TailscaleController
 │   └── repository/ Implémentations des interfaces de domain
-├── automation/     Service de premier plan, worker périodique, receveur de boot
+├── automation/     Service de premier plan, receveur de boot, coordination
 └── di/             Modules Hilt
 ```
 
@@ -405,17 +405,15 @@ L'application est fonctionnellement complète. Les réserves connues — mode av
 sans changement de réseau, `lint` sur les sources de test — sont tracées dans
 [TASKS.md](./TASKS.md).
 
-### 9.1 Déclenchement, selon le mode d'observation
+### 9.1 Déclenchement
 
 ```mermaid
 graph LR
     S["Système Android"] -->|NetworkCallback| SV["TunnelWatchService"]
-    W["WorkManager, 15 min"] --> PW["PeriodicSyncWorker"]
     B["BOOT_COMPLETED"] --> BR["BootReceiver"]
     U["Bouton Synchroniser"] --> VM["HomeViewModel"]
 
     SV --> C["AutomationCoordinator"]
-    PW --> C
     BR --> C
     VM --> UC["SynchronizeTunnelUseCase"]
     C --> UC
@@ -423,9 +421,6 @@ graph LR
 
     style C fill:#dbeafe,stroke:#3a5bc7,stroke-width:2px
 ```
-
-`AndroidAutomationTrigger` choisit le mécanisme selon le réglage « réactivité
-immédiate », et n'en laisse jamais deux actifs à la fois.
 
 **Pourquoi un service de premier plan.** L'approche initiale — enregistrer un
 `PendingIntent` auprès de `ConnectivityManager` pour que le système réveille
@@ -445,6 +440,12 @@ Un seul réveil par inscription, consommé sur-le-champ : plus aucun changement
 de réseau n'était observé. Réarmer à chaque réveil rétablit la couverture mais
 chaque réarmement provoque sa propre livraison immédiate — 463 réveils en
 50 secondes, mesuré. Observer en continu exige donc un processus vivant.
+
+Une vérification périodique par WorkManager a été écrite pour offrir un mode
+sans notification, puis retirée : la plateforme n'accepte pas de période plus
+courte que quinze minutes. Une application censée suivre le réseau qui
+réagirait un quart d'heure plus tard ne rend pas le service promis, et le
+réglage n'aurait servi qu'à déplacer le problème sur l'utilisateur.
 
 Bénéfice indirect : le `debounce` du domaine s'applique enfin. Le service
 consomme `NetworkObserver.observe()`, un `Flow` qui vit aussi longtemps que
@@ -476,7 +477,8 @@ lui — là où un réveil par diffusion ne survivait pas d'un processus à l'au
 | 18 | Seuls les écarts de réglage sont persistés | Ajouter une règle ne demande aucune migration |
 | 19 | L'accueil affiche l'état **constaté** du tunnel | Rend visible un écart entre commande transmise et effet réel |
 | 20 | `SynchronizationOutcome` à six cas | « Rien à faire » et « impossible d'agir » ne se racontent pas pareil |
-| 21 | Service de premier plan pour observer en continu, mode économe par WorkManager | Le réveil par `PendingIntent` ne délivre qu'une fois avant d'être relâché — mesuré, voir §9.1 |
+| 21 | Service de premier plan pour observer en continu, sans mode dégradé | Le réveil par `PendingIntent` ne délivre qu'une fois avant d'être relâché, et un travail périodique ne descend pas sous quinze minutes — mesuré, voir §9.1 |
+| 21b | La notification est expliquée, jamais offerte comme réglage | Un interrupteur grisé promet un choix inexistant, et coché-désactivé il se lit comme éteint |
 | 22 | Explication avant chaque demande de permission | Android n'explique pas pourquoi lire un SSID exige la localisation |
 | 23 | Fiche système plutôt que `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Cette intention suffit à faire rejeter une publication Play Store |
 | 24 | Fuseau et langue injectés dans la mise en forme | Un test de rendu ne doit pas dépendre des réglages de la machine |

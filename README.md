@@ -45,25 +45,22 @@ Le moteur suit un pattern *Strategy* : **ajouter une règle n'implique aucune
 modification du moteur existant.** Horaires, BSSID, niveau de batterie,
 Bluetooth, Android Auto… sont des ajouts, pas des refontes.
 
-### Deux modes d'observation, à votre main
+### Pourquoi une notification permanente
 
-Observer le réseau en continu **exige un processus vivant**, donc un service
-visible, auquel Android impose une notification permanente. Ce n'est pas
-contournable : le seul mécanisme qui l'aurait permis ne délivre qu'un réveil
-unique avant que le système ne le retire — constaté à la mesure, les relevés
-sont à l'étape 17 de [TASKS.md](./TASKS.md).
+Observer le réseau **exige un processus vivant**, donc un service visible,
+auquel Android impose une notification permanente. Ce n'est pas contournable :
+le seul mécanisme qui l'aurait permis ne délivre qu'un réveil unique avant que
+le système ne le retire — constaté à la mesure, les relevés sont à l'étape 17
+de [TASKS.md](./TASKS.md).
 
-Plutôt que de trancher à votre place, l'application vous laisse le réglage
-**Réactivité immédiate** :
+Une vérification espacée, sans service ni notification, a été écrite puis
+retirée : Android n'accepte pas de période plus courte que quinze minutes. Une
+application censée suivre le réseau qui réagirait un quart d'heure plus tard ne
+rendrait pas le service promis.
 
-| | Réaction au changement de réseau | Notification |
-|---|---|---|
-| **Activé** (par défaut) | immédiate, quelques secondes | permanente, imposée par Android |
-| **Désactivé** | vérification toutes les 15 min | aucune, sauf si vous la demandez |
-
-Quinze minutes est le minimum qu'Android accepte pour un travail périodique :
-en mode économe, un changement de réseau peut rester sans effet pendant ce
-laps de temps. Le réglage le dit plutôt que de le masquer.
+La notification n'est donc pas un réglage, et l'écran des paramètres l'explique
+au lieu de l'offrir. Elle affiche l'état du tunnel et la règle qui l'a décidé,
+et disparaît si vous coupez l'automatisation.
 
 ### Ce que l'application ne fait pas
 
@@ -106,7 +103,7 @@ SDK Android sur son classpath. Il s'exécute intégralement en test JVM, sans
 émulateur.
 
 **Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Room · DataStore ·
-WorkManager · StateFlow · Coroutines**
+StateFlow · Coroutines**
 
 Le détail — couches, moteur de règles, cycle de synchronisation, décisions
 d'architecture — est dans **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
@@ -172,11 +169,11 @@ automatique.
 3. `./gradlew bundleRelease` → App Bundle dans `app/build/outputs/bundle/`.
 4. Compléter la fiche Play Console : formulaire de sécurité des données,
    justification de chaque permission, politique de confidentialité.
-5. **Déclarer les types de service de premier plan.** Le mode « réactivité
-   immédiate » emploie `specialUse` — observation continue du réseau, qu'aucun
-   type prédéfini ne décrit — et `location`, seule façon de lire le nom d'un
-   réseau Wi-Fi hors du premier plan. Chacun demande une justification écrite,
-   et `specialUse` fait l'objet d'une revue manuelle.
+5. **Déclarer les types de service de premier plan.** L'application emploie
+   `specialUse` — observation continue du réseau, qu'aucun type prédéfini ne
+   décrit — et `location`, seule façon de lire le nom d'un réseau Wi-Fi hors du
+   premier plan. Chacun demande une justification écrite, et `specialUse` fait
+   l'objet d'une revue manuelle.
 6. Publier en test interne avant toute diffusion en production.
 
 Les permissions restent minimales par conception : chacune n'est demandée que
