@@ -277,10 +277,15 @@ une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étape 1 de [TASKS.md](./TASKS.md) uniquement.
+Étapes 1 et 2 de [TASKS.md](./TASKS.md).
 
 ```
 .
+├── domain/                  module Kotlin/JVM pur
+│   └── src/
+│       ├── main/kotlin/fr/vbrosseau/tailscaleautorules/domain/
+│       │   └── model/       TunnelState, NetworkTransport, NetworkContext, RuleDecision
+│       └── test/kotlin/…/model/   12 tests JVM
 ├── app/                     module application Android
 │   └── src/main/
 │       ├── kotlin/fr/vbrosseau/tailscaleautorules/
@@ -294,9 +299,18 @@ une mesure, pas un objectif.
 └── documentation (voir README.md)
 ```
 
-`:domain`, `data/`, les règles, le moteur, la persistance et l'injection
-**n'existent pas encore** : ils sont créés par les étapes 2 à 8. Cette section
-est mise à jour à chaque étape.
+La contrainte du §1.1 est vérifiable à tout moment :
+
+```console
+$ ./gradlew :domain:dependencies --configuration compileClasspath
+compileClasspath - Compile classpath for 'main'.
+\--- org.jetbrains.kotlin:kotlin-stdlib:2.4.10
+     \--- org.jetbrains:annotations:13.0
+```
+
+`data/`, `presentation/` (au-delà du thème), les règles, le moteur, la
+persistance et l'injection **n'existent pas encore** : ils sont créés par les
+étapes 3 à 10. Cette section est mise à jour à chaque étape.
 
 ---
 

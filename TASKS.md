@@ -24,18 +24,22 @@ Squelette Gradle et chaîne de qualité opérationnels.
 
 ---
 
-## 2. Architecture `[ ]`
+## 2. Architecture `[x]`
 
 Matérialiser les couches, sans logique métier.
 
-- [ ] Module Kotlin/JVM `:domain`, sans SDK Android
-- [ ] Arborescence de paquets décrite dans [ARCHITECTURE.md](./ARCHITECTURE.md) §2
-- [ ] Premiers types du modèle : `TunnelState`, `NetworkTransport`,
+- [x] Module Kotlin/JVM `:domain`, sans SDK Android — classpath réduit à
+      `kotlin-stdlib`, `:app` dépend de `:domain`
+- [x] Paquet `domain/model/` ; les autres paquets de
+      [ARCHITECTURE.md](./ARCHITECTURE.md) §2 sont créés avec leur contenu, pas
+      en avance
+- [x] Premiers types du modèle : `TunnelState`, `NetworkTransport`,
       `NetworkContext`, `RuleDecision`
-- [ ] Tests JVM sur ces types (invariants, valeurs par défaut)
+- [x] 12 tests JVM : invariants de `NetworkContext`, valeurs par défaut,
+      propriétés dérivées, égalité, revalidation par `copy`
 
-**Fait quand** `:domain` compile sans dépendance Android et que ses tests
-tournent hors émulateur.
+**Vérifié :** `./gradlew ktlintCheck detekt lint test assembleDebug` → succès,
+12 tests, 0 échec, hors émulateur.
 
 ---
 
