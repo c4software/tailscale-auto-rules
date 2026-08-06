@@ -7,9 +7,10 @@
 [![Min SDK](https://img.shields.io/badge/minSdk-26-brightgreen.svg)](https://developer.android.com/tools/releases/platforms)
 
 > ⚠️ **Première version fonctionnelle, pas encore publiée.** Les quatre écrans,
-> le moteur de règles et l'automatisation sont livrés et testés. L'application
-> n'a en revanche **jamais tourné sur un terminal réel** : les réserves ouvertes
-> avant publication sont listées en tête de [TASKS.md](./TASKS.md).
+> le moteur de règles et l'automatisation sont livrés, testés, et **vérifiés sur
+> un terminal réel** (Pixel 10 Pro) : application fermée, le tunnel s'active en
+> passant en 5G et se désactive en retrouvant un réseau de confiance. Les
+> réserves restantes sont listées en tête de [TASKS.md](./TASKS.md).
 
 ---
 
@@ -43,18 +44,33 @@ Le moteur suit un pattern *Strategy* : **ajouter une règle n'implique aucune
 modification du moteur existant.** Horaires, BSSID, niveau de batterie,
 Bluetooth, Android Auto… sont des ajouts, pas des refontes.
 
+### Deux modes d'observation, à votre main
+
+Observer le réseau en continu **exige un processus vivant**, donc un service
+visible, auquel Android impose une notification permanente. Ce n'est pas
+contournable : le seul mécanisme qui l'aurait permis ne délivre qu'un réveil
+unique avant que le système ne le retire — constaté à la mesure, les relevés
+sont à l'étape 17 de [TASKS.md](./TASKS.md).
+
+Plutôt que de trancher à votre place, l'application vous laisse le réglage
+**Réactivité immédiate** :
+
+| | Réaction au changement de réseau | Notification |
+|---|---|---|
+| **Activé** (par défaut) | immédiate, quelques secondes | permanente, imposée par Android |
+| **Désactivé** | vérification toutes les 15 min | aucune, sauf si vous la demandez |
+
+Quinze minutes est le minimum qu'Android accepte pour un travail périodique :
+en mode économe, un changement de réseau peut rester sans effet pendant ce
+laps de temps. Le réglage le dit plutôt que de le masquer.
+
 ### Ce que l'application ne fait pas
 
-- **Elle ne veille pas en permanence si vous ne le voulez pas.** Observer le
-  réseau en continu exige un service visible, auquel Android impose une
-  notification permanente ; il n'existe aucun moyen de contourner cela. Le
-  réglage **Réactivité immédiate** vous laisse arbitrer : activé, bascule
-  instantanée et notification permanente ; désactivé, une simple vérification
-  toutes les quinze minutes, sans service ni notification.
-- **Elle ne lit pas votre position.** La permission de localisation est exigée
-  par Android pour lire le *nom* d'un réseau Wi-Fi, rien de plus. Elle n'est
-  demandée qu'au moment où vous configurez un réseau de confiance, après
-  explication.
+- **Elle ne vous localise pas.** La permission de localisation sert uniquement à
+  lire le *nom* d'un réseau Wi-Fi — Android le classe comme donnée de
+  localisation, et n'offre aucune autre voie. Elle n'est demandée qu'au moment
+  où vous configurez un réseau de confiance, après explication. Le service ne
+  s'en réclame que si vous l'avez accordée.
 - **Elle n'envoie rien.** Aucun réseau, aucune télémétrie, aucun compte. Tout
   reste sur le téléphone.
 
@@ -73,6 +89,10 @@ l'application.
 Chaque écran existe aussi en thème sombre dans
 [`app/src/test/screenshots/`](app/src/test/screenshots/).
 
+> ℹ️ Les références de l'écran des paramètres sont **en retard d'une version** :
+> il a gagné la bascule « Réactivité immédiate ». À réenregistrer, voir
+> [Rendu visuel](#rendu-visuel).
+
 ---
 
 ## Architecture en bref
@@ -89,7 +109,7 @@ SDK Android sur son classpath. Il s'exécute intégralement en test JVM, sans
 émulateur.
 
 **Kotlin · Jetpack Compose · Material 3 · MVVM · Hilt · Room · DataStore ·
-StateFlow · Coroutines**
+WorkManager · StateFlow · Coroutines**
 
 Le détail — couches, moteur de règles, cycle de synchronisation, décisions
 d'architecture — est dans **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
@@ -155,7 +175,12 @@ automatique.
 3. `./gradlew bundleRelease` → App Bundle dans `app/build/outputs/bundle/`.
 4. Compléter la fiche Play Console : formulaire de sécurité des données,
    justification de chaque permission, politique de confidentialité.
-5. Publier en test interne avant toute diffusion en production.
+5. **Déclarer les types de service de premier plan.** Le mode « réactivité
+   immédiate » emploie `specialUse` — observation continue du réseau, qu'aucun
+   type prédéfini ne décrit — et `location`, seule façon de lire le nom d'un
+   réseau Wi-Fi hors du premier plan. Chacun demande une justification écrite,
+   et `specialUse` fait l'objet d'une revue manuelle.
+6. Publier en test interne avant toute diffusion en production.
 
 Les permissions restent minimales par conception : chacune n'est demandée que
 si la fonctionnalité qui la justifie est activée par l'utilisateur (voir
