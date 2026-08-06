@@ -310,21 +310,43 @@ Deux commits : le cas d'usage, puis les ViewModels.
 
 ---
 
-## 14. Tests UI `[ ]`
+## 14. Tests UI `[x]`
 
-- [ ] Ajout d'un SSID
-- [ ] Suppression d'un SSID
-- [ ] Affichage de l'état sur l'accueil
-- [ ] Bascule des paramètres
+Écrits **au fil de l'eau** plutôt que repoussés ici, comme
+[AGENTS.md](./AGENTS.md) §4 l'exige. Cette étape n'a donc comblé que les
+manques.
+
+- [x] Ajout d'un SSID (dialogue), suppression, renommage pré-rempli
+- [x] Affichage de l'état sur l'accueil, y compris client absent et SSID
+      indisponible
+- [x] Bascule de chacun des quatre paramètres
+- [x] Journal : transitions, règle, horodatage, effacement confirmé
+- [x] Barre de navigation : sélection, route inconnue, unicité des routes
+- [x] Explications de permission (localisation, notification)
+
+**Total : 43 tests Compose** sous Robolectric, repérés par `testTag`.
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 243 tests, 0 échec.
 
 ---
 
-## 15. Documentation `[ ]`
+## 15. Documentation `[x]`
 
-- [ ] README complété : captures d'écran réelles, procédure de publication
-- [ ] ARCHITECTURE.md aligné sur le code livré
-- [ ] SPECS.md §10.1 clos par le résultat du spike
-- [ ] CHANGELOG
+- [x] README : ce que l'application **ne fait pas** (pas de veille permanente,
+      pas de lecture de position, aucun envoi), commande de vérification à jour
+- [x] ARCHITECTURE.md aligné sur le code livré, §9.1 sur le déclenchement,
+      25 décisions d'architecture tracées
+- [x] SPECS.md §10.1 clos par le résultat du spike, §3.3 précisé par
+      l'implémentation
+- [x] CHANGELOG, réserves connues comprises
+
+### Reste à faire avant publication
+
+- [ ] **Captures d'écran réelles** — demandent un terminal ou un émulateur ;
+      les emplacements sont en place dans le README.
+- [ ] **Procédure de publication détaillée** — la trame est dans le README ;
+      elle se complète au premier envoi réel sur la Play Console.
 
 ---
 

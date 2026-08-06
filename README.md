@@ -10,9 +10,10 @@
 
 </div>
 
-> ⚠️ **Projet en construction.** Le pilotage du client Tailscale est établi et
-> testé ; le moteur de règles et l'interface sont en cours d'implémentation.
-> Voir [TASKS.md](./TASKS.md) pour l'avancement réel.
+> ⚠️ **Première version fonctionnelle, pas encore publiée.** Les quatre écrans,
+> le moteur de règles et l'automatisation sont livrés et testés (243 tests).
+> Trois réserves connues sont listées dans [TASKS.md](./TASKS.md) ; deux
+> demandent une mesure sur terminal réel avant publication.
 
 ---
 
@@ -45,6 +46,19 @@ des 500 derniers événements.
 Le moteur suit un pattern *Strategy* : **ajouter une règle n'implique aucune
 modification du moteur existant.** Horaires, BSSID, niveau de batterie,
 Bluetooth, Android Auto… sont des ajouts, pas des refontes.
+
+### Ce que l'application ne fait pas
+
+- **Elle ne veille pas en permanence.** Le système la réveille aux changements
+  de réseau ; entre-temps elle ne consomme rien. C'est ce qui permet à la
+  notification d'état de rester **optionnelle et désactivée par défaut** — un
+  service de premier plan l'aurait rendue obligatoire.
+- **Elle ne lit pas votre position.** La permission de localisation est exigée
+  par Android pour lire le *nom* d'un réseau Wi-Fi, rien de plus. Elle n'est
+  demandée qu'au moment où vous configurez un réseau de confiance, après
+  explication.
+- **Elle n'envoie rien.** Aucun réseau, aucune télémétrie, aucun compte. Tout
+  reste sur le téléphone.
 
 ---
 
@@ -100,10 +114,15 @@ L'APK est produit dans `app/build/outputs/apk/debug/`.
 ### Vérification complète
 
 ```bash
-./gradlew ktlintCheck detekt lint test assembleDebug
+./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug
 ```
 
-C'est exactement ce que vérifie la CI sur chaque Pull Request.
+C'est exactement ce que vérifie la CI sur chaque Pull Request : formatage,
+analyse statique, lint Android, 243 tests, couverture du domaine, compilation.
+
+`koverVerify` échoue sous 95 % de couverture sur `:domain`. Les paquets `rule`
+et `engine` — le moteur de décision — sont à **100 % d'instructions et de
+branches**.
 
 ---
 
@@ -144,6 +163,7 @@ conventions de code et la définition de « terminé ».
 | [TASKS.md](./TASKS.md) | Feuille de route — l'**ordre** et l'avancement |
 | [AGENTS.md](./AGENTS.md) | Règles de développement et conventions |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Comment contribuer |
+| [CHANGELOG.md](./CHANGELOG.md) | Journal des modifications |
 | [PROMPT.md](./PROMPT.md) | Intention initiale du projet (figée) |
 
 ---

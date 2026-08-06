@@ -322,7 +322,7 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 9 complètes, étape 10 partielle. 190 tests, 0 échec.
+Étapes 1 à 14 complètes. 243 tests, 0 échec.
 
 ```
 .
@@ -335,29 +335,35 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 │       │   ├── rule/        Rule, RuleContext, RuleId, RuleSettings, Priorities
 │       │   │                + les 4 règles de la version 1
 │       │   ├── engine/      RuleEngine, RuleEvaluation
+│       │   ├── repository/  Blacklist, Journal, Settings (contrats)
+│       │   ├── settings/    AppSettings
+│       │   ├── time/        Clock
+│       │   ├── usecase/     SynchronizeTunnelUseCase, SynchronizationOutcome
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
-│       ├── testFixtures/…/  FakeTailscaleController, FakeNetworkObserver, Contexts
-│       └── test/…/          69 tests JVM
+│       ├── testFixtures/…/  les 6 Fakes + fabriques Contexts
+│       └── test/…/          110 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/
 │       │   ├── kotlin/fr/vbrosseau/tailscaleautorules/
 │       │   │   ├── TailscaleAutoRulesApplication.kt · MainActivity.kt
+│       │   │   ├── automation/           Trigger, Coordinator, 2 receveurs
 │       │   │   ├── data/local/           Room (base, DAO, entités), clés DataStore
 │       │   │   ├── data/network/         AndroidNetworkObserver
 │       │   │   ├── data/repository/      Room…Repository, DataStoreSettingsRepository
 │       │   │   ├── data/tailscale/       AndroidTailscaleController
-│       │   │   ├── di/                   7 modules Hilt
-│       │   │   └── presentation/
+│       │   │   ├── notification/         NotificationChannels, TunnelNotifier
+│       │   │   ├── di/                   10 modules Hilt
+│       │   │   └── presentation/         SystemStatus, libellés
 │       │   │       ├── theme/           AppTheme, Color, Spacing
-│       │   │       ├── navigation/      AppNavHost, AppRoutes
-│       │   │       ├── home/            HomeScreen + ViewModel + UiState
-│       │   │       ├── blacklist/       BlacklistScreen + ViewModel + UiState
-│       │   │       ├── settings/        SettingsViewModel, SettingsUiState
-│       │   │       └── journal/         JournalViewModel, JournalUiState
+│       │   │       ├── navigation/      AppNavHost, AppNavigationBar, AppDestination
+│       │   │       ├── home/            écran + ViewModel + UiState
+│       │   │       ├── blacklist/       écran + ViewModel + UiState
+│       │   │       ├── settings/        écran + ViewModel + UiState
+│       │   │       └── journal/         écran + ViewModel + UiState + mise en forme
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          80 tests (Robolectric, DataStore, ViewModels, Compose)
+│       └── test/…/          133 tests (Robolectric, DataStore, ViewModels, Compose)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
@@ -374,8 +380,37 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-Les écrans Paramètres et Journal, les notifications et le service **n'existent
-pas encore** : ils sont créés par les étapes 11 à 13. Cette section est mise à jour à chaque étape.
+L'application est fonctionnellement complète. Les réserves connues — debounce
+sur le chemin des réveils, mode avion sans changement de réseau, `lint` sur les
+sources de test — sont tracées dans [TASKS.md](./TASKS.md).
+
+### 9.1 Déclenchement, sans processus permanent
+
+```mermaid
+graph LR
+    S["Système Android"] -->|PendingIntent| R["NetworkChangeReceiver"]
+    B["BOOT_COMPLETED"] --> BR["BootReceiver"]
+    U["Bouton Synchroniser"] --> VM["HomeViewModel"]
+
+    R --> C["AutomationCoordinator"]
+    BR --> C
+    VM --> UC["SynchronizeTunnelUseCase"]
+    C --> UC
+    C --> N["TunnelNotifier"]
+
+    style C fill:#dbeafe,stroke:#3a5bc7,stroke-width:2px
+```
+
+`NetworkCallbackTrigger` enregistre un `PendingIntent` auprès de
+`ConnectivityManager` : **c'est le système qui réveille l'application**, laquelle
+ne consomme rien entre deux changements de réseau. Un service de premier plan —
+seule autre façon d'observer en continu — imposerait une notification permanente
+sur Android 8 et suivants, et contredirait SPECS.md §7.
+
+Conséquence assumée : le `debounce` du domaine ne s'applique pas à ce chemin, un
+`Flow` ne survivant pas entre deux réveils de processus. L'effet est amorti par
+le court-circuit « état déjà atteint » du cas d'usage — une rafale produit au
+plus une commande et une entrée de journal.
 
 ---
 
@@ -403,3 +438,8 @@ pas encore** : ils sont créés par les étapes 11 à 13. Cette section est mise
 | 18 | Seuls les écarts de réglage sont persistés | Ajouter une règle ne demande aucune migration |
 | 19 | L'accueil affiche l'état **constaté** du tunnel | Rend visible un écart entre commande transmise et effet réel |
 | 20 | `SynchronizationOutcome` à six cas | « Rien à faire » et « impossible d'agir » ne se racontent pas pareil |
+| 21 | Réveil par `PendingIntent`, pas de service de premier plan | Seule façon de garder la notification optionnelle sur Android 8+ |
+| 22 | Explication avant chaque demande de permission | Android n'explique pas pourquoi lire un SSID exige la localisation |
+| 23 | Fiche système plutôt que `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Cette intention suffit à faire rejeter une publication Play Store |
+| 24 | Fuseau et langue injectés dans la mise en forme | Un test de rendu ne doit pas dépendre des réglages de la machine |
+| 25 | Repérage des tests par `testTag` | Un libellé est traduisible ; un test qui s'y accroche casse à la reformulation |
