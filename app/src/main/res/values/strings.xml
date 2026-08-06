@@ -42,6 +42,15 @@
     <string name="blacklist_error_blank">Le nom du réseau ne peut pas être vide.</string>
     <string name="blacklist_error_unknown">L\'enregistrement a échoué.</string>
 
+    <!-- Notification -->
+    <string name="notification_channel_name">État du tunnel</string>
+    <string name="notification_channel_description">Indique en permanence si le tunnel Tailscale est actif, et pourquoi.</string>
+    <string name="notification_tunnel_enabled">Tunnel activé</string>
+    <string name="notification_tunnel_disabled">Tunnel désactivé</string>
+    <string name="notification_tunnel_unknown">État du tunnel indéterminé</string>
+    <string name="notification_reason">Raison : %1$s</string>
+    <string name="notification_no_reason">Aucune règle appliquée pour l\'instant</string>
+
     <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
     <string name="rule_airplane_mode">Mode avion</string>
     <string name="rule_blacklisted_wifi">Wi-Fi de confiance</string>

@@ -14,6 +14,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!--
+      Notification d'état. Demandée à l'utilisateur uniquement s'il active
+      l'option correspondante (SPECS.md §7 et §8) : l'application n'emploie pas
+      de service de premier plan, qui l'aurait rendue obligatoire.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
       Sans cette déclaration, Android 11+ répond « paquet introuvable » et
       l'application conclut à tort que le client Tailscale est absent.
     -->
