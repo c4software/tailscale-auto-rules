@@ -120,9 +120,9 @@ L'APK est produit dans `app/build/outputs/apk/debug/`.
 C'est exactement ce que vérifie la CI sur chaque Pull Request : formatage,
 analyse statique, lint Android, 243 tests, couverture du domaine, compilation.
 
-`koverVerify` échoue sous 95 % de couverture sur `:domain`. Les paquets `rule`
-et `engine` — le moteur de décision — sont à **100 % d'instructions et de
-branches**.
+`koverVerify` échoue sous 98 % de couverture sur `:domain`, qui est à
+**100 % d'instructions et 98,7 % de branches**. Le seuil constate un acquis
+plutôt qu'il ne fixe un objectif : il empêche une régression silencieuse.
 
 ---
 

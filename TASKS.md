@@ -142,7 +142,8 @@ Matérialiser les couches, sans logique métier.
 - [x] Chaque branche de chaque règle, `NO_DECISION` compris
 - [x] `ShippedRulesTest` rejoue le tableau de [SPECS.md](./SPECS.md) §4 avec
       l'ensemble réel de règles
-- [x] Kover 0.9.9, seuil bloquant à 95 % sur `:domain`, intégré à la CI
+- [x] Kover 0.9.9, seuil bloquant sur `:domain`, intégré à la CI (relevé à
+      98 % à l'étape 16, le domaine étant intégralement couvert)
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 81 tests, 0 échec.
@@ -350,12 +351,29 @@ manques.
 
 ---
 
-## 16. GitHub Actions `[ ]`
+## 16. GitHub Actions `[x]`
 
-- [ ] Workflow de PR : `ktlintCheck`, `detekt`, `lint`, `test`, `assembleDebug`
-- [ ] Rapport de couverture
-- [ ] Cache Gradle
-- [ ] Branche `main` protégée : aucune fusion si une étape échoue
+Un workflow minimal existait dès l'étape 1, pour que le dépôt ne soit jamais
+sans filet. Cette étape le complète.
 
-> Un workflow minimal est présent dès l'étape 1 pour que le dépôt ne soit jamais
-> sans filet. Cette étape le complète (couverture, matrice, publication).
+- [x] Workflow de PR : `ktlintCheck`, `detekt`, `lint`, `test`,
+      `:domain:koverVerify`, `assembleDebug` — **en étapes séparées**, pour que
+      la première défaillance se nomme elle-même
+- [x] Rapport de couverture publié dans le résumé de la PR
+- [x] Cache Gradle, **en lecture seule hors de `main`** : une branche de PR ne
+      doit pas pouvoir empoisonner le cache partagé
+- [x] `permissions: contents: read` — ce workflow vérifie, il ne publie rien
+- [x] Gabarit de Pull Request reprenant les critères de `CONTRIBUTING.md`
+- [x] Rapports des deux modules conservés en artefacts
+
+### À faire dans l'interface GitHub
+
+La protection de branche ne se configure pas depuis le dépôt. Sur
+`Settings → Branches → Add rule` pour `main` :
+
+- [ ] *Require a pull request before merging*
+- [ ] *Require status checks to pass* → cocher **Compilation, lint, tests, couverture**
+- [ ] *Require branches to be up to date before merging*
+- [ ] *Do not allow bypassing the above settings*
+
+Tant que ce n'est pas fait, la CI signale sans bloquer.

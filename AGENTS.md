@@ -184,9 +184,11 @@ Commande de vérification, à passer **avant tout commit** :
 ./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug
 ```
 
-`koverVerify` échoue sous 95 % de couverture sur `:domain`. Ce n'est pas un
-chiffre décoratif : la pureté de `Rule.evaluate` rend ce niveau atteignable
-sans échafaudage, donc ne pas l'atteindre signale une branche oubliée.
+`koverVerify` échoue sous 98 % de couverture sur `:domain`. Le seuil constate
+un acquis — le domaine est intégralement couvert — plutôt qu'il ne fixe un
+objectif : le laisser plus bas autoriserait une régression silencieuse. La
+pureté de `Rule.evaluate` rend ce niveau atteignable sans échafaudage, donc ne
+pas l'atteindre signale une branche oubliée.
 
 Correction automatique du formatage :
 

@@ -45,10 +45,14 @@ kover {
         }
         verify {
             rule {
-                // Le moteur et les règles sont le cœur du projet : c'est le
-                // seul endroit où une couverture quasi totale est exigée, et
-                // la pureté de `evaluate` la rend atteignable.
-                minBound(95)
+                // Le domaine est intégralement couvert : le seuil constate un
+                // acquis plutôt que de fixer un objectif. Le laisser plus bas
+                // autoriserait une régression silencieuse.
+                //
+                // 98 plutôt que 100 : une seule branche de `when` exhaustif est
+                // inatteignable depuis les tests, le compilateur garantissant
+                // déjà qu'elle ne peut pas survenir.
+                minBound(98)
             }
         }
     }

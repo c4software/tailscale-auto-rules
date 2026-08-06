@@ -313,10 +313,15 @@ versionnées dans le dépôt — et non des mocks générés :
 `FakeClock`, `FakeLogger`. Un Fake se lit, se déboguer et ne casse pas quand une
 signature bouge ailleurs.
 
-Objectif de couverture : **~100 % sur `:domain`**, vérifié par Kover avec un
-seuil bloquant à 95 % (`./gradlew :domain:koverVerify`, également dans la CI).
-Les paquets `rule` et `engine` sont à **100 % d'instructions et de branches**.
-Ailleurs, la couverture est une mesure, pas un objectif.
+Couverture de `:domain` : **100 % d'instructions, 98,7 % de branches**, vérifiée
+par Kover avec un seuil bloquant à 98 % (`./gradlew :domain:koverVerify`,
+également dans la CI). Les branches manquantes sont celles d'un `when` exhaustif
+qu'aucun test ne peut atteindre, le compilateur garantissant déjà qu'elles ne
+surviennent pas.
+
+Le seuil **constate un acquis** plutôt qu'il ne fixe un objectif : le laisser
+plus bas autoriserait une régression silencieuse. Hors du domaine, la couverture
+est une mesure, pas un objectif.
 
 ---
 

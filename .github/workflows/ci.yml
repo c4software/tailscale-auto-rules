@@ -9,10 +9,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Aucune écriture : ce workflow vérifie, il ne publie rien.
+permissions:
+  contents: read
+
 jobs:
   verify:
-    name: Compilation, lint, tests
+    name: Compilation, lint, tests, couverture
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +30,13 @@ jobs:
 
       - name: Configurer Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # Le cache n'est écrit que depuis main : une branche de PR ne doit
+          # pas pouvoir empoisonner le cache partagé.
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      # Les étapes sont séparées pour que la première défaillance nomme
+      # elle-même ce qui a échoué, sans avoir à lire un journal de build.
       - name: Formatage (ktlint)
         run: ./gradlew ktlintCheck --no-configuration-cache
 
@@ -44,6 +55,36 @@ jobs:
       - name: Compilation
         run: ./gradlew assembleDebug
 
+      - name: Résumé de couverture
+        if: always()
+        run: |
+          report=domain/build/reports/kover/report.xml
+          [ -f "$report" ] || exit 0
+          python3 - "$report" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse(sys.argv[1]).getroot()
+          print("## Couverture du domaine\n")
+          print("| Paquet | Instructions | Branches |")
+          print("|---|---:|---:|")
+
+          def ratio(node, kind):
+              counter = next(
+                  (c for c in node.findall("counter") if c.get("type") == kind), None
+              )
+              if counter is None:
+                  return "—"
+              missed, covered = int(counter.get("missed")), int(counter.get("covered"))
+              total = missed + covered
+              return f"{100 * covered / total:.1f} %" if total else "—"
+
+          for package in root.findall("package"):
+              name = package.get("name").split("/")[-1]
+              print(f"| `{name}` | {ratio(package, 'INSTRUCTION')} | {ratio(package, 'BRANCH')} |")
+
+          print(f"| **total** | **{ratio(root, 'INSTRUCTION')}** | **{ratio(root, 'BRANCH')}** |")
+          PY
+
       - name: Publier les rapports
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,4 +92,5 @@ jobs:
           name: rapports
           path: |
             app/build/reports/
+            domain/build/reports/
           retention-days: 7
