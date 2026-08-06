@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.runComposeUiTest
 import com.github.takahirom.roborazzi.captureRoboImage
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.runner.RunWith
@@ -42,21 +45,38 @@ abstract class ScreenshotTest {
      *
      * @param name racine du nom de fichier ; le thème y est suffixé.
      */
+    @OptIn(ExperimentalTestApi::class)
     protected fun capture(name: String, content: @Composable () -> Unit) {
         listOf(THEME_LIGHT to false, THEME_DARK to true).forEach { (label, dark) ->
-            captureRoboImage(filePath = "$SCREENSHOT_DIR/$name-$label.png") {
-                AppTheme(darkTheme = dark, dynamicColor = false) {
-                    // Le fond du thème est peint explicitement : sans lui, la
-                    // capture serait transparente et les deux thèmes
-                    // paraîtraient identiques.
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background),
-                    ) {
-                        content()
+            runComposeUiTest {
+                // L'horloge n'avance que sur ordre. Sans cela, un indicateur de
+                // progression — animation sans fin — empêche l'interface
+                // d'atteindre le repos : la capture ne se termine jamais et le
+                // test tourne en boucle, processeur à fond. Constaté sur
+                // l'écran d'accueil en cours de synchronisation.
+                mainClock.autoAdvance = false
+
+                setContent {
+                    AppTheme(darkTheme = dark, dynamicColor = false) {
+                        // Le fond du thème est peint explicitement : sans lui,
+                        // la capture serait transparente et les deux thèmes
+                        // paraîtraient identiques.
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.background),
+                        ) {
+                            content()
+                        }
                     }
                 }
+
+                // Une image suffit à composer et mesurer ; la figer ici rend
+                // aussi la référence reproductible, une animation capturée à un
+                // instant quelconque ne l'étant pas.
+                mainClock.advanceTimeByFrame()
+
+                onRoot().captureRoboImage(filePath = "$SCREENSHOT_DIR/$name-$label.png")
             }
         }
     }

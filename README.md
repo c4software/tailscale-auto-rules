@@ -89,10 +89,6 @@ l'application.
 Chaque écran existe aussi en thème sombre dans
 [`app/src/test/screenshots/`](app/src/test/screenshots/).
 
-> ℹ️ Les références de l'écran des paramètres sont **en retard d'une version** :
-> il a gagné la bascule « Réactivité immédiate ». À réenregistrer, voir
-> [Rendu visuel](#rendu-visuel).
-
 ---
 
 ## Architecture en bref
