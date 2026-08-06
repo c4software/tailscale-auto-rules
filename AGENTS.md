@@ -162,6 +162,22 @@ La valeur n'étant résolue qu'à l'exécution, la commande devient impossible �
 rapprocher d'une règle d'autorisation : le harness redemande confirmation à
 chaque appel, et aucune règle réutilisable ne peut être enregistrée.
 
+### Écrire des commandes qui ne redemandent pas confirmation
+
+Une commande n'est mémorisable dans une règle d'autorisation que si sa forme se
+répète. Quatre habitudes suffisent à éviter l'essentiel des demandes :
+
+| À faire | Plutôt que |
+|---|---|
+| Écrire les fichiers avec les outils **Write** et **Edit** | `cat > fichier <<'EOF'`, `sed -i '…'`, `python3 - <<'PY'` |
+| `git commit -m "…"` (l'identité est dans `.git/config`) | `git -c user.email=… -c user.name=… commit …` |
+| Un motif `grep` stable, ou lire la sortie complète | un `grep -E "…"` différent à chaque appel |
+| Une commande de vérification unique (§5) | des variantes de tâches Gradle au coup par coup |
+
+Les règles partagées vivent dans `.claude/settings.json`, versionné et sans
+chemin machine. `git push` en est **volontairement absent** : une action
+sortante se confirme.
+
 Commande de vérification, à passer **avant tout commit** :
 
 ```bash

@@ -3,12 +3,26 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew *)",
+
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git show*)",
+      "Bash(git ls-files*)",
+      "Bash(git check-ignore*)",
+      "Bash(git config *)",
       "Bash(git add *)",
-      "Bash(git ls-files*)"
+      "Bash(git commit *)",
+      "Bash(git restore *)",
+
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(mkdir -p *)",
+      "Bash(jq *)",
+      "Bash(curl -s https://repo1.maven.org/*)",
+      "Bash(curl -s https://dl.google.com/*)",
+      "Bash(curl -sf https://raw.githubusercontent.com/*)"
     ]
   }
 }
