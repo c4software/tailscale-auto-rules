@@ -285,12 +285,28 @@ Deux commits : le cas d'usage, puis les ViewModels.
 
 ---
 
-## 13. Journal `[ ]`
+## 13. Journal et navigation `[x]`
 
-- [ ] Écran du journal, du plus récent au plus ancien
-- [ ] Ancien état → nouvel état, règle, raison, horodatage
-- [ ] Purge vérifiée à 500 entrées
-- [ ] Action d'effacement
+- [x] Écran du journal, du plus récent au plus ancien
+- [x] Ancien état → nouvel état, règle lisible, horodatage localisé
+- [x] Purge à 500 entrées — déjà garantie par le repository (étape 8), l'écran
+      n'en refait rien
+- [x] Effacement, confirmé par un dialogue car irréversible, et proposé
+      seulement s'il y a quelque chose à effacer
+- [x] `formatJournalTimestamp` — fuseau et langue en paramètres, donc testable
+      sans dépendre des réglages de la machine
+- [x] **Barre de navigation** entre les quatre destinations, pilotée par
+      l'énumération `AppDestination`
+- [x] Les quatre écrans sont désormais atteignables
+- [x] 12 tests (8 sur l'écran, 4 en JVM pur sur la mise en forme)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 232 tests, 0 échec.
+
+> L'exemption d'optimisation de batterie ouvre la fiche de l'application dans
+> les réglages système, et non `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` :
+> cette dernière est proscrite par le Play Store hors des rares catégories qui
+> la justifient, et son seul usage suffit à faire rejeter une publication.
 
 ---
 

@@ -4,4 +4,6 @@ package fr.vbrosseau.tailscaleautorules.presentation.navigation
 object AppRoutes {
     const val HOME = "home"
     const val BLACKLIST = "blacklist"
+    const val JOURNAL = "journal"
+    const val SETTINGS = "settings"
 }

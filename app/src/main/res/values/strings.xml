@@ -42,6 +42,16 @@
     <string name="blacklist_error_blank">Le nom du réseau ne peut pas être vide.</string>
     <string name="blacklist_error_unknown">L\'enregistrement a échoué.</string>
 
+    <!-- Journal -->
+    <string name="journal_explanation">Les %1$d derniers changements d\'état du tunnel.</string>
+    <string name="journal_empty">Aucun changement enregistré pour l\'instant.</string>
+    <string name="journal_clear">Effacer le journal</string>
+    <string name="journal_clear_confirm_title">Effacer le journal ?</string>
+    <string name="journal_clear_confirm_body">Les entrées enregistrées seront définitivement supprimées.</string>
+    <string name="journal_clear_confirm">Effacer</string>
+    <string name="journal_cancel">Annuler</string>
+    <string name="journal_transition">%1$s → %2$s</string>
+
     <!-- Paramètres -->
     <string name="settings_service_title">Automatisation active</string>
     <string name="settings_service_summary">Applique les règles à chaque changement de réseau.</string>
