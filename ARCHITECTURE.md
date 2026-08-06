@@ -314,7 +314,7 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 8 de [TASKS.md](./TASKS.md). 128 tests, 0 échec.
+Étapes 1 à 9 de [TASKS.md](./TASKS.md). 166 tests, 0 échec.
 
 ```
 .
@@ -340,10 +340,15 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 │       │   │   ├── data/repository/      Room…Repository, DataStoreSettingsRepository
 │       │   │   ├── data/tailscale/       AndroidTailscaleController
 │       │   │   ├── di/                   7 modules Hilt
-│       │   │   └── presentation/theme/   AppTheme, Color, Spacing
+│       │   │   └── presentation/
+│       │   │       ├── theme/           AppTheme, Color, Spacing
+│       │   │       ├── home/            HomeViewModel, HomeUiState
+│       │   │       ├── blacklist/       BlacklistViewModel, BlacklistUiState
+│       │   │       ├── settings/        SettingsViewModel, SettingsUiState
+│       │   │       └── journal/         JournalViewModel, JournalUiState
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          31 tests (Robolectric + DataStore en JVM)
+│       └── test/…/          56 tests (Robolectric, DataStore, ViewModels)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
@@ -360,8 +365,8 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-Les cas d'usage, les ViewModels et les écrans **n'existent pas encore** : ils
-sont créés par les étapes 9 à 13. Cette section est mise à jour à chaque étape.
+Les écrans Compose, les notifications et le service **n'existent pas encore** :
+ils sont créés par les étapes 10 à 13. Cette section est mise à jour à chaque étape.
 
 ---
 
@@ -387,3 +392,5 @@ sont créés par les étapes 9 à 13. Cette section est mise à jour à chaque �
 | 16 | Purge du journal dans la transaction d'insertion | Sinon la capacité peut être dépassée sans purge |
 | 17 | Ligne de journal illisible ignorée | Une base venue d'une version ultérieure ne doit pas casser l'affichage |
 | 18 | Seuls les écarts de réglage sont persistés | Ajouter une règle ne demande aucune migration |
+| 19 | L'accueil affiche l'état **constaté** du tunnel | Rend visible un écart entre commande transmise et effet réel |
+| 20 | `SynchronizationOutcome` à six cas | « Rien à faire » et « impossible d'agir » ne se racontent pas pareil |

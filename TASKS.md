@@ -175,12 +175,26 @@ aurait produit un diff illisible.
 
 ---
 
-## 9. ViewModels `[ ]`
+## 9. ViewModels `[x]`
 
-- [ ] `SynchronizeTunnelUseCase` dans `:domain` + ses tests
-- [ ] `HomeViewModel`, `BlacklistViewModel`, `SettingsViewModel`, `JournalViewModel`
-- [ ] Un `StateFlow<UiState>` par ViewModel, aucune logique métier
-- [ ] Tests avec Fakes et dispatcher de test
+Deux commits : le cas d'usage, puis les ViewModels.
+
+- [x] `SynchronizeTunnelUseCase` — seul composant connaissant l'enchaînement
+      complet. Deux formes d'appel : sans argument (relit le réseau, pour la
+      synchronisation manuelle) et avec un contexte déjà stabilisé
+- [x] `SynchronizationOutcome` — six issues distinctes plutôt qu'un booléen
+- [x] `HomeViewModel`, `BlacklistViewModel`, `SettingsViewModel`,
+      `JournalViewModel`, un `StateFlow<UiState>` chacun
+- [x] `MainDispatcherRule` pour substituer `Dispatchers.Main` en test
+- [x] 38 tests (13 sur le cas d'usage, 25 sur les ViewModels)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 166 tests, 0 échec.
+
+> [SPECS.md](./SPECS.md) §3.3 a été précisé au passage : « on n'écrit au journal
+> que lorsque l'état change réellement » n'était pas un critère observable, le
+> canal de commande étant asynchrone et sans accusé de réception. Le critère
+> retenu est désormais explicite, et l'écart résiduel documenté.
 
 ---
 
