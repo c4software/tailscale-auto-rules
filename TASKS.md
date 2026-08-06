@@ -43,14 +43,21 @@ Matérialiser les couches, sans logique métier.
 
 ---
 
-## 3. Configuration Hilt `[ ]`
+## 3. Configuration Hilt `[x]`
 
-- [ ] Plugin Hilt + KSP, `@HiltAndroidApp`, `@AndroidEntryPoint`
-- [ ] `DispatcherModule` — dispatchers qualifiés et injectables
-- [ ] Test d'intégration vérifiant la construction du graphe
+- [x] Plugin Hilt 2.60.1 + KSP 2.3.11, `TailscaleAutoRulesApplication`
+      (`@HiltAndroidApp`), `MainActivity` (`@AndroidEntryPoint`)
+- [x] `DispatcherModule` — `@IoDispatcher`, `@DefaultDispatcher`,
+      `@MainDispatcher`, seul endroit référençant `kotlinx.coroutines.Dispatchers`
+- [x] Test Robolectric + `HiltAndroidRule` : construction du graphe et
+      résolution de chaque qualifier
 
-**Fait quand** l'application démarre avec Hilt actif et un graphe vide mais
-valide.
+**Vérifié :** `./gradlew ktlintCheck detekt lint test assembleDebug` → succès,
+14 tests, 0 échec.
+
+> Robolectric 4.16.1 ne fournit pas d'image pour l'API 37 ; les tests JVM
+> Android s'exécutent sur l'API 35 (`app/src/test/resources/robolectric.properties`).
+> À relever dès qu'une version supporte l'API cible.
 
 ---
 
