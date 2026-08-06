@@ -27,6 +27,8 @@ class DataStoreSettingsRepository @Inject constructor(
 
     override fun observeAppSettings(): Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
 
+    override suspend fun currentAppSettings(): AppSettings = dataStore.data.first().toAppSettings()
+
     override suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
         dataStore.edit { preferences ->
             val updated = transform(preferences.toAppSettings())

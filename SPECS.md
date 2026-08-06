@@ -79,9 +79,34 @@ une **décision**.
 - Décision `ENABLE` alors que le tunnel est déjà actif → **aucune action**.
 - Décision `DISABLE` alors que le tunnel est déjà inactif → **aucune action**.
 - `NO_DECISION` → **aucune action**.
-- Sinon → appel au contrôleur Tailscale, puis écriture d'une entrée au journal.
+- L'automatisation désactivée dans les paramètres → **aucune action**, et les
+  règles ne sont même pas évaluées.
+- Aucun client Tailscale installé → **aucune action**, signalée à l'utilisateur.
+- Commande transmise mais refusée → **rien n'est consigné**.
+- Sinon → commande au client Tailscale, puis écriture au journal.
 
-Autrement dit : **on n'écrit au journal que lorsque l'état change réellement.**
+#### Ce que « l'état a changé » signifie exactement
+
+La version initiale de cette section disait « on n'écrit au journal que lorsque
+l'état change **réellement** ». L'implémentation a montré que ce critère n'est
+pas observable : le canal de commande du client officiel est asynchrone et sans
+accusé de réception (§10.1). Attendre une confirmation reviendrait à sonder le
+tunnel en boucle, sans garantie de terme.
+
+Le critère retenu est donc : **une entrée est écrite lorsqu'une commande de
+changement a été acceptée par le système, depuis un état constaté différent de
+l'état visé.** Concrètement :
+
+| Situation | Journal |
+|---|---|
+| État courant déjà égal à l'état visé | rien |
+| Commande refusée ou client absent | rien |
+| Commande transmise avec succès | une entrée |
+
+L'écart résiduel — le client accepte la demande puis échoue silencieusement —
+reste possible. Il est visible dans l'application : l'écran d'accueil affiche
+l'état **constaté** du tunnel, pas la dernière décision. Une divergence entre
+les deux se voit donc, au lieu d'être masquée.
 
 ---
 

@@ -17,6 +17,8 @@ class FakeSettingsRepository(
 
     override fun observeAppSettings(): Flow<AppSettings> = appSettings.asStateFlow()
 
+    override suspend fun currentAppSettings(): AppSettings = appSettings.value
+
     override suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
         appSettings.value = transform(appSettings.value)
     }

@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.Flow
 interface SettingsRepository {
     fun observeAppSettings(): Flow<AppSettings>
 
+    /** Instantané des préférences, pour un cycle ponctuel de synchronisation. */
+    suspend fun currentAppSettings(): AppSettings
+
     suspend fun updateAppSettings(transform: (AppSettings) -> AppSettings)
 
     /** Réglages surchargés par l'utilisateur, par règle. */
