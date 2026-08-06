@@ -6,6 +6,19 @@ s'enchaînent sans validation intermédiaire (voir [AGENTS.md](./AGENTS.md) §1)
 
 Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 
+> **Les seize étapes sont terminées.** Ce qui reste ouvert est listé ci-dessous
+> et ne bloque pas le fonctionnement : deux points demandent une mesure sur
+> terminal réel, deux dépendent d'outils tiers, deux se font hors du dépôt.
+>
+> | Point | Étape | Nature |
+> |---|---|---|
+> | Debounce sur le chemin des réveils | 11 | mesure sur terminal |
+> | Mode avion sans changement de réseau | 11 | mesure sur terminal |
+> | `lint` sur les sources de test | 5 | défaut AGP 9.3.1 |
+> | Robolectric sur l'API 37 | 3 | version à paraître |
+> | Captures d'écran, procédure Play Console | 15 | hors du dépôt |
+> | Protection de la branche `main` | 16 | interface GitHub |
+
 ---
 
 ## 1. Initialisation du projet `[x]`
@@ -199,7 +212,7 @@ Deux commits : le cas d'usage, puis les ViewModels.
 
 ---
 
-## 10. Interface Compose `[~]`
+## 10. Interface Compose `[x]`
 
 - [x] `AppNavHost` — seul endroit où l'état rejoint les écrans
 - [x] Écran d'accueil ([SPECS.md](./SPECS.md) §6.1) : état du tunnel, réseau,
@@ -209,16 +222,12 @@ Deux commits : le cas d'usage, puis les ViewModels.
       traduits **dans la présentation**, `when` exhaustifs sans branche `else`
 - [x] `@Preview` sans injection sur les deux écrans
 - [x] 23 tests Compose sous Robolectric, repérage par `testTag`
-
-### Reste à faire
-
-- [ ] Écran d'explication préalable à la demande de permission de localisation —
-      dépend de la logique de permission, traitée avec le service (étape 11)
-- [ ] Navigation visible entre les destinations (barre de navigation) — arrive
-      avec les écrans Paramètres et Journal (étapes 12 et 13)
+- [x] Explication préalable à la demande de permission de localisation, livrée
+      à l'étape 14 : elle dépendait de `SystemStatus`, introduit à l'étape 12
+- [x] Barre de navigation, livrée à l'étape 13 avec la quatrième destination
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
-→ succès, 190 tests, 0 échec.
+→ succès.
 
 ---
 
