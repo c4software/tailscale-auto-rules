@@ -168,28 +168,33 @@ revoir : signalez-le plutôt que de contourner.
 
 ```kotlin
 interface TailscaleController {
+    suspend fun isAvailable(): Boolean
     suspend fun enable(): Result<Unit>
     suspend fun disable(): Result<Unit>
     suspend fun isRunning(): Boolean
 }
 ```
 
-Implémentations prévues :
+| Implémentation | Module | Usage |
+|---|---|---|
+| `AndroidTailscaleController` | `:app` / `data/tailscale` | Production — diffusion explicite vers `IPNReceiver` |
+| `FakeTailscaleController` | `:domain` / `testFixtures` | Tests — état en mémoire, inspectable, injection d'échec |
 
-| Implémentation | Usage |
-|---|---|
-| `AndroidTailscaleController` | Production — pilotage du client officiel |
-| `FakeTailscaleController` | Tests — état en mémoire, inspectable |
-| `NoOpTailscaleController` | Terminal sans client Tailscale installé |
+Les Fakes vivent dans le source set `testFixtures` de `:domain` : ils sont
+ainsi partagés par les tests des deux modules sans être embarqués dans l'APK.
 
-Le retour `Result` est délibéré : le pilotage d'une application tierce **échoue
-normalement** (client absent, refus, API modifiée). L'échec est une valeur de
-retour attendue, pas une exception à rattraper au petit bonheur.
+Le retour `Result` est délibéré : piloter une application tierce **échoue
+normalement** — client absent, diffusion refusée, canal modifié. L'échec est
+une valeur de retour attendue, pas une exception à rattraper au petit bonheur.
+`TailscaleUnavailableException` distingue le cas « aucun client installé », qui
+est une issue nominale.
 
-Voir [SPECS.md](./SPECS.md) §10.1 pour le risque associé à l'implémentation de
-production.
+Il n'existe pas d'implémentation `NoOp` : l'absence de client est déjà un
+échec explicite d'`AndroidTailscaleController`. Une classe supplémentaire
+n'ajouterait qu'un chemin de code à maintenir.
 
----
+Le canal de commande retenu et ses trois contraintes sont établis et justifiés
+dans [SPECS.md](./SPECS.md) §10.1.
 
 ## 5. Observation du réseau
 
@@ -277,22 +282,28 @@ une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 et 2 de [TASKS.md](./TASKS.md).
+Étapes 1 à 4 de [TASKS.md](./TASKS.md). 26 tests, 0 échec.
 
 ```
 .
 ├── domain/                  module Kotlin/JVM pur
 │   └── src/
-│       ├── main/kotlin/fr/vbrosseau/tailscaleautorules/domain/
-│       │   └── model/       TunnelState, NetworkTransport, NetworkContext, RuleDecision
-│       └── test/kotlin/…/model/   12 tests JVM
+│       ├── main/kotlin/…/domain/
+│       │   ├── model/       TunnelState, NetworkTransport, NetworkContext, RuleDecision
+│       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
+│       ├── testFixtures/…/  FakeTailscaleController
+│       └── test/…/          18 tests JVM
 ├── app/                     module application Android
-│   └── src/main/
-│       ├── kotlin/fr/vbrosseau/tailscaleautorules/
-│       │   ├── MainActivity.kt
-│       │   └── presentation/theme/   AppTheme, Color, Spacing
-│       ├── res/
-│       └── AndroidManifest.xml
+│   └── src/
+│       ├── main/
+│       │   ├── kotlin/fr/vbrosseau/tailscaleautorules/
+│       │   │   ├── TailscaleAutoRulesApplication.kt · MainActivity.kt
+│       │   │   ├── data/tailscale/       AndroidTailscaleController
+│       │   │   ├── di/                   DispatcherModule, TailscaleModule, qualifiers
+│       │   │   └── presentation/theme/   AppTheme, Color, Spacing
+│       │   ├── res/
+│       │   └── AndroidManifest.xml
+│       └── test/…/          8 tests Robolectric
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
 ├── build.gradle.kts · settings.gradle.kts · gradle.properties
@@ -308,9 +319,8 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-`data/`, `presentation/` (au-delà du thème), les règles, le moteur, la
-persistance et l'injection **n'existent pas encore** : ils sont créés par les
-étapes 3 à 10. Cette section est mise à jour à chaque étape.
+L'observation réseau, les règles, le moteur, la persistance et les écrans
+**n'existent pas encore** : ils sont créés par les étapes 5 à 10. Cette section est mise à jour à chaque étape.
 
 ---
 
@@ -322,9 +332,10 @@ persistance et l'injection **n'existent pas encore** : ils sont créés par les
 | 2 | Strategy pour les règles | Ajouter une règle sans modifier le moteur (ouvert/fermé) |
 | 3 | `evaluate` pure | Rend la couverture exhaustive atteignable sans échafaudage |
 | 4 | Première décision ferme retenue | Sémantique explicite, testable, sans arbitrage caché |
-| 5 | `TailscaleController` derrière une interface | Isole le seul risque fonctionnel majeur du projet |
+| 5 | `TailscaleController` derrière une interface | Isole un canal non contractuel : en cas de rupture, une seule classe est à reprendre |
 | 6 | `Result` en retour du contrôleur | L'échec de pilotage d'une app tierce est nominal |
 | 7 | Fakes plutôt que mocks | Lisibles, robustes au refactoring, sans magie |
 | 8 | Debounce injecté | Testable en temps virtuel, ajustable sans recompiler la logique |
 | 9 | Room pour les collections, DataStore pour les scalaires | Chaque outil sur son terrain, aucun recouvrement |
 | 10 | Compose androidx (et non Compose Multiplatform) | Le projet est mono-plateforme ; API Android officielle |
+| 11 | Fakes dans `testFixtures` de `:domain` | Partagés par les tests des deux modules, absents de l'APK |

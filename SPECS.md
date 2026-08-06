@@ -235,30 +235,48 @@ aucune collection en DataStore.
 
 ## 10. Points ouverts
 
-### 10.1 Pilotage effectif du client Tailscale
+### 10.1 Pilotage effectif du client Tailscale — *résolu*
 
-Le client Tailscale Android n'expose pas d'API publique documentée et stable
-permettant à une application tierce d'activer ou de désactiver le tunnel. C'est
-le principal risque du projet, et il est **fonctionnel**, non architectural.
+**Le client officiel prévoit explicitement ce cas d'usage.** Le spike de
+l'étape 4 a établi que `com.tailscale.ipn` déclare un receveur de diffusion
+exporté, dont le commentaire de code est sans ambiguïté :
 
-L'architecture le circonscrit délibérément : le moteur, les règles, la
-persistance et l'interface ne dépendent que de l'interface `TailscaleController`
-(voir [ARCHITECTURE.md](./ARCHITECTURE.md) §4). Une implémentation `Fake`
-permet de développer et de tester **l'intégralité** du projet sans dépendre de
-la résolution de ce point.
+```java
+/** IPNReceiver allows external applications to start the VPN. */
+public class IPNReceiver extends BroadcastReceiver {
+    public static final String INTENT_CONNECT_VPN    = "com.tailscale.ipn.CONNECT_VPN";
+    public static final String INTENT_DISCONNECT_VPN = "com.tailscale.ipn.DISCONNECT_VPN";
+```
 
-Pistes à évaluer lors de l'étape « Couche Tailscale » :
+Il est déclaré `android:exported="true"` sans permission requise : une
+application tierce peut lui adresser une diffusion. Une troisième action,
+`com.tailscale.ipn.USE_EXIT_NODE`, sélectionne un nœud de sortie — hors périmètre
+de la version 1, mais elle confirme que le canal est prévu pour durer.
 
-1. Intent ou service exporté par le paquet `com.tailscale.ipn`, s'il en existe
-   un de documenté ;
-2. Tuile de réglages rapides / raccourci exposé par le client officiel ;
-3. `VpnService.prepare` et gestion de l'application VPN toujours active ;
-4. À défaut, mode « assisté » : l'application détecte et notifie, l'utilisateur
-   confirme d'un geste.
+Trois contraintes en découlent, portées par le contrat `TailscaleController` :
 
-**Cette étape doit commencer par un spike de vérification**, dont le résultat
-peut modifier la présente section. Aucune ligne de code métier ne doit
-présupposer l'issue.
+1. **Aucun accusé de réception.** Le receveur enfile un `WorkManager` et rend
+   la main. Un `Result` réussi signifie « demande transmise », jamais « tunnel
+   actif ». Seul `isRunning()` fait foi sur l'état réel, et il peut mettre un
+   instant à refléter la demande.
+2. **La diffusion doit être explicite** — composant désigné nommément. Une
+   diffusion implicite n'atteindrait pas le receveur et serait de surcroît
+   restreinte depuis Android 8.
+3. **La visibilité du paquet doit être déclarée** dans notre manifeste
+   (`<queries>`), sans quoi Android 11+ répond « paquet introuvable » et
+   l'application conclut à tort à l'absence du client.
+
+**Limite résiduelle assumée.** Android n'expose pas quelle application porte un
+tunnel VPN actif. `isRunning()` détecte donc « un VPN est actif », et non
+« *ce* VPN est actif ». C'est suffisant tant que l'utilisateur n'emploie qu'un
+seul VPN, ce qui est le cas nominal ; l'approximation reste documentée dans le
+code plutôt que masquée.
+
+**Risque de pérennité.** Ce canal n'est pas contractuel : Tailscale peut le
+modifier. C'est précisément pourquoi il est isolé derrière une interface (voir
+[ARCHITECTURE.md](./ARCHITECTURE.md) §4). En cas de rupture, seule
+`AndroidTailscaleController` est à reprendre ; ni le moteur, ni les règles, ni
+l'interface ne sont concernés.
 
 ### 10.2 Portée de la version 1
 

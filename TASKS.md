@@ -61,18 +61,26 @@ Matérialiser les couches, sans logique métier.
 
 ---
 
-## 4. Couche Tailscale `[ ]`
+## 4. Couche Tailscale `[x]`
 
-> ⚠️ **Commencer par un spike** — voir [SPECS.md](./SPECS.md) §10.1. Aucune
-> ligne de code métier ne doit présupposer son issue.
+- [x] **Spike concluant** : `com.tailscale.ipn` expose `IPNReceiver`
+      (`exported`, sans permission) avec les actions `CONNECT_VPN` et
+      `DISCONNECT_VPN`. Résultat consigné dans [SPECS.md](./SPECS.md) §10.1
+- [x] Interface `TailscaleController` dans `:domain` — `isAvailable`, `enable`,
+      `disable`, `isRunning`
+- [x] `FakeTailscaleController` dans `domain/testFixtures`, partagé par les
+      deux modules
+- [x] `AndroidTailscaleController` — diffusion explicite, `<queries>`,
+      détection du tunnel via `ConnectivityManager`
+- [x] Détection de la présence du client, `TailscaleUnavailableException`
+- [x] 12 tests (6 sur le Fake, 6 Robolectric sur l'implémentation Android)
 
-- [ ] Spike : déterminer comment piloter le client officiel, et documenter le
-      résultat dans SPECS.md §10.1
-- [ ] Interface `TailscaleController` dans `:domain`
-- [ ] `FakeTailscaleController` (tests) et `NoOpTailscaleController` (client absent)
-- [ ] Implémentation de production selon le résultat du spike
-- [ ] Détection de la présence du client Tailscale
-- [ ] Tests des trois implémentations
+**Vérifié :** `./gradlew ktlintCheck detekt lint test assembleDebug` → succès,
+26 tests, 0 échec.
+
+> `NoOpTailscaleController` n'a pas été créé : l'absence de client est déjà un
+> échec explicite d'`AndroidTailscaleController`. Une classe de plus n'aurait
+> ajouté qu'un chemin de code à maintenir.
 
 ---
 

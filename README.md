@@ -10,10 +10,9 @@
 
 </div>
 
-> ⚠️ **Projet en construction.** Le squelette technique est en place ; les
-> fonctionnalités décrites ci-dessous sont en cours d'implémentation. Voir
-> [TASKS.md](./TASKS.md) pour l'avancement réel, et
-> [SPECS.md](./SPECS.md) §10.1 pour le principal point ouvert.
+> ⚠️ **Projet en construction.** Le pilotage du client Tailscale est établi et
+> testé ; le moteur de règles et l'interface sont en cours d'implémentation.
+> Voir [TASKS.md](./TASKS.md) pour l'avancement réel.
 
 ---
 

@@ -2,6 +2,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinJvm)
+    // Expose les Fakes du domaine aux tests des autres modules.
+    `java-test-fixtures`
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
 }
@@ -32,4 +34,6 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(testFixtures(project(":domain")))
 }
