@@ -1,5 +1,9 @@
 package fr.vbrosseau.tailscaleautorules.domain.tailscale
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 /**
  * Contrôleur en mémoire, inspectable, pour les tests.
  *
@@ -12,9 +16,11 @@ package fr.vbrosseau.tailscaleautorules.domain.tailscale
  * @param available présence simulée du client officiel.
  */
 class FakeTailscaleController(
-    private var running: Boolean = false,
+    running: Boolean = false,
     var available: Boolean = true,
 ) : TailscaleController {
+    private val runningState = MutableStateFlow(running)
+
     /** Nombre d'appels à [enable], quel qu'en soit le résultat. */
     var enableCount: Int = 0
         private set
@@ -33,7 +39,9 @@ class FakeTailscaleController(
 
     override suspend fun isAvailable(): Boolean = available
 
-    override suspend fun isRunning(): Boolean = running
+    override suspend fun isRunning(): Boolean = runningState.value
+
+    override fun observeRunning(): Flow<Boolean> = runningState.asStateFlow()
 
     override suspend fun enable(): Result<Unit> {
         enableCount++
@@ -53,7 +61,7 @@ class FakeTailscaleController(
             return Result.failure(failure)
         }
 
-        running = targetState
+        runningState.value = targetState
         return Result.success(Unit)
     }
 }

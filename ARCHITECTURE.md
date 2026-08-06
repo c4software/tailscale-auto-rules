@@ -275,6 +275,22 @@ Les tests d'interface repèrent les éléments par `testTag`, jamais par leur
 libellé : un libellé est traduisible, et un test qui s'y accroche casse à la
 première reformulation.
 
+### 6.1 Deux niveaux de vérification visuelle
+
+| Niveau | Répond à | Outil |
+|---|---|---|
+| Test d'interface | « Qu'est-ce qui est affiché ? » | `compose-ui-test` |
+| Capture de référence | « À quoi cela ressemble ? » | Roborazzi |
+
+Les deux sont nécessaires et ne se recouvrent pas. Un défaut de contraste, un
+débordement de texte ou une régression de thème sombre ne cassent **aucune**
+assertion textuelle ; inversement, une capture ne dit pas si un bouton déclenche
+la bonne action.
+
+Les références sont versionnées dans `app/src/test/screenshots/`, en clair et en
+sombre. Le thème sombre n'est jamais celui qu'on regarde en développant : c'est
+là que les défauts s'installent sans être vus.
+
 ---
 
 ## 7. Injection de dépendances
@@ -448,3 +464,6 @@ plus une commande et une entrée de journal.
 | 23 | Fiche système plutôt que `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Cette intention suffit à faire rejeter une publication Play Store |
 | 24 | Fuseau et langue injectés dans la mise en forme | Un test de rendu ne doit pas dépendre des réglages de la machine |
 | 25 | Repérage des tests par `testTag` | Un libellé est traduisible ; un test qui s'y accroche casse à la reformulation |
+| 26 | Références visuelles versionnées | Une revue voit le changement dans le diff, pas seulement un test rouge |
+| 27 | Capture systématique en thème sombre | C'est là que les défauts de contraste s'installent sans être vus |
+| 28 | Couleur dynamique désactivée en capture | Elle dépend du fond d'écran : la référence serait instable |

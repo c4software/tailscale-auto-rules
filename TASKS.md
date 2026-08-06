@@ -6,13 +6,17 @@ s'enchaînent sans validation intermédiaire (voir [AGENTS.md](./AGENTS.md) §1)
 
 Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 
-> **Les seize étapes sont terminées.** Ce qui reste ouvert est listé ci-dessous
-> et ne bloque pas le fonctionnement : deux points demandent une mesure sur
-> terminal réel, deux dépendent d'outils tiers, deux se font hors du dépôt.
+> **Les seize étapes sont terminées, mais l'étape 17 les remet en cause.**
+> L'automatisation en arrière-plan ne fonctionne pas sur terminal réel : le
+> mécanisme de réveil retenu à l'étape 11 est inopérant par construction. Voir
+> l'étape 17 ci-dessous.
+>
+> Les autres points ouverts ne bloquent pas : deux dépendent d'outils tiers,
+> deux se font hors du dépôt.
 >
 > | Point | Étape | Nature |
 > |---|---|---|
-> | Debounce sur le chemin des réveils | 11 | mesure sur terminal |
+> | Observation réseau en arrière-plan | 17 | **refonte en cours** |
 > | Mode avion sans changement de réseau | 11 | mesure sur terminal |
 > | `lint` sur les sources de test | 5 | défaut AGP 9.3.1 |
 > | Robolectric sur l'API 37 | 3 | version à paraître |
@@ -336,6 +340,39 @@ manques.
 
 **Total : 43 tests Compose** sous Robolectric, repérés par `testTag`.
 
+### Rendu visuel (Roborazzi)
+
+Ajouté après coup : les tests ci-dessus vérifient *ce qui est affiché*, pas *à
+quoi cela ressemble*.
+
+- [x] Roborazzi 1.70.0, rendu graphique natif de Robolectric
+- [x] **22 références** — les 11 états les plus exposés des quatre écrans, en
+      thème clair **et** sombre
+- [x] Références versionnées dans `app/src/test/screenshots/` : une revue voit
+      le changement visuel dans le diff
+- [x] Couleur dynamique désactivée et format d'écran figé, sans quoi les
+      références dépendraient du fond d'écran ou de la configuration par défaut
+      de Robolectric
+- [x] **Hors CI et hors commande de vérification standard**, délibérément : le
+      rendu graphique natif coûte plusieurs minutes de temps machine, trop cher
+      à chaque Pull Request
+- [x] Tas à 2 Go et recyclage de JVM (`forkEvery`), appliqués **uniquement** aux
+      exécutions Roborazzi — sans quoi la CI paierait ces réglages pour rien
+
+> **Conséquence assumée.** Une régression visuelle n'est rattrapée
+> automatiquement par personne. Le filet repose sur l'auteur d'un changement
+> d'interface, qui lance `:app:verifyRoborazziDebug` avant de committer. C'est
+> rappelé dans [AGENTS.md](./AGENTS.md) §4, [CONTRIBUTING.md](./CONTRIBUTING.md)
+> et le gabarit de Pull Request.
+>
+> À reconsidérer si des régressions visuelles passent réellement en revue — le
+> coût serait alors justifié.
+
+**Ce que ça a trouvé dès la première exécution :** sur les cartes d'action, les
+boutons « Autoriser » et « Ouvrir les réglages » conservaient la couleur
+primaire et devenaient illisibles sur le fond teinté en thème sombre. Aucune
+assertion textuelle ne pouvait le détecter.
+
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 243 tests, 0 échec.
 
@@ -386,3 +423,53 @@ La protection de branche ne se configure pas depuis le dépôt. Sur
 - [ ] *Do not allow bypassing the above settings*
 
 Tant que ce n'est pas fait, la CI signale sans bloquer.
+
+---
+
+## 17. Observation réseau en arrière-plan `[ ]`
+
+**L'automatisation ne fonctionne pas hors de l'application.** Constaté sur
+Pixel 10 Pro : passer en 5G n'active pas le tunnel, revenir en Wi-Fi ne le
+désactive pas. Seule une ouverture de l'application produit un effet.
+
+### Ce qui a été mesuré
+
+Le mécanisme retenu à l'étape 11 —
+`ConnectivityManager.registerNetworkCallback(NetworkRequest, PendingIntent)` —
+ne peut pas tenir sa promesse. Deux faits, tirés du journal système :
+
+1. L'inscription livre l'état courant **immédiatement**, dans la milliseconde ;
+2. `ConnectivityService` la **relâche cinq secondes après cette livraison**.
+
+```
+22:19:00.820  REGISTER … to trigger PendingIntent{5d98ada}
+22:19:00.821  ConnectivityService: Sending PendingIntent{5d98ada}
+22:19:00.893  ConnectivityService: Finished sending PendingIntent{5d98ada}
+22:19:05.898  RELEASE  … callbackRequest: 57492
+```
+
+Une inscription ne vaut donc que pour **un seul réveil, consommé sur-le-champ**.
+Aucun changement ultérieur n'est jamais observé. Réarmer à chaque réveil
+rétablit la couverture mais chaque réarmement provoque sa propre livraison
+immédiate : **463 réveils en 50 secondes**, mesuré. Les deux issues sont
+inacceptables.
+
+Conclusion : observer le réseau en arrière-plan exige un processus vivant. La
+décision d'architecture n°14 tombe.
+
+### Ce qui la remplace — arbitré avec le porteur du projet
+
+Un réglage « réactivité immédiate », laissé à l'utilisateur :
+
+- [ ] **Activé** — service de premier plan et notification permanente. Bascule
+      instantanée. La notification devient le prix explicite de l'instantanéité.
+- [ ] **Désactivé** — vérification périodique par WorkManager (15 min minimum
+      imposées par la plateforme), sans notification ni service.
+- [ ] `AppSettings` porte le nouveau réglage ; `SPECS.md` §7 est réécrit pour
+      énoncer le compromis au lieu de promettre une notification toujours
+      optionnelle
+- [ ] `ARCHITECTURE.md` : décision n°14 remplacée, cause mesurée consignée
+- [ ] `NetworkCallbackTrigger` et `NetworkChangeReceiver` retirés
+- [ ] Le service consomme `NetworkObserver.observe()`, donc le debounce du
+      domaine s'applique enfin — ce qui clôt le point ouvert de l'étape 11
+- [ ] Vérification sur terminal réel, processus tué, aller-retour Wi-Fi ↔ 5G

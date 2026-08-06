@@ -140,6 +140,40 @@ Exemple du style attendu :
 - Couverture visée : **~100 % sur `:domain`**. Chaque branche `NO_DECISION`
   incluse.
 
+### Rendu visuel (Roborazzi)
+
+Les tests d'interface vérifient **ce qui est affiché** ; les captures vérifient
+**à quoi cela ressemble**. Une régression de mise en page, de contraste ou de
+thème sombre ne casse aucune assertion textuelle.
+
+- Les références vivent dans `app/src/test/screenshots/`, **versionnées** : une
+  revue doit voir le changement visuel dans le diff, pas seulement lire qu'un
+  test a échoué.
+- Chaque écran est capturé en clair **et** en sombre. Le thème sombre n'est
+  jamais celui qu'on regarde en développant : c'est là que les défauts de
+  contraste s'installent sans être vus.
+- La couleur dynamique est désactivée et le format d'écran figé
+  (`@Config(qualifiers)`) : sans cela, la référence dépendrait du fond d'écran
+  ou de la configuration par défaut de Robolectric.
+
+```bash
+./gradlew :app:verifyRoborazziDebug   # comparer aux références
+./gradlew :app:recordRoborazziDebug   # réenregistrer après un changement voulu
+```
+
+⚠️ **Ces commandes ne sont pas dans la vérification de §5, ni dans la CI.** Le
+rendu graphique natif coûte plusieurs minutes de temps machine ; le payer à
+chaque commit et à chaque Pull Request ne se justifie pas.
+
+**Conséquence, à assumer :** une régression visuelle n'est rattrapée par
+personne automatiquement. **Quiconque touche à l'interface lance
+`verifyRoborazziDebug` avant de committer** — c'est le seul filet.
+
+**Réenregistrer n'est pas anodin** : un `record` accepte en bloc toute
+différence, y compris une régression. Ne le lancer qu'après avoir constaté que
+le changement visuel est celui qu'on voulait, et **regarder les images**
+produites avant de committer.
+
 ---
 
 ## 5. Vérification

@@ -8,6 +8,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -35,10 +36,18 @@ class TailscaleAutoRulesApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+        Timber.i("Processus démarré")
+
         scope.launch {
             settingsRepository.observeAppSettings()
                 .distinctUntilChanged()
-                .collect { settings -> coordinator.applySettings(settings) }
+                .collect { settings ->
+                    Timber.i("Réglages appliqués : %s", settings)
+                    coordinator.applySettings(settings)
+                }
         }
     }
 }

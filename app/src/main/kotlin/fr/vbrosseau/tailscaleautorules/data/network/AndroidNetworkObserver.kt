@@ -12,6 +12,7 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
+import androidx.annotation.RequiresApi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
@@ -22,17 +23,26 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Observe le réseau via [ConnectivityManager.NetworkCallback] et le mode avion
  * via la diffusion système correspondante.
  *
- * Le flux émis est brut côté callbacks puis stabilisé par l'opérateur du
- * domaine : la logique de debounce reste ainsi testable hors Android.
+ * **Le SSID ne s'obtient que par le callback.** `getNetworkCapabilities()`
+ * renvoie des capacités *expurgées* de tout ce qui est sensible à la
+ * localisation : le `transportInfo` y est vide, même permission accordée. Seules
+ * les capacités livrées à un callback enregistré avec
+ * `FLAG_INCLUDE_LOCATION_INFO` portent le SSID. C'est pourquoi cette classe
+ * construit son contexte à partir des capacités **reçues**, et ne les redemande
+ * jamais.
  */
 @Singleton
 class AndroidNetworkObserver @Inject constructor(
@@ -43,7 +53,28 @@ class AndroidNetworkObserver @Inject constructor(
     private val connectivityManager: ConnectivityManager?
         get() = context.getSystemService(ConnectivityManager::class.java)
 
-    override fun observe(): Flow<NetworkContext> = callbackFlow {
+    override fun observe(): Flow<NetworkContext> = rawContexts().stabilized()
+
+    /**
+     * Contexte courant, sans attendre le debounce.
+     *
+     * On ouvre brièvement une observation plutôt que d'interroger le système :
+     * c'est le seul moyen d'obtenir un SSID. Le système livre l'état courant dès
+     * l'enregistrement, la réponse est donc quasi immédiate.
+     *
+     * Le repli couvre le cas où aucun réseau ne correspond — hors ligne, mode
+     * avion — auquel cas aucun callback n'arrive et attendre indéfiniment
+     * bloquerait la synchronisation manuelle.
+     */
+    override suspend fun current(): NetworkContext = withContext(ioDispatcher) {
+        val context = withTimeoutOrNull(CURRENT_TIMEOUT) { rawContexts().first() }
+            ?: redactedContext()
+        Timber.i("Contexte capturé : %s", context)
+        context
+    }
+
+    /** Flux brut, sans stabilisation : le debounce appartient au domaine. */
+    private fun rawContexts(): Flow<NetworkContext> = callbackFlow {
         val manager = connectivityManager
         if (manager == null) {
             send(NetworkContext.Disconnected)
@@ -51,30 +82,34 @@ class AndroidNetworkObserver @Inject constructor(
             return@callbackFlow
         }
 
-        // Toute notification, quelle qu'elle soit, provoque une relecture
-        // complète de l'état : c'est plus simple, et plus sûr, que d'essayer de
-        // reconstituer le contexte à partir de l'événement reçu.
-        val networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                trySend(readContext())
+        // Capacités par réseau, telles que le système nous les livre. Les
+        // conserver est indispensable : elles ne sont pas relisibles ensuite.
+        val known = mutableMapOf<Network, NetworkCapabilities>()
+
+        fun publish() {
+            trySend(contextFrom(known.values))
+        }
+
+        val events = object : NetworkEvents {
+            override fun onCapabilities(network: Network, capabilities: NetworkCapabilities) {
+                known[network] = capabilities
+                publish()
             }
 
             override fun onLost(network: Network) {
-                trySend(readContext())
-            }
-
-            override fun onCapabilitiesChanged(
-                network: Network,
-                networkCapabilities: NetworkCapabilities,
-            ) {
-                trySend(readContext())
+                known.remove(network)
+                publish()
             }
         }
 
+        val networkCallback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            LocationAwareCallback(events)
+        } else {
+            PlainCallback(events)
+        }
+
         val airplaneModeReceiver = object : BroadcastReceiver() {
-            override fun onReceive(receiverContext: Context?, intent: Intent?) {
-                trySend(readContext())
-            }
+            override fun onReceive(receiverContext: Context?, intent: Intent?) = publish()
         }
 
         val request = NetworkRequest.Builder()
@@ -89,30 +124,51 @@ class AndroidNetworkObserver @Inject constructor(
             IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED),
         )
 
-        // Valeur initiale : sans elle, un collecteur resterait muet jusqu'au
-        // premier changement de réseau.
-        send(readContext())
-
         awaitClose {
             manager.unregisterNetworkCallback(networkCallback)
             context.unregisterReceiver(airplaneModeReceiver)
         }
-    }.flowOn(ioDispatcher).stabilized()
+    }.flowOn(ioDispatcher)
 
-    override suspend fun current(): NetworkContext = withContext(ioDispatcher) { readContext() }
+    /**
+     * Construit le contexte à partir du réseau physique.
+     *
+     * Le tunnel est écarté : une fois monté, il devient le réseau actif et
+     * masquerait le Wi-Fi ou la 4G sous-jacents. Les règles décideraient alors
+     * sur « autre transport » et s'abstiendraient toutes.
+     */
+    private fun contextFrom(capabilities: Collection<NetworkCapabilities>): NetworkContext {
+        val physical = capabilities
+            .filterNot { it.hasTransport(NetworkCapabilities.TRANSPORT_VPN) }
+            .maxByOrNull { it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) }
 
-    private fun readContext(): NetworkContext {
-        val manager = connectivityManager
-        val network = manager?.activeNetwork
-        val capabilities = network?.let(manager::getNetworkCapabilities)
-        val transport = capabilities.toTransport()
+        val transport = physical.toTransport()
 
         return NetworkContext(
             transport = transport,
             isAirplaneModeOn = isAirplaneModeOn(),
+            isInternetValidated = physical
+                ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true,
+            ssid = if (transport == NetworkTransport.WIFI) readSsid(physical) else null,
+        )
+    }
+
+    /**
+     * Contexte de repli, sans SSID.
+     *
+     * Les capacités obtenues ici sont expurgées ; le transport et le mode avion
+     * restent exacts, ce qui suffit à toutes les règles sauf celle des réseaux
+     * de confiance.
+     */
+    private fun redactedContext(): NetworkContext {
+        val manager = connectivityManager
+        val capabilities = manager?.activeNetwork?.let(manager::getNetworkCapabilities)
+
+        return NetworkContext(
+            transport = capabilities.toTransport(),
+            isAirplaneModeOn = isAirplaneModeOn(),
             isInternetValidated = capabilities
                 ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true,
-            ssid = if (transport == NetworkTransport.WIFI) readSsid(capabilities) else null,
         )
     }
 
@@ -128,18 +184,14 @@ class AndroidNetworkObserver @Inject constructor(
         Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
 
     /**
-     * Lit le SSID courant, ou `null` s'il est indisponible.
+     * Lit le SSID, ou `null` s'il est indisponible.
      *
-     * Deux chemins selon la plateforme :
+     * À partir d'Android 12, il voyage dans les capacités reçues du callback.
+     * Avant, seul `WifiManager.getConnectionInfo()` le fournit — API dépréciée
+     * depuis, d'où la restriction de portée explicite.
      *
-     * - À partir d'Android 12, le SSID se lit sur les capacités du réseau via
-     *   [NetworkCapabilities.getTransportInfo]. C'est la voie officielle.
-     * - Avant, seul `WifiManager.getConnectionInfo()` le fournit. L'API est
-     *   dépréciée depuis Android 12, d'où la restriction de portée explicite.
-     *
-     * Dans les deux cas, l'absence de permission de localisation fait renvoyer
-     * au système une valeur de repli (`<unknown ssid>`), traitée ici comme une
-     * indisponibilité — c'est ce que SPECS.md §4.2 impose.
+     * Sans permission de localisation, le système renvoie une valeur de repli,
+     * traitée ici comme une indisponibilité (SPECS.md §4.2).
      */
     private fun readSsid(capabilities: NetworkCapabilities?): String? {
         val wifiInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -153,4 +205,53 @@ class AndroidNetworkObserver @Inject constructor(
             ?.removeSurrounding("\"")
             ?.takeIf { it.isNotBlank() && it != WifiManager.UNKNOWN_SSID }
     }
+
+    private companion object {
+        val CURRENT_TIMEOUT = 1_500.milliseconds
+    }
+}
+
+/**
+ * Ce que l'observateur retient d'un callback réseau.
+ *
+ * Existe parce que le constructeur `NetworkCallback(int)` — celui qui demande
+ * un SSID non expurgé — n'apparaît qu'avec Android 12. Le choix du constructeur
+ * se fait à la déclaration de la classe : deux sous-classes sont donc
+ * inévitables, mais le comportement, lui, n'est écrit qu'une fois et leur est
+ * délégué.
+ */
+private interface NetworkEvents {
+    fun onCapabilities(network: Network, capabilities: NetworkCapabilities)
+
+    fun onLost(network: Network)
+}
+
+/**
+ * `FLAG_INCLUDE_LOCATION_INFO` demande au système de ne pas expurger le SSID
+ * des capacités livrées.
+ */
+@RequiresApi(Build.VERSION_CODES.S)
+private class LocationAwareCallback(
+    private val events: NetworkEvents,
+) : ConnectivityManager.NetworkCallback(FLAG_INCLUDE_LOCATION_INFO) {
+
+    override fun onCapabilitiesChanged(
+        network: Network,
+        networkCapabilities: NetworkCapabilities,
+    ) = events.onCapabilities(network, networkCapabilities)
+
+    override fun onLost(network: Network) = events.onLost(network)
+}
+
+/** Avant Android 12, le SSID passe par `WifiManager` plutôt que par ce callback. */
+private class PlainCallback(
+    private val events: NetworkEvents,
+) : ConnectivityManager.NetworkCallback() {
+
+    override fun onCapabilitiesChanged(
+        network: Network,
+        networkCapabilities: NetworkCapabilities,
+    ) = events.onCapabilities(network, networkCapabilities)
+
+    override fun onLost(network: Network) = events.onLost(network)
 }

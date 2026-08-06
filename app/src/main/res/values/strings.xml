@@ -7,6 +7,16 @@
     <string name="destination_journal">Journal</string>
     <string name="destination_settings">Paramètres</string>
 
+    <!--
+      Libellés courts de la barre de navigation. « Réseaux de confiance » y
+      passait sur deux lignes, ce qui décalait son icône par rapport aux autres.
+      Le titre d'écran, lui, garde le libellé complet.
+    -->
+    <string name="destination_short_home">Accueil</string>
+    <string name="destination_short_blacklist">Réseaux</string>
+    <string name="destination_short_journal">Journal</string>
+    <string name="destination_short_settings">Paramètres</string>
+
     <!-- Accueil -->
     <string name="home_tunnel_title">Tunnel Tailscale</string>
     <string name="home_tunnel_enabled">Activé</string>

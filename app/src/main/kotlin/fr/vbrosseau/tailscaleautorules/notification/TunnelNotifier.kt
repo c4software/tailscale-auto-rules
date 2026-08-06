@@ -14,6 +14,7 @@ import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.presentation.labelRes
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -49,7 +50,10 @@ class TunnelNotifier @Inject constructor(
      *   n'a encore été appliquée.
      */
     fun show(state: TunnelState, ruleId: RuleId?) {
-        if (!canNotify()) return
+        if (!canNotify()) {
+            Timber.w("Notification non publiée : permission absente")
+            return
+        }
 
         NotificationChannels.ensureCreated(context)
 
@@ -66,6 +70,7 @@ class TunnelNotifier @Inject constructor(
 
         try {
             manager.notify(NOTIFICATION_ID, notification)
+            Timber.i("Notification publiée : %s", state)
         } catch (ignored: SecurityException) {
             // La garde `canNotify()` ne suffit pas formellement : l'utilisateur
             // peut révoquer la permission entre le contrôle et l'appel. Perdre
@@ -75,6 +80,7 @@ class TunnelNotifier @Inject constructor(
     }
 
     fun hide() {
+        Timber.i("Notification retirée")
         manager.cancel(NOTIFICATION_ID)
     }
 

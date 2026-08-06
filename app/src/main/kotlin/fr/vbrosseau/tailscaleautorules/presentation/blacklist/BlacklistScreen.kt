@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -168,7 +169,11 @@ private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modi
         ),
     ) {
         Column(
-            modifier = Modifier.padding(Spacing.md),
+            // Sans `fillMaxWidth`, la colonne s'ajuste au texte et l'alignement
+            // à droite du bouton se fait dans ce cadre rétréci, pas dans la carte.
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Text(
@@ -179,9 +184,13 @@ private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modi
                 text = stringResource(R.string.blacklist_location_body),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            TextButton(
+            // Un bouton plein plutôt qu'un bouton texte : aligné à gauche et
+            // sans contour, l'action se lisait comme un paragraphe de plus.
+            FilledTonalButton(
                 onClick = onGrant,
-                modifier = Modifier.testTag(BlacklistTestTags.LOCATION_GRANT),
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .testTag(BlacklistTestTags.LOCATION_GRANT),
             ) {
                 Text(stringResource(R.string.blacklist_location_grant))
             }
@@ -274,12 +283,19 @@ private fun ErrorCard(message: String, onDismiss: () -> Unit, modifier: Modifier
             contentColor = MaterialTheme.colorScheme.onErrorContainer,
         ),
     ) {
-        Row(
-            modifier = Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            // Sans `fillMaxWidth`, la colonne s'ajuste au texte et l'alignement
+            // à droite du bouton se fait dans ce cadre rétréci, pas dans la carte.
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text(text = message, modifier = Modifier.weight(1f))
-            TextButton(onClick = onDismiss) {
+            Text(text = message)
+            FilledTonalButton(
+                onClick = onDismiss,
+                modifier = Modifier.align(Alignment.End),
+            ) {
                 Text(stringResource(R.string.blacklist_cancel))
             }
         }

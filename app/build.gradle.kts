@@ -8,7 +8,21 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.roborazzi)
 }
+
+/**
+ * Vrai lorsque la construction demandée capture ou compare des images.
+ *
+ * Sert à n'appliquer les réglages coûteux de JVM qu'à ces exécutions-là. Le
+ * `test` ordinaire — celui de la CI — garde la configuration par défaut : sans
+ * mode Roborazzi actif, `captureRoboImage` ne fait rien, les tests de rendu se
+ * réduisent alors à quelques millisecondes.
+ */
+val isScreenshotRun =
+    gradle.startParameter.taskNames.any {
+        it.contains("roborazzi", ignoreCase = true)
+    }
 
 android {
     namespace = "fr.vbrosseau.tailscaleautorules"
@@ -28,6 +42,27 @@ android {
         unitTests {
             // Requis par Robolectric pour résoudre les ressources et le manifeste.
             isIncludeAndroidResources = true
+
+            all { test ->
+                // Roborazzi lit ces propriétés pour savoir s'il doit enregistrer
+                // les références ou les comparer. Les passer par Gradle évite de
+                // recompiler les tests pour changer de mode.
+                test.systemProperties(
+                    providers.gradlePropertiesPrefixedBy("roborazzi.").get(),
+                )
+
+                if (isScreenshotRun) {
+                    // Une exécution Roborazzi ne s'intéresse qu'aux captures :
+                    // rejouer les 150 autres tests coûterait des minutes pour
+                    // rien, et le rendu graphique natif ne rendant pas toute sa
+                    // mémoire d'une classe à l'autre, la suite entière finissait
+                    // par saturer le tas. Le symptôme était trompeur — un test
+                    // sans rapport échouait, l'OutOfMemoryError lui parvenant
+                    // sous forme d'« exception avant le test ».
+                    test.filter.includeTestsMatching("*ScreenshotTest")
+                    test.maxHeapSize = "2g"
+                }
+            }
         }
     }
 
@@ -49,6 +84,9 @@ android {
 
     buildFeatures {
         compose = true
+        // Requis pour distinguer les constructions de débogage : la
+        // journalisation n'est plantée que dans celles-là.
+        buildConfig = true
     }
 
     lint {
@@ -88,12 +126,19 @@ detekt {
     buildUponDefaultConfig = true
 }
 
+roborazzi {
+    // Les références sont versionnées : une revue doit pouvoir constater un
+    // changement visuel dans le diff, pas seulement lire qu'un test a échoué.
+    outputDir.set(file("src/test/screenshots"))
+}
+
 dependencies {
     implementation(project(":domain"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.timber)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
@@ -124,5 +169,8 @@ dependencies {
     testImplementation(libs.hilt.testing)
     testImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
     kspTest(libs.hilt.compiler)
 }

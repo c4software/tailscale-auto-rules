@@ -49,6 +49,15 @@ jobs:
       - name: Tests unitaires
         run: ./gradlew test
 
+      # La vérification du rendu visuel (Roborazzi) n'est volontairement pas
+      # exécutée ici : le rendu graphique natif de Robolectric prend plusieurs
+      # minutes de temps machine à chaque exécution, pour un coût qui ne se
+      # justifie pas sur chaque Pull Request.
+      #
+      # Conséquence assumée : une régression visuelle n'est pas rattrapée
+      # automatiquement. Elle l'est en local, par l'auteur d'un changement
+      # d'interface — voir AGENTS.md §4 et le gabarit de Pull Request.
+
       - name: Couverture du domaine
         run: ./gradlew :domain:koverVerify :domain:koverXmlReport
 

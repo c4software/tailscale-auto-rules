@@ -16,6 +16,15 @@
 - [ ] Aucun code mort, aucun `TODO` sans tâche dans `TASKS.md`
 - [ ] La documentation impactée est à jour
 
+## Si cette PR touche à l'interface
+
+> ⚠️ La CI **ne vérifie pas** le rendu visuel — trop coûteux par PR. Ces points
+> sont donc à votre charge, personne ne les rattrapera.
+
+- [ ] `./gradlew :app:verifyRoborazziDebug` a été lancé
+- [ ] Les références réenregistrées ont été **regardées**, pas seulement acceptées
+- [ ] Le thème sombre a été vérifié, pas seulement le clair
+
 ## Si cette PR ajoute une règle
 
 - [ ] `evaluate` reste pure — pas d'I/O, pas d'horloge, pas de journalisation

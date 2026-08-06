@@ -49,10 +49,32 @@ commande, créez-le avec `sdk.dir=/chemin/vers/Android/Sdk`. Il ne doit **jamais
 4. Vérifiez avant de pousser :
 
    ```bash
-   ./gradlew ktlintCheck detekt lint test assembleDebug
+   ./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug
    ```
 
    Formatage automatique : `./gradlew ktlintFormat`.
+
+   **Si — et seulement si — vous avez modifié l'interface**, vérifiez en plus le
+   rendu visuel :
+
+   ```bash
+   ./gradlew :app:verifyRoborazziDebug
+   ```
+
+   Cette étape **n'est pas dans la CI** : elle coûte plusieurs minutes de temps
+   machine, trop cher à chaque Pull Request. Personne ne la lancera donc à votre
+   place.
+
+   En cas de différence, regardez les images produites dans
+   `app/build/outputs/roborazzi/`, assurez-vous que le changement est bien celui
+   que vous vouliez, puis réenregistrez :
+
+   ```bash
+   ./gradlew :app:recordRoborazziDebug
+   ```
+
+   Les images mises à jour font partie de la PR : c'est ainsi que la revue voit
+   le changement visuel.
 5. Mettez à jour la documentation impactée
    ([ARCHITECTURE.md](./ARCHITECTURE.md), [SPECS.md](./SPECS.md),
    [TASKS.md](./TASKS.md)).

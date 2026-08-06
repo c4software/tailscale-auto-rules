@@ -7,25 +7,38 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Réveille l'application par diffusion, sans processus permanent.
+ * Réveil par diffusion, sans processus permanent.
  *
- * `ConnectivityManager.registerNetworkCallback(NetworkRequest, PendingIntent)`
- * confie l'observation au système : il réveille [NetworkChangeReceiver] quand
- * le réseau change, et l'application ne consomme rien entre-temps.
+ * **Cette approche ne tient pas — elle est conservée le temps de la remplacer.**
+ * L'intention était de confier l'observation au système pour que la notification
+ * d'état reste optionnelle (SPECS.md §7). Deux mesures sur appareil l'ont
+ * infirmée :
  *
- * C'est ce qui permet à la notification d'état de rester **optionnelle**
- * (SPECS.md §7). Un service de premier plan, seule alternative pour observer en
- * continu, imposerait une notification permanente sur Android 8 et suivants.
+ * 1. `registerNetworkCallback(NetworkRequest, PendingIntent)` livre l'état
+ *    courant **immédiatement**, dans la milliseconde qui suit l'inscription ;
+ * 2. `ConnectivityService` relâche ensuite l'inscription **cinq secondes après
+ *    cette livraison** — le journal système est sans ambiguïté :
  *
- * **Écart assumé.** Le debounce du domaine ne s'applique pas ici : chaque
- * réveil déclenche une synchronisation. Ce n'est pas un problème en pratique,
- * le cas d'usage n'agissant que si l'état visé diffère de l'état constaté —
- * une rafale d'événements produit donc au plus une commande, et une seule
- * entrée de journal.
+ * ```
+ * 22:19:00.820  REGISTER … to trigger PendingIntent{5d98ada}
+ * 22:19:00.821  ConnectivityService: Sending PendingIntent{5d98ada}
+ * 22:19:00.893  ConnectivityService: Finished sending PendingIntent{5d98ada}
+ * 22:19:05.898  RELEASE  … callbackRequest: 57492
+ * ```
+ *
+ * Une inscription ne vaut donc que pour un seul réveil, consommé sur-le-champ :
+ * aucun changement de réseau ultérieur n'est jamais observé. Réarmer à chaque
+ * réveil rétablit bien la couverture, mais chaque réarmement provoque sa propre
+ * livraison immédiate — mesuré à 463 réveils en 50 secondes. Les deux issues
+ * sont inacceptables.
+ *
+ * L'observation en arrière-plan exige donc un processus vivant. Voir TASKS.md
+ * pour l'architecture qui remplace celle-ci.
  */
 @Singleton
 class NetworkCallbackTrigger @Inject constructor(
@@ -43,10 +56,12 @@ class NetworkCallbackTrigger @Inject constructor(
             .build()
 
         connectivityManager?.registerNetworkCallback(request, wakeUpIntent())
+        Timber.i("Réveil armé")
     }
 
     override fun disarm() {
         connectivityManager?.unregisterNetworkCallback(wakeUpIntent())
+        Timber.i("Réveil désarmé")
     }
 
     /**

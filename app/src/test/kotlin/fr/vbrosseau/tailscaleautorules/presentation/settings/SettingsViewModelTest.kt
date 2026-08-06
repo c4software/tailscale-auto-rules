@@ -1,5 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.presentation.settings
 
+import fr.vbrosseau.tailscaleautorules.automation.NotificationRefresher
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
@@ -14,10 +15,21 @@ class SettingsViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    /** Compte les réalignements demandés, sans rien publier. */
+    private class RecordingNotificationRefresher : NotificationRefresher {
+        var refreshCount: Int = 0
+            private set
+
+        override suspend fun refreshNotificationIfEnabled() {
+            refreshCount++
+        }
+    }
+
     private val repository = FakeSettingsRepository()
     private val systemStatus = FakeSystemStatus()
+    private val refresher = RecordingNotificationRefresher()
 
-    private fun viewModel() = SettingsViewModel(repository, systemStatus)
+    private fun viewModel() = SettingsViewModel(repository, systemStatus, refresher)
 
     @Test
     fun theInitialStateCarriesTheStoredPreferences() = runTest {
@@ -109,6 +121,20 @@ class SettingsViewModelTest {
         model.refreshSystemStatus()
 
         assertTrue(!model.uiState.value.needsNotificationPermission)
+    }
+
+    @Test
+    fun returningToTheScreenRealignsTheNotification() = runTest {
+        // Constaté sur appareil : l'utilisateur active l'option puis accorde la
+        // permission dans les réglages système, et aucune notification
+        // n'apparaît. Sans ce réalignement au retour, elle n'était publiée qu'à
+        // la modification suivante d'un réglage.
+        val model = viewModel()
+        val afterInit = refresher.refreshCount
+
+        model.refreshSystemStatus()
+
+        assertEquals(afterInit + 1, refresher.refreshCount)
     }
 
     @Test

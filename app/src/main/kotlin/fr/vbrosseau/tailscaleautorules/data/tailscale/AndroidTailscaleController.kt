@@ -5,13 +5,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleUnavailableException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,6 +53,9 @@ class AndroidTailscaleController @Inject constructor(
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : TailscaleController {
 
+    private val connectivityManager: ConnectivityManager?
+        get() = context.getSystemService(ConnectivityManager::class.java)
+
     override suspend fun isAvailable(): Boolean = withContext(ioDispatcher) {
         runCatching { context.packageManager.findTailscalePackage() }.isSuccess
     }
@@ -70,6 +80,50 @@ class AndroidTailscaleController @Inject constructor(
         connectivityManager.getNetworkCapabilities(network)
             ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
     }
+
+    /**
+     * Observe l'apparition et la disparition d'un tunnel VPN.
+     *
+     * C'est ici, et non dans l'observation du réseau, que le tunnel se
+     * surveille : le `NetworkContext` du domaine écarte volontairement le VPN
+     * pour que les règles voient le réseau physique. Y faire transiter l'état
+     * du tunnel le rendrait invisible — deux contextes identiques, filtrés par
+     * `distinctUntilChanged`.
+     */
+    override fun observeRunning(): Flow<Boolean> = callbackFlow {
+        val manager = connectivityManager
+        if (manager == null) {
+            send(false)
+            awaitClose { }
+            return@callbackFlow
+        }
+
+        val active = mutableSetOf<Network>()
+
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                active += network
+                trySend(true)
+            }
+
+            override fun onLost(network: Network) {
+                active -= network
+                trySend(active.isNotEmpty())
+            }
+        }
+
+        val request = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_VPN)
+            // Un NetworkRequest exclut les VPN par défaut : sans cette levée,
+            // le callback ne serait jamais appelé.
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            .build()
+
+        manager.registerNetworkCallback(request, callback)
+        send(isRunning())
+
+        awaitClose { manager.unregisterNetworkCallback(callback) }
+    }.distinctUntilChanged().flowOn(ioDispatcher)
 
     private suspend fun broadcast(action: String): Result<Unit> = withContext(ioDispatcher) {
         runCatching {

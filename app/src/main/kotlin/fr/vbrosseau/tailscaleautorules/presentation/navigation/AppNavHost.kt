@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -55,6 +56,14 @@ fun AppNavHost(
             val viewModel: BlacklistViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+            // Une permission s'accorde dans une boîte de dialogue système :
+            // l'application est mise en pause puis reprise. Sans ce reconstat,
+            // l'explication resterait affichée alors qu'elle n'a plus lieu d'être.
+            LifecycleResumeEffect(viewModel) {
+                viewModel.refreshSystemStatus()
+                onPauseOrDispose { }
+            }
+
             BlacklistScreen(
                 uiState = uiState,
                 onAdd = viewModel::add,
@@ -76,6 +85,13 @@ fun AppNavHost(
         composable(AppRoutes.SETTINGS) {
             val viewModel: SettingsViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            // Même raison qu'au-dessus : la permission de notification et
+            // l'exemption de batterie se règlent hors de l'application.
+            LifecycleResumeEffect(viewModel) {
+                viewModel.refreshSystemStatus()
+                onPauseOrDispose { }
+            }
 
             SettingsScreen(
                 uiState = uiState,

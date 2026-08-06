@@ -1,5 +1,3 @@
-<div align="center">
-
 # Tailscale Auto Rules
 
 **Active ou désactive votre tunnel Tailscale automatiquement, selon vos règles.**
@@ -8,12 +6,10 @@
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
 [![Min SDK](https://img.shields.io/badge/minSdk-26-brightgreen.svg)](https://developer.android.com/tools/releases/platforms)
 
-</div>
-
 > ⚠️ **Première version fonctionnelle, pas encore publiée.** Les quatre écrans,
-> le moteur de règles et l'automatisation sont livrés et testés (243 tests).
-> Trois réserves connues sont listées dans [TASKS.md](./TASKS.md) ; deux
-> demandent une mesure sur terminal réel avant publication.
+> le moteur de règles et l'automatisation sont livrés et testés. L'application
+> n'a en revanche **jamais tourné sur un terminal réel** : les réserves ouvertes
+> avant publication sont listées en tête de [TASKS.md](./TASKS.md).
 
 ---
 
@@ -64,11 +60,16 @@ Bluetooth, Android Auto… sont des ajouts, pas des refontes.
 
 ## Captures d'écran
 
-<!-- À remplacer par de vraies captures à l'étape 15 de TASKS.md -->
+Les images ci-dessous sont les **références de test** produites par Roborazzi,
+et non des captures retouchées : ce que vous voyez est exactement ce que rend
+l'application.
 
-| Accueil | Blacklist Wi-Fi | Journal | Paramètres |
+| Accueil | Réseaux de confiance | Journal | Paramètres |
 |:---:|:---:|:---:|:---:|
-| _(à venir)_ | _(à venir)_ | _(à venir)_ | _(à venir)_ |
+| ![Accueil](app/src/test/screenshots/accueil-nominal-clair.png) | ![Réseaux de confiance](app/src/test/screenshots/blacklist-remplie-clair.png) | ![Journal](app/src/test/screenshots/journal-rempli-clair.png) | ![Paramètres](app/src/test/screenshots/parametres-nominaux-clair.png) |
+
+Chaque écran existe aussi en thème sombre dans
+[`app/src/test/screenshots/`](app/src/test/screenshots/).
 
 ---
 
@@ -102,9 +103,9 @@ la toolchain sont fournis, rien d'autre à installer.
 git clone https://github.com/c4software/tailscale-auto-rules.git
 cd tailscale-auto-rules
 
-# Si vous utilisez le JDK embarqué d'Android Studio :
+# Si vous utilisez le JDK embarqué d'Android Studio. `gradlew` lit JAVA_HOME
+# en priorité : inutile de toucher au PATH.
 export JAVA_HOME=$HOME/.local/share/JetBrains/Toolbox/apps/android-studio/jbr
-export PATH="$JAVA_HOME/bin:$PATH"
 
 ./gradlew assembleDebug
 ```
@@ -118,19 +119,33 @@ L'APK est produit dans `app/build/outputs/apk/debug/`.
 ```
 
 C'est exactement ce que vérifie la CI sur chaque Pull Request : formatage,
-analyse statique, lint Android, 243 tests, couverture du domaine, compilation.
+analyse statique, lint Android, tests, couverture du domaine, compilation.
 
 `koverVerify` échoue sous 98 % de couverture sur `:domain`, qui est à
 **100 % d'instructions et 98,7 % de branches**. Le seuil constate un acquis
 plutôt qu'il ne fixe un objectif : il empêche une régression silencieuse.
 
+### Rendu visuel
+
+Les captures de référence se vérifient **à part**, et volontairement **hors
+CI** : le rendu graphique coûte plusieurs minutes de temps machine, trop cher à
+chaque Pull Request.
+
+```bash
+./gradlew :app:verifyRoborazziDebug   # comparer aux références
+./gradlew :app:recordRoborazziDebug   # réenregistrer après un changement voulu
+```
+
+À lancer si — et seulement si — vous touchez à l'interface. Personne ne le fera
+à votre place : une régression visuelle n'est rattrapée par aucune vérification
+automatique.
+
 ---
 
 ## Publication sur le Play Store
 
-> Procédure détaillée à l'étape 15 de [TASKS.md](./TASKS.md).
-
-Trame :
+> Trame vérifiée sur le papier, **pas encore éprouvée** : elle se complètera au
+> premier envoi réel sur la Play Console.
 
 1. Créer un keystore de release, **hors du dépôt**.
 2. Renseigner `keystore.properties` (ignoré par Git) et le référencer dans la

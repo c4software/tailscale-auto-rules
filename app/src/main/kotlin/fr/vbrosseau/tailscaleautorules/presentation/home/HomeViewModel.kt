@@ -37,7 +37,7 @@ class HomeViewModel @Inject constructor(
     init {
         observeNetwork()
         observeJournal()
-        viewModelScope.launch { refreshTunnelState() }
+        observeTunnel()
     }
 
     /**
@@ -52,7 +52,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSynchronizing = true) }
             synchronizeTunnel()
-            refreshTunnelState()
+            // L'état affiché n'est pas relu ici : la commande est asynchrone et
+            // la relecture arriverait avant que le tunnel ait bougé.
+            // `observeTunnel` le mettra à jour dès que le changement aura eu
+            // lieu — ou ne le mettra pas à jour s'il n'a pas lieu, ce qui est
+            // précisément l'information utile.
             _uiState.update { it.copy(isSynchronizing = false) }
         }
     }
@@ -61,9 +65,33 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             networkObserver.observe().collect { context ->
                 _uiState.update { it.copy(transport = context.transport, ssid = context.ssid) }
-                // Le tunnel peut avoir bougé pendant le changement de réseau :
-                // on reconstate plutôt que de supposer.
-                refreshTunnelState()
+            }
+        }
+    }
+
+    /**
+     * Suit l'état réel du tunnel, quelle qu'en soit la cause.
+     *
+     * Il peut être coupé depuis le client officiel ou une tuile de réglages
+     * rapides, sans que l'application y soit pour rien. L'observer est le seul
+     * moyen d'afficher un état constaté plutôt que supposé.
+     */
+    private fun observeTunnel() {
+        viewModelScope.launch {
+            val isInstalled = controller.isAvailable()
+            _uiState.update { it.copy(isTailscaleInstalled = isInstalled) }
+
+            if (!isInstalled) {
+                _uiState.update { it.copy(tunnelState = TunnelState.UNKNOWN) }
+                return@launch
+            }
+
+            controller.observeRunning().collect { isRunning ->
+                _uiState.update {
+                    it.copy(
+                        tunnelState = if (isRunning) TunnelState.ENABLED else TunnelState.DISABLED,
+                    )
+                }
             }
         }
     }
@@ -76,17 +104,4 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun refreshTunnelState() {
-        val isInstalled = controller.isAvailable()
-        _uiState.update {
-            it.copy(
-                isTailscaleInstalled = isInstalled,
-                tunnelState = when {
-                    !isInstalled -> TunnelState.UNKNOWN
-                    controller.isRunning() -> TunnelState.ENABLED
-                    else -> TunnelState.DISABLED
-                },
-            )
-        }
-    }
 }

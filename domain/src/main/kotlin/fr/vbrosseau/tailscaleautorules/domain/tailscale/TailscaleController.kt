@@ -1,5 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.domain.tailscale
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Pilotage du tunnel Tailscale, vu du domaine.
  *
@@ -24,6 +26,17 @@ interface TailscaleController {
 
     /** État réel du tunnel au moment de l'appel. */
     suspend fun isRunning(): Boolean
+
+    /**
+     * État réel du tunnel, observé dans la durée.
+     *
+     * Indispensable à l'interface : le tunnel peut être coupé depuis le client
+     * officiel, une tuile de réglages rapides, ou une autre application. Sans
+     * observation, l'état affiché resterait celui du dernier appel à
+     * [isRunning] — et le contrat étant asynchrone, cet appel arrive de toute
+     * façon trop tôt après une commande.
+     */
+    fun observeRunning(): Flow<Boolean>
 }
 
 /**

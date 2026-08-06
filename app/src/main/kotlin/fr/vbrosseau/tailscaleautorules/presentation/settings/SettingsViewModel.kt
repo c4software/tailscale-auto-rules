@@ -3,6 +3,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.vbrosseau.tailscaleautorules.automation.NotificationRefresher
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
@@ -41,6 +42,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
     private val systemStatus: SystemStatus,
+    private val notificationRefresher: NotificationRefresher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -70,6 +72,16 @@ class SettingsViewModel @Inject constructor(
                 versionName = systemStatus.versionName,
             )
         }
+
+        // L'utilisateur peut avoir activé la notification **avant** d'en
+        // accorder la permission : sans ce rappel, elle ne serait publiée qu'à
+        // la prochaine modification d'un réglage.
+        //
+        // Seule la notification est réalignée, jamais le réveil : le
+        // réenregistrer à chaque reprise d'écran le faisait churner auprès du
+        // système, au point de le voir relâché quelques secondes après son
+        // armement.
+        viewModelScope.launch { notificationRefresher.refreshNotificationIfEnabled() }
     }
 
     fun setServiceEnabled(enabled: Boolean) = update { it.copy(isServiceEnabled = enabled) }

@@ -26,6 +26,10 @@ voir les réserves de [TASKS.md](./TASKS.md).
 - **Notification d'état** persistante et réellement optionnelle.
 - **Journal** des 500 derniers changements, avec la règle qui a décidé.
 - Explications de permission avant chaque demande (localisation, notification).
+- **Tests de rendu visuel** (Roborazzi) : 22 références couvrant les états les
+  plus exposés des quatre écrans, en thème clair et sombre. Vérification
+  volontairement hors CI — trop coûteuse par Pull Request — donc à la charge de
+  l'auteur d'un changement d'interface.
 
 ### Notes de conception
 

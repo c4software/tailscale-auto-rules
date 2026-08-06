@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -192,14 +193,23 @@ private fun ActionCard(
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         ),
     ) {
-        Row(
-            modifier = Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
+        // Le bouton est placé sous le message, et non à côté : côte à côte, il
+        // lui prenait la largeur et hachait le texte en lignes très courtes.
+        // `fillMaxWidth` est indispensable — sans lui la colonne s'ajuste au
+        // texte, et l'alignement à droite du bouton se fait dans ce cadre
+        // rétréci plutôt que dans la carte.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text(text = message, modifier = Modifier.weight(1f))
-            TextButton(
+            Text(text = message)
+            FilledTonalButton(
                 onClick = onAction,
-                modifier = Modifier.testTag("$testTag:action"),
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .testTag("$testTag:action"),
             ) {
                 Text(actionLabel)
             }

@@ -1,16 +1,16 @@
 package fr.vbrosseau.tailscaleautorules.automation
 
 /**
- * Arme ou désarme le réveil automatique de l'application.
+ * Arme ou désarme l'observation du réseau qui pilote l'automatisation.
  *
  * Abstrait derrière une interface pour que le coordinateur — qui porte la
  * logique — soit testable sans mécanique Android.
  */
 interface AutomationTrigger {
 
-    /** Demande au système de réveiller l'application à chaque changement réseau. */
+    /** Met en place l'observation du réseau. */
     fun arm()
 
-    /** Cesse d'être réveillé. */
+    /** Cesse d'observer. */
     fun disarm()
 }
