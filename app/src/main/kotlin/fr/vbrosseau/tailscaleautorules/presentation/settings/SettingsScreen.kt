@@ -31,6 +31,7 @@ fun SettingsScreen(
     uiState: SettingsUiState,
     onServiceEnabledChange: (Boolean) -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
+    onImmediateModeChange: (Boolean) -> Unit,
     onPersistentNotificationChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
     onRequestNotificationPermission: () -> Unit,
@@ -67,6 +68,14 @@ fun SettingsScreen(
             checked = uiState.settings.startOnBoot,
             onCheckedChange = onStartOnBootChange,
             testTag = SettingsTestTags.START_ON_BOOT,
+        )
+
+        SwitchRow(
+            title = stringResource(R.string.settings_immediate_title),
+            summary = stringResource(R.string.settings_immediate_summary),
+            checked = uiState.settings.isImmediateModeEnabled,
+            onCheckedChange = onImmediateModeChange,
+            testTag = SettingsTestTags.IMMEDIATE_MODE,
         )
 
         NotificationSection(
@@ -114,11 +123,23 @@ private fun NotificationSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
+        // En mode immédiat, la notification est imposée par la plateforme : la
+        // laisser modifiable ferait promettre à l'utilisateur ce que
+        // l'application ne peut pas tenir.
+        val forced = uiState.settings.notificationIsUnavoidable
+
         SwitchRow(
             title = stringResource(R.string.settings_notification_title),
-            summary = stringResource(R.string.settings_notification_summary),
-            checked = uiState.settings.showPersistentNotification,
+            summary = stringResource(
+                if (forced) {
+                    R.string.settings_notification_forced
+                } else {
+                    R.string.settings_notification_summary
+                },
+            ),
+            checked = forced || uiState.settings.showPersistentNotification,
             onCheckedChange = onPersistentNotificationChange,
+            enabled = !forced,
             testTag = SettingsTestTags.NOTIFICATION,
         )
 
@@ -141,6 +162,7 @@ private fun SwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     testTag: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -155,6 +177,7 @@ private fun SwitchRow(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
+                enabled = enabled,
                 modifier = Modifier.testTag(testTag),
             )
         }
@@ -250,6 +273,7 @@ private fun SettingsScreenPreview() {
             ),
             onServiceEnabledChange = {},
             onStartOnBootChange = {},
+            onImmediateModeChange = {},
             onPersistentNotificationChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},

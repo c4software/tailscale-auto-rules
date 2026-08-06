@@ -45,10 +45,12 @@ Bluetooth, Android Auto… sont des ajouts, pas des refontes.
 
 ### Ce que l'application ne fait pas
 
-- **Elle ne veille pas en permanence.** Le système la réveille aux changements
-  de réseau ; entre-temps elle ne consomme rien. C'est ce qui permet à la
-  notification d'état de rester **optionnelle et désactivée par défaut** — un
-  service de premier plan l'aurait rendue obligatoire.
+- **Elle ne veille pas en permanence si vous ne le voulez pas.** Observer le
+  réseau en continu exige un service visible, auquel Android impose une
+  notification permanente ; il n'existe aucun moyen de contourner cela. Le
+  réglage **Réactivité immédiate** vous laisse arbitrer : activé, bascule
+  instantanée et notification permanente ; désactivé, une simple vérification
+  toutes les quinze minutes, sans service ni notification.
 - **Elle ne lit pas votre position.** La permission de localisation est exigée
   par Android pour lire le *nom* d'un réseau Wi-Fi, rien de plus. Elle n'est
   demandée qu'au moment où vous configurez un réseau de confiance, après

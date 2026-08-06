@@ -15,6 +15,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 internal object SettingsKeys {
     val ServiceEnabled = booleanPreferencesKey("service_enabled")
     val StartOnBoot = booleanPreferencesKey("start_on_boot")
+    val ImmediateMode = booleanPreferencesKey("immediate_mode")
     val PersistentNotification = booleanPreferencesKey("persistent_notification")
     val VerboseLogging = booleanPreferencesKey("verbose_logging")
 

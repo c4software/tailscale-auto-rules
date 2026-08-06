@@ -1,6 +1,8 @@
 package fr.vbrosseau.tailscaleautorules
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import fr.vbrosseau.tailscaleautorules.automation.AutomationCoordinator
 import fr.vbrosseau.tailscaleautorules.di.ApplicationScope
@@ -21,10 +23,25 @@ import javax.inject.Inject
  * redémarrage suivant.
  */
 @HiltAndroidApp
-class TailscaleAutoRulesApplication : Application() {
+class TailscaleAutoRulesApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var coordinator: AutomationCoordinator
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    /**
+     * WorkManager reçoit la fabrique de Hilt.
+     *
+     * Sans elle, il instancierait le worker par son constructeur sans argument
+     * — inexistant ici — et le travail périodique échouerait à chaque
+     * exécution, sans que rien ne le signale à l'utilisateur.
+     */
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     @Inject
     lateinit var settingsRepository: SettingsRepository

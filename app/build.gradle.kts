@@ -140,6 +140,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
 
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -165,6 +169,7 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.hilt.testing)
     testImplementation(libs.compose.ui.test.junit4)

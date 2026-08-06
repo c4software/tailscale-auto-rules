@@ -82,9 +82,12 @@ class AndroidNetworkObserverTest {
     }
 
     /**
-     * Démarre une capture, laisse l'inscription se faire, puis livre les
-     * capacités. L'ordre importe : livrer avant l'inscription ne toucherait
-     * personne.
+     * Démarre une capture, laisse l'inscription se faire, livre les capacités,
+     * puis laisse retomber la rafale.
+     *
+     * L'ordre importe : livrer avant l'inscription ne toucherait personne, et
+     * décider avant la fin de la fenêtre retiendrait le premier réseau livré
+     * plutôt que celui qui porte la connexion.
      */
     private fun TestScope.captureAfterDelivering(
         observer: AndroidNetworkObserver,
@@ -92,6 +95,7 @@ class AndroidNetworkObserverTest {
     ): Deferred<NetworkContext> = async { observer.current() }.also {
         runCurrent()
         deliver(*capabilities)
+        advanceTimeBy(SETTLE_MARGIN)
     }
 
     private fun setAirplaneMode(enabled: Boolean) {
@@ -176,6 +180,35 @@ class AndroidNetworkObserverTest {
     }
 
     @Test
+    fun wifiWinsOverCellularWhenBothAreStillValidated() = runTest {
+        // Android conserve le cellulaire actif et validé plusieurs minutes
+        // après une bascule vers le Wi-Fi. Départager sur la seule validation
+        // laissait gagner le cellulaire, livré en premier : le tunnel ne
+        // réagissait qu'au démontage effectif du réseau mobile, très longtemps
+        // après. C'est exactement ce qui a été constaté sur appareil.
+        val networkContext = captureAfterDelivering(
+            observer(),
+            capabilities(NetworkCapabilities.TRANSPORT_CELLULAR, validated = true),
+            capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = true),
+        ).await()
+
+        assertEquals(NetworkTransport.WIFI, networkContext.transport)
+    }
+
+    @Test
+    fun anUnvalidatedWifiDoesNotSupplantAWorkingCellularNetwork() = runTest {
+        // La réciproque : tant que le Wi-Fi n'a pas confirmé son accès
+        // Internet, basculer dessus couperait une connexion qui fonctionne.
+        val networkContext = captureAfterDelivering(
+            observer(),
+            capabilities(NetworkCapabilities.TRANSPORT_CELLULAR, validated = true),
+            capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = false),
+        ).await()
+
+        assertEquals(NetworkTransport.CELLULAR, networkContext.transport)
+    }
+
+    @Test
     fun airplaneModeIsReadFromTheSystemSetting() = runTest {
         setAirplaneMode(true)
 
@@ -213,5 +246,8 @@ class AndroidNetworkObserverTest {
 
     private companion object {
         const val FIRST_NET_ID = 100
+
+        /** Dépasse confortablement la fenêtre de retombée de l'observateur. */
+        val SETTLE_MARGIN = 1.seconds
     }
 }

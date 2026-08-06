@@ -6,17 +6,15 @@ s'enchaînent sans validation intermédiaire (voir [AGENTS.md](./AGENTS.md) §1)
 
 Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 
-> **Les seize étapes sont terminées, mais l'étape 17 les remet en cause.**
-> L'automatisation en arrière-plan ne fonctionne pas sur terminal réel : le
-> mécanisme de réveil retenu à l'étape 11 est inopérant par construction. Voir
-> l'étape 17 ci-dessous.
+> **Les dix-sept étapes sont terminées.** L'étape 17 a remplacé le mécanisme
+> d'observation retenu à l'étape 11, inopérant par construction ; l'automatisation
+> en arrière-plan est désormais vérifiée sur terminal réel.
 >
-> Les autres points ouverts ne bloquent pas : deux dépendent d'outils tiers,
-> deux se font hors du dépôt.
+> Les points ouverts ne bloquent pas : deux dépendent d'outils tiers, deux se
+> font hors du dépôt.
 >
 > | Point | Étape | Nature |
 > |---|---|---|
-> | Observation réseau en arrière-plan | 17 | **refonte en cours** |
 > | Mode avion sans changement de réseau | 11 | mesure sur terminal |
 > | `lint` sur les sources de test | 5 | défaut AGP 9.3.1 |
 > | Robolectric sur l'API 37 | 3 | version à paraître |
@@ -426,7 +424,7 @@ Tant que ce n'est pas fait, la CI signale sans bloquer.
 
 ---
 
-## 17. Observation réseau en arrière-plan `[ ]`
+## 17. Observation réseau en arrière-plan `[x]`
 
 **L'automatisation ne fonctionne pas hors de l'application.** Constaté sur
 Pixel 10 Pro : passer en 5G n'active pas le tunnel, revenir en Wi-Fi ne le
@@ -461,15 +459,60 @@ décision d'architecture n°14 tombe.
 
 Un réglage « réactivité immédiate », laissé à l'utilisateur :
 
-- [ ] **Activé** — service de premier plan et notification permanente. Bascule
-      instantanée. La notification devient le prix explicite de l'instantanéité.
-- [ ] **Désactivé** — vérification périodique par WorkManager (15 min minimum
-      imposées par la plateforme), sans notification ni service.
-- [ ] `AppSettings` porte le nouveau réglage ; `SPECS.md` §7 est réécrit pour
-      énoncer le compromis au lieu de promettre une notification toujours
-      optionnelle
-- [ ] `ARCHITECTURE.md` : décision n°14 remplacée, cause mesurée consignée
-- [ ] `NetworkCallbackTrigger` et `NetworkChangeReceiver` retirés
-- [ ] Le service consomme `NetworkObserver.observe()`, donc le debounce du
+- [x] **Activé** — `TunnelWatchService`, service de premier plan et notification
+      permanente. Bascule instantanée. La notification devient le prix explicite
+      de l'instantanéité.
+- [x] **Désactivé** — `PeriodicSyncWorker`, vérification toutes les 15 min
+      (minimum imposé par la plateforme), sans notification ni service.
+- [x] `AndroidAutomationTrigger` bascule entre les deux et n'en laisse jamais
+      deux actifs
+- [x] `AppSettings` porte le réglage, ainsi que les deux règles dérivées
+      `notificationIsUnavoidable` et `notificationIsVisible`
+- [x] `SPECS.md` §7.1 énonce le compromis au lieu de promettre une notification
+      toujours optionnelle ; §8 corrige le caractère des permissions
+- [x] `ARCHITECTURE.md` §9.1 et décision n°21 : cause mesurée consignée
+- [x] `NetworkCallbackTrigger` et `NetworkChangeReceiver` retirés
+- [x] Le service consomme `NetworkObserver.observe()`, donc le debounce du
       domaine s'applique enfin — ce qui clôt le point ouvert de l'étape 11
-- [ ] Vérification sur terminal réel, processus tué, aller-retour Wi-Fi ↔ 5G
+- [x] WorkManager reçoit la fabrique de workers de Hilt, son auto-initialisation
+      étant retirée du manifeste
+
+**Vérifié sur Pixel 10 Pro**, processus tué par `am kill`, aller-retour
+Wi-Fi ↔ cellulaire :
+
+```
+23:15:17  Contexte observé : CELLULAR, validé  → mobile-network → ENABLED
+23:16:18  Contexte observé : WIFI, validé      → other-wifi     → ENABLED
+```
+
+Le service redémarre seul après la mort du processus (`START_STICKY`) et traite
+les deux bascules.
+
+### Deux défauts découverts par cette vérification, corrigés
+
+**1. Le Wi-Fi mettait des minutes à l'emporter sur le cellulaire.**
+Android conserve le réseau mobile actif *et validé* longtemps après une bascule
+vers le Wi-Fi. Le réseau retenu était le premier livré parmi les validés, donc
+le cellulaire : le tunnel ne réagissait qu'au démontage effectif du mobile.
+
+- [x] `PreferredNetwork` départage comme Android le fait pour son réseau par
+      défaut : validé d'abord, puis filaire > Wi-Fi > cellulaire
+- [x] `current()` laisse retomber la rafale d'inscription avant de décider,
+      la première émission ne portant qu'un seul réseau
+
+**2. Le SSID était illisible en arrière-plan.**
+`ssid=null` dès que l'application n'était plus au premier plan, permission de
+localisation pourtant accordée : la règle des réseaux de confiance ne pouvait
+jamais s'appliquer. Android ne laisse un service accéder à la localisation —
+dont relève le SSID — que s'il se déclare de type `location`.
+
+- [x] `TunnelWatchService` déclare `specialUse|location`, et n'ajoute le second
+      type **que si la permission est accordée** : le déclarer sans la détenir
+      fait rejeter le démarrage du service
+
+**Revérifié sur appareil**, processus tué, aller-retour complet :
+
+```
+23:36:04  CELLULAR              → mobile-network   → Applied DISABLED→ENABLED
+23:36:29  WIFI, ssid=::1        → blacklisted-wifi → Applied ENABLED→DISABLED
+```

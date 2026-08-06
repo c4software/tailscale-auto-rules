@@ -1,6 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.notification
 
 import android.Manifest
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -21,10 +22,9 @@ import javax.inject.Singleton
 /**
  * Publie et retire la notification d'état.
  *
- * **Elle est réellement optionnelle.** L'application n'emploie pas de service
- * de premier plan, lequel imposerait une notification permanente sur Android 8
- * et suivants et contredirait donc SPECS.md §7. La notification n'est donc pas
- * une contrainte de plateforme mais un choix de l'utilisateur.
+ * **Elle n'est optionnelle qu'en mode économe.** En mode immédiat, un service
+ * de premier plan observe le réseau en continu, et Android impose alors une
+ * notification permanente depuis la version 8 (SPECS.md §7).
  *
  * Toutes les opérations sont sans effet lorsque la permission de notification
  * n'a pas été accordée : c'est un cas nominal, pas une erreur, puisque
@@ -55,18 +55,7 @@ class TunnelNotifier @Inject constructor(
             return
         }
 
-        NotificationChannels.ensureCreated(context)
-
-        val notification = NotificationCompat.Builder(context, NotificationChannels.TUNNEL_STATE)
-            .setSmallIcon(R.drawable.ic_notification_tunnel)
-            .setContentTitle(context.getString(state.notificationTitleRes()))
-            .setContentText(reasonText(ruleId))
-            .setContentIntent(openApplicationIntent())
-            // Persistante : elle décrit un état continu, pas un événement.
-            .setOngoing(true)
-            .setShowWhen(false)
-            .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .build()
+        val notification = build(state, ruleId)
 
         try {
             manager.notify(NOTIFICATION_ID, notification)
@@ -77,6 +66,28 @@ class TunnelNotifier @Inject constructor(
             // une notification d'état est sans conséquence ; faire planter
             // l'application pour cela en aurait une.
         }
+    }
+
+    /**
+     * Construit la notification sans la publier.
+     *
+     * Le service de premier plan doit remettre la sienne à `startForeground` :
+     * il ne peut pas se contenter de la voir publiée, la plateforme exige de la
+     * recevoir. C'est la même notification, décrite au même endroit.
+     */
+    fun build(state: TunnelState, ruleId: RuleId?): Notification {
+        NotificationChannels.ensureCreated(context)
+
+        return NotificationCompat.Builder(context, NotificationChannels.TUNNEL_STATE)
+            .setSmallIcon(R.drawable.ic_notification_tunnel)
+            .setContentTitle(context.getString(state.notificationTitleRes()))
+            .setContentText(reasonText(ruleId))
+            .setContentIntent(openApplicationIntent())
+            // Persistante : elle décrit un état continu, pas un événement.
+            .setOngoing(true)
+            .setShowWhen(false)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
     }
 
     fun hide() {

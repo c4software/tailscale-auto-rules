@@ -26,9 +26,15 @@ data class SettingsUiState(
     val isIgnoringBatteryOptimizations: Boolean = true,
     val versionName: String = "",
 ) {
-    /** L'option est demandée, mais la permission manque. */
+    /**
+     * Une notification doit être visible, mais la permission manque.
+     *
+     * Le mode immédiat compte aussi : le service de premier plan démarre sans
+     * la permission, mais sa notification reste invisible — l'utilisateur ne
+     * verrait alors plus rien de l'état du tunnel.
+     */
     val needsNotificationPermission: Boolean
-        get() = settings.showPersistentNotification && !canNotify
+        get() = settings.notificationIsVisible && !canNotify
 }
 
 /**
@@ -87,6 +93,8 @@ class SettingsViewModel @Inject constructor(
     fun setServiceEnabled(enabled: Boolean) = update { it.copy(isServiceEnabled = enabled) }
 
     fun setStartOnBoot(enabled: Boolean) = update { it.copy(startOnBoot = enabled) }
+
+    fun setImmediateMode(enabled: Boolean) = update { it.copy(isImmediateModeEnabled = enabled) }
 
     fun setPersistentNotification(enabled: Boolean) =
         update { it.copy(showPersistentNotification = enabled) }

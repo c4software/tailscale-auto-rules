@@ -46,13 +46,19 @@ class AutomationCoordinatorTest {
         var armCount: Int = 0
             private set
 
-        override fun arm() {
+        /** `null` tant que rien n'a été armé. */
+        var isImmediate: Boolean? = null
+            private set
+
+        override fun arm(immediate: Boolean) {
             isArmed = true
+            isImmediate = immediate
             armCount++
         }
 
         override fun disarm() {
             isArmed = false
+            isImmediate = null
         }
     }
 
@@ -99,6 +105,38 @@ class AutomationCoordinatorTest {
     }
 
     @Test
+    fun theChosenModeIsTransmittedToTheTrigger() = runTest {
+        // Le mode décide du mécanisme d'observation : service de premier plan
+        // ou travail périodique. Le confondre reviendrait à promettre une
+        // réactivité que la plateforme ne rendrait pas.
+        coordinator.applySettings(
+            AppSettings(isServiceEnabled = true, isImmediateModeEnabled = true),
+        )
+        assertEquals(true, trigger.isImmediate)
+
+        coordinator.applySettings(
+            AppSettings(isServiceEnabled = true, isImmediateModeEnabled = false),
+        )
+        assertEquals(false, trigger.isImmediate)
+    }
+
+    @Test
+    fun theImmediateModeMakesTheNotificationAppearWithoutBeingAskedFor() = runTest {
+        // La notification n'est pas une option dans ce mode : Android l'impose
+        // au service de premier plan. L'afficher sans que l'utilisateur l'ait
+        // demandée est donc le comportement correct.
+        coordinator.applySettings(
+            AppSettings(
+                isServiceEnabled = true,
+                isImmediateModeEnabled = true,
+                showPersistentNotification = false,
+            ),
+        )
+
+        assertNotNull(postedNotification())
+    }
+
+    @Test
     fun aDisabledServiceDisarmsTheTrigger() = runTest {
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
 
@@ -109,7 +147,11 @@ class AutomationCoordinatorTest {
 
     @Test
     fun noNotificationUnlessTheOptionIsEnabled() = runTest {
-        coordinator.applySettings(AppSettings(showPersistentNotification = false))
+        // Le mode économe est le seul où la notification est un choix : en mode
+        // immédiat, la plateforme l'impose au service de premier plan.
+        coordinator.applySettings(
+            AppSettings(isImmediateModeEnabled = false, showPersistentNotification = false),
+        )
 
         assertNull(postedNotification())
     }
@@ -161,6 +203,9 @@ class AutomationCoordinatorTest {
 
     @Test
     fun synchronizingPostsNothingWhenTheOptionIsOff() = runTest {
+        settings.updateAppSettings {
+            it.copy(isImmediateModeEnabled = false, showPersistentNotification = false)
+        }
         observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
 
         coordinator.synchronize()

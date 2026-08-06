@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Observation du réseau : indispensable au moteur de règles. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -22,6 +23,23 @@
 
     <!-- Réarmer l'automatisation après un redémarrage du terminal. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!--
+      Observation continue du réseau (mode « réactivité immédiate »). Aucun type
+      de service prédéfini ne décrit ce besoin : ni synchronisation de données,
+      ni appareil connecté, ni localisation. D'où « usage particulier », dont le
+      motif est déclaré sur le service lui-même.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <!--
+      Le SSID relève de la localisation aux yeux d'Android. Depuis Android 10,
+      un service n'y a accès que s'il se déclare de type « localisation » : sans
+      cela, le nom du réseau revient vide en arrière-plan, et la règle des
+      réseaux de confiance ne peut jamais s'appliquer. Constaté sur appareil.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <!--
       Sans cette déclaration, Android 11+ répond « paquet introuvable » et
@@ -51,12 +69,33 @@
         </activity>
 
         <!--
-          Réveillé par le système via le PendingIntent enregistré auprès de
-          ConnectivityManager. Non exporté : personne d'autre n'a à le déclencher.
+          WorkManager s'initialise seul par défaut, donc sans le graphe Hilt :
+          le worker ne pourrait alors pas recevoir ses dépendances. L'auto-
+          initialisation est retirée, l'application fournit la configuration.
         -->
-        <receiver
-            android:name=".automation.NetworkChangeReceiver"
-            android:exported="false" />
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
+        <!--
+          Observe le réseau tant que le mode immédiat est actif. Non exporté :
+          lui seul, et le coordinateur, décident de son cycle de vie.
+        -->
+        <service
+            android:name=".automation.TunnelWatchService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse|location">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Observation continue de l'état du réseau afin d'activer ou de désactiver le tunnel Tailscale selon les règles de l'utilisateur. Aucun autre type de service de premier plan ne décrit ce besoin." />
+        </service>
 
         <receiver
             android:name=".automation.BootReceiver"

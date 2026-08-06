@@ -4,9 +4,9 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import fr.vbrosseau.tailscaleautorules.automation.AndroidAutomationTrigger
 import fr.vbrosseau.tailscaleautorules.automation.AutomationCoordinator
 import fr.vbrosseau.tailscaleautorules.automation.AutomationTrigger
-import fr.vbrosseau.tailscaleautorules.automation.NetworkCallbackTrigger
 import fr.vbrosseau.tailscaleautorules.automation.NotificationRefresher
 import fr.vbrosseau.tailscaleautorules.presentation.AndroidSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
@@ -19,7 +19,9 @@ abstract class AutomationModule {
 
     @Binds
     @Singleton
-    abstract fun bindAutomationTrigger(implementation: NetworkCallbackTrigger): AutomationTrigger
+    abstract fun bindAutomationTrigger(
+        implementation: AndroidAutomationTrigger,
+    ): AutomationTrigger
 
     @Binds
     @Singleton

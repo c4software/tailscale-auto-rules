@@ -33,6 +33,7 @@ class SettingsScreenTest {
                     uiState = uiState,
                     onServiceEnabledChange = { toggles += "service" to it },
                     onStartOnBootChange = { toggles += "boot" to it },
+                    onImmediateModeChange = { toggles += "immediate" to it },
                     onPersistentNotificationChange = { toggles += "notification" to it },
                     onVerboseLoggingChange = { toggles += "logging" to it },
                     onRequestNotificationPermission = { permissionRequests++ },
@@ -65,7 +66,7 @@ class SettingsScreenTest {
     fun togglingASwitchReportsTheNewValue() {
         show(SettingsUiState(settings = AppSettings(verboseLogging = false)))
 
-        composeRule.onNodeWithTag(SettingsTestTags.LOGGING).performClick()
+        composeRule.onNodeWithTag(SettingsTestTags.LOGGING).performScrollTo().performClick()
 
         assertEquals(listOf("logging" to true), toggles)
     }
@@ -95,7 +96,9 @@ class SettingsScreenTest {
             ),
         )
 
-        composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION_PERMISSION).assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION_PERMISSION)
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onNodeWithTag("${SettingsTestTags.NOTIFICATION_PERMISSION}:action")
             .performClick()
 
@@ -106,7 +109,13 @@ class SettingsScreenTest {
     fun nothingIsAskedWhenTheOptionIsOff() {
         show(
             SettingsUiState(
-                settings = AppSettings(showPersistentNotification = false),
+                // En mode immédiat, la notification est imposée : la permission
+                // est donc bien réclamée. C'est le mode économe, sans option,
+                // qui ne doit rien demander.
+                settings = AppSettings(
+                    isImmediateModeEnabled = false,
+                    showPersistentNotification = false,
+                ),
                 canNotify = false,
             ),
         )

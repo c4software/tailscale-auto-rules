@@ -89,9 +89,11 @@ class SettingsViewModelTest {
     @Test
     fun thePermissionIsOnlyMissingOnceTheOptionIsEnabled() = runTest {
         // Sans l'option, l'absence de permission n'est pas un manque : rien ne
-        // doit être demandé à l'utilisateur.
+        // doit être demandé à l'utilisateur. Le mode immédiat est écarté, lui
+        // rendant la notification — donc la permission — indispensable.
         systemStatus.notificationsAllowed = false
         val model = viewModel()
+        model.setImmediateMode(false)
 
         assertTrue(!model.uiState.value.needsNotificationPermission)
 

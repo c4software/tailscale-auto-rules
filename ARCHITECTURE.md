@@ -82,7 +82,7 @@ réutilisables indépendamment.
 │   ├── network/    Observation de la connectivité, lecture du SSID
 │   ├── tailscale/  Implémentations de TailscaleController
 │   └── repository/ Implémentations des interfaces de domain
-├── service/        Service de premier plan, receivers (boot, mode avion), notification
+├── automation/     Service de premier plan, worker périodique, receveur de boot
 └── di/             Modules Hilt
 ```
 
@@ -401,19 +401,21 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-L'application est fonctionnellement complète. Les réserves connues — debounce
-sur le chemin des réveils, mode avion sans changement de réseau, `lint` sur les
-sources de test — sont tracées dans [TASKS.md](./TASKS.md).
+L'application est fonctionnellement complète. Les réserves connues — mode avion
+sans changement de réseau, `lint` sur les sources de test — sont tracées dans
+[TASKS.md](./TASKS.md).
 
-### 9.1 Déclenchement, sans processus permanent
+### 9.1 Déclenchement, selon le mode d'observation
 
 ```mermaid
 graph LR
-    S["Système Android"] -->|PendingIntent| R["NetworkChangeReceiver"]
+    S["Système Android"] -->|NetworkCallback| SV["TunnelWatchService"]
+    W["WorkManager, 15 min"] --> PW["PeriodicSyncWorker"]
     B["BOOT_COMPLETED"] --> BR["BootReceiver"]
     U["Bouton Synchroniser"] --> VM["HomeViewModel"]
 
-    R --> C["AutomationCoordinator"]
+    SV --> C["AutomationCoordinator"]
+    PW --> C
     BR --> C
     VM --> UC["SynchronizeTunnelUseCase"]
     C --> UC
@@ -422,16 +424,31 @@ graph LR
     style C fill:#dbeafe,stroke:#3a5bc7,stroke-width:2px
 ```
 
-`NetworkCallbackTrigger` enregistre un `PendingIntent` auprès de
-`ConnectivityManager` : **c'est le système qui réveille l'application**, laquelle
-ne consomme rien entre deux changements de réseau. Un service de premier plan —
-seule autre façon d'observer en continu — imposerait une notification permanente
-sur Android 8 et suivants, et contredirait SPECS.md §7.
+`AndroidAutomationTrigger` choisit le mécanisme selon le réglage « réactivité
+immédiate », et n'en laisse jamais deux actifs à la fois.
 
-Conséquence assumée : le `debounce` du domaine ne s'applique pas à ce chemin, un
-`Flow` ne survivant pas entre deux réveils de processus. L'effet est amorti par
-le court-circuit « état déjà atteint » du cas d'usage — une rafale produit au
-plus une commande et une entrée de journal.
+**Pourquoi un service de premier plan.** L'approche initiale — enregistrer un
+`PendingIntent` auprès de `ConnectivityManager` pour que le système réveille
+l'application sans processus permanent — était la seule à laisser la
+notification optionnelle. Elle ne fonctionne pas. Le journal système établit
+que l'inscription est honorée **immédiatement** puis **relâchée cinq secondes
+après cette livraison** :
+
+```
+22:19:00.820  REGISTER … to trigger PendingIntent{5d98ada}
+22:19:00.821  ConnectivityService: Sending PendingIntent{5d98ada}
+22:19:00.893  ConnectivityService: Finished sending PendingIntent{5d98ada}
+22:19:05.898  RELEASE  … callbackRequest: 57492
+```
+
+Un seul réveil par inscription, consommé sur-le-champ : plus aucun changement
+de réseau n'était observé. Réarmer à chaque réveil rétablit la couverture mais
+chaque réarmement provoque sa propre livraison immédiate — 463 réveils en
+50 secondes, mesuré. Observer en continu exige donc un processus vivant.
+
+Bénéfice indirect : le `debounce` du domaine s'applique enfin. Le service
+consomme `NetworkObserver.observe()`, un `Flow` qui vit aussi longtemps que
+lui — là où un réveil par diffusion ne survivait pas d'un processus à l'autre.
 
 ---
 
@@ -459,7 +476,7 @@ plus une commande et une entrée de journal.
 | 18 | Seuls les écarts de réglage sont persistés | Ajouter une règle ne demande aucune migration |
 | 19 | L'accueil affiche l'état **constaté** du tunnel | Rend visible un écart entre commande transmise et effet réel |
 | 20 | `SynchronizationOutcome` à six cas | « Rien à faire » et « impossible d'agir » ne se racontent pas pareil |
-| 21 | Réveil par `PendingIntent`, pas de service de premier plan | Seule façon de garder la notification optionnelle sur Android 8+ |
+| 21 | Service de premier plan pour observer en continu, mode économe par WorkManager | Le réveil par `PendingIntent` ne délivre qu'une fois avant d'être relâché — mesuré, voir §9.1 |
 | 22 | Explication avant chaque demande de permission | Android n'explique pas pourquoi lire un SSID exige la localisation |
 | 23 | Fiche système plutôt que `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Cette intention suffit à faire rejeter une publication Play Store |
 | 24 | Fuseau et langue injectés dans la mise en forme | Un test de rendu ne doit pas dépendre des réglages de la machine |

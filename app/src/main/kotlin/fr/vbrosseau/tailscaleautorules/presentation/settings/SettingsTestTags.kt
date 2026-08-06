@@ -4,6 +4,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.settings
 object SettingsTestTags {
     const val SERVICE = "settings:service"
     const val START_ON_BOOT = "settings:start-on-boot"
+    const val IMMEDIATE_MODE = "settings:immediate-mode"
     const val NOTIFICATION = "settings:notification"
     const val LOGGING = "settings:logging"
     const val DISABLED_NOTICE = "settings:disabled-notice"

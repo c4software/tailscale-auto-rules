@@ -22,7 +22,9 @@ import fr.vbrosseau.tailscaleautorules.domain.network.stabilized
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -31,6 +33,7 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Observe le réseau via [ConnectivityManager.NetworkCallback] et le mode avion
@@ -56,19 +59,21 @@ class AndroidNetworkObserver @Inject constructor(
     override fun observe(): Flow<NetworkContext> = rawContexts().stabilized()
 
     /**
-     * Contexte courant, sans attendre le debounce.
+     * Contexte courant, sans attendre la fenêtre de stabilisation complète.
      *
      * On ouvre brièvement une observation plutôt que d'interroger le système :
      * c'est le seul moyen d'obtenir un SSID. Le système livre l'état courant dès
-     * l'enregistrement, la réponse est donc quasi immédiate.
+     * l'enregistrement, la réponse est donc quasi immédiate — le temps que la
+     * rafale retombe, voir `SETTLE_WINDOW`.
      *
      * Le repli couvre le cas où aucun réseau ne correspond — hors ligne, mode
      * avion — auquel cas aucun callback n'arrive et attendre indéfiniment
      * bloquerait la synchronisation manuelle.
      */
     override suspend fun current(): NetworkContext = withContext(ioDispatcher) {
-        val context = withTimeoutOrNull(CURRENT_TIMEOUT) { rawContexts().first() }
-            ?: redactedContext()
+        val context = withTimeoutOrNull(CURRENT_TIMEOUT) {
+            rawContexts().debounce(SETTLE_WINDOW).first()
+        } ?: redactedContext()
         Timber.i("Contexte capturé : %s", context)
         context
     }
@@ -136,11 +141,14 @@ class AndroidNetworkObserver @Inject constructor(
      * Le tunnel est écarté : une fois monté, il devient le réseau actif et
      * masquerait le Wi-Fi ou la 4G sous-jacents. Les règles décideraient alors
      * sur « autre transport » et s'abstiendraient toutes.
+     *
+     * Le réseau retenu parmi les autres est celui que désigne [PreferredNetwork] :
+     * plusieurs coexistent pendant — et longtemps après — une bascule.
      */
     private fun contextFrom(capabilities: Collection<NetworkCapabilities>): NetworkContext {
         val physical = capabilities
             .filterNot { it.hasTransport(NetworkCapabilities.TRANSPORT_VPN) }
-            .maxByOrNull { it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) }
+            .maxWithOrNull(PreferredNetwork)
 
         val transport = physical.toTransport()
 
@@ -207,8 +215,56 @@ class AndroidNetworkObserver @Inject constructor(
     }
 
     private companion object {
-        val CURRENT_TIMEOUT = 1_500.milliseconds
+        /**
+         * Laisse la rafale d'inscription retomber.
+         *
+         * Le système livre chaque réseau correspondant séparément, en quelques
+         * millisecondes. Prendre la première émission retiendrait donc le
+         * premier réseau livré — souvent le cellulaire encore actif après une
+         * bascule vers le Wi-Fi — plutôt que celui qui porte la connexion.
+         */
+        val SETTLE_WINDOW = 300.milliseconds
+
+        val CURRENT_TIMEOUT = 2.seconds
     }
+}
+
+/**
+ * Départage les réseaux simultanés : le plus grand est celui qui porte
+ * réellement la connexion.
+ *
+ * **Plusieurs réseaux coexistent bien au-delà d'une bascule.** En passant du
+ * cellulaire au Wi-Fi, Android conserve le cellulaire actif et validé plusieurs
+ * minutes avant de le démonter. Départager sur la seule validation laissait
+ * alors gagner le cellulaire — simplement parce qu'il avait été livré en
+ * premier — et le tunnel ne réagissait au Wi-Fi qu'à la disparition effective
+ * du réseau mobile, très longtemps après.
+ *
+ * L'ordre reproduit celui d'Android pour son réseau par défaut : un réseau
+ * validé prime toujours, puis le filaire devance le Wi-Fi, qui devance le
+ * cellulaire.
+ */
+private object PreferredNetwork : Comparator<NetworkCapabilities> {
+
+    override fun compare(first: NetworkCapabilities, second: NetworkCapabilities): Int =
+        compareValuesBy(
+            first,
+            second,
+            { it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) },
+            { it.transportRank() },
+        )
+
+    private fun NetworkCapabilities.transportRank(): Int = when {
+        hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> ETHERNET
+        hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> WIFI
+        hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> CELLULAR
+        else -> OTHER
+    }
+
+    private const val ETHERNET = 3
+    private const val WIFI = 2
+    private const val CELLULAR = 1
+    private const val OTHER = 0
 }
 
 /**

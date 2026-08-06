@@ -1,7 +1,10 @@
 package fr.vbrosseau.tailscaleautorules.automation
 
+import android.app.Notification
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
+import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
@@ -37,7 +40,11 @@ class AutomationCoordinator @Inject constructor(
      * et à chaque modification des paramètres.
      */
     suspend fun applySettings(settings: AppSettings) {
-        if (settings.isServiceEnabled) trigger.arm() else trigger.disarm()
+        if (settings.isServiceEnabled) {
+            trigger.arm(immediate = settings.isImmediateModeEnabled)
+        } else {
+            trigger.disarm()
+        }
 
         applyNotification(settings)
     }
@@ -61,7 +68,7 @@ class AutomationCoordinator @Inject constructor(
      * potentiellement différents.
      */
     private suspend fun applyNotification(settings: AppSettings) {
-        if (settings.showPersistentNotification && settings.isServiceEnabled) {
+        if (settings.notificationIsVisible) {
             refreshNotification()
         } else {
             // Désactiver l'automatisation retire aussi la notification :
@@ -78,16 +85,42 @@ class AutomationCoordinator @Inject constructor(
         return outcome
     }
 
+    /**
+     * Cycle sur un contexte déjà stabilisé.
+     *
+     * C'est la forme qu'emploie l'observation continue : le contexte qui a
+     * déclenché le cycle est celui sur lequel on décide. Le relire perdrait le
+     * bénéfice du debounce et pourrait livrer un état différent.
+     */
+    suspend fun synchronize(networkContext: NetworkContext): SynchronizationOutcome {
+        val outcome = synchronizeTunnel(networkContext)
+        refreshNotificationIfEnabled()
+        return outcome
+    }
+
+    /**
+     * Notification décrivant l'état courant, sans la publier.
+     *
+     * Le service de premier plan doit en fournir une à `startForeground` dès
+     * son démarrage, avant tout cycle.
+     */
+    suspend fun currentNotification(): Notification = notifier.build(tunnelState(), lastRuleId())
+
     private suspend fun refreshNotification() {
         Timber.d("Rafraîchissement de la notification")
-        val state = when {
-            !controller.isAvailable() -> TunnelState.UNKNOWN
-            controller.isRunning() -> TunnelState.ENABLED
-            else -> TunnelState.DISABLED
-        }
-
-        // La raison affichée vient du journal, donc du dernier changement
-        // réellement appliqué — et non de la dernière décision envisagée.
-        notifier.show(state, journalRepository.observeRecent().first().firstOrNull()?.ruleId)
+        notifier.show(tunnelState(), lastRuleId())
     }
+
+    private suspend fun tunnelState(): TunnelState = when {
+        !controller.isAvailable() -> TunnelState.UNKNOWN
+        controller.isRunning() -> TunnelState.ENABLED
+        else -> TunnelState.DISABLED
+    }
+
+    /**
+     * La raison affichée vient du journal, donc du dernier changement
+     * réellement appliqué — et non de la dernière décision envisagée.
+     */
+    private suspend fun lastRuleId(): RuleId? =
+        journalRepository.observeRecent().first().firstOrNull()?.ruleId
 }

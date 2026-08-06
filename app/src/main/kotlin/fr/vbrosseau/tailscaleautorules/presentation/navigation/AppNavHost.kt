@@ -97,6 +97,7 @@ fun AppNavHost(
                 uiState = uiState,
                 onServiceEnabledChange = viewModel::setServiceEnabled,
                 onStartOnBootChange = viewModel::setStartOnBoot,
+                onImmediateModeChange = viewModel::setImmediateMode,
                 onPersistentNotificationChange = viewModel::setPersistentNotification,
                 onVerboseLoggingChange = viewModel::setVerboseLogging,
                 onRequestNotificationPermission = onRequestNotificationPermission,

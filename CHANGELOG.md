@@ -18,8 +18,11 @@ voir les réserves de [TASKS.md](./TASKS.md).
   renumérotation.
 - **Pilotage du client Tailscale** par diffusion explicite vers son receveur
   exporté `IPNReceiver`.
-- **Réveil par le système** via `registerNetworkCallback(NetworkRequest,
-  PendingIntent)` : aucun processus permanent, aucune notification imposée.
+- **Observation du réseau au choix de l'utilisateur.** En mode « réactivité
+  immédiate », un service de premier plan observe en continu et bascule sans
+  délai ; Android impose alors sa notification permanente. En mode économe, une
+  vérification périodique toutes les quinze minutes, sans service ni
+  notification. Le réglage énonce le compromis au lieu de le masquer.
 - **Persistance** : Room pour les réseaux de confiance et le journal (500
   entrées, purge transactionnelle), DataStore pour les préférences.
 - **Quatre écrans** : accueil, réseaux de confiance, journal, paramètres.
