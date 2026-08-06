@@ -11,7 +11,8 @@ Documents liés : [SPECS.md](./SPECS.md) (le quoi) ·
 
 ## 1. Méthode de travail
 
-**Une étape de [TASKS.md](./TASKS.md) à la fois. Jamais deux.**
+**Un commit par étape de [TASKS.md](./TASKS.md), dans l'ordre. Les étapes
+s'enchaînent sans demander de validation.**
 
 Pour chaque étape :
 
@@ -20,11 +21,35 @@ Pour chaque étape :
 3. Écrire les tests dans le même incrément que le code.
 4. Lancer la vérification complète (§5) et **rapporter la sortie réelle**.
 5. Mettre à jour la documentation impactée.
-6. Committer.
-7. **Attendre la validation avant de poursuivre.**
+6. Committer, puis passer à l'étape suivante.
 
-Si une étape se révèle plus grosse que prévu, la découper — jamais l'étaler sur
-deux validations.
+Si une étape se révèle plus grosse que prévu, la découper en plusieurs commits
+— mais ne jamais fusionner deux étapes en un seul.
+
+La granularité est **le commit, pas la conversation** : c'est lui qui rend le
+travail relisible et réversible étape par étape. C'est ce qui rend l'avance
+autonome sûre.
+
+### Quand s'arrêter quand même
+
+L'enchaînement automatique ne dispense pas de savoir s'interrompre. Quatre cas,
+et seulement ceux-là :
+
+- **La vérification (§5) échoue et la corriger demande un arbitrage** — abaisser
+  une version, relâcher une règle de qualité, renoncer à un test.
+- **La spécification est ambiguë sur une règle métier.** Ne jamais trancher en
+  silence sur un comportement visible par l'utilisateur.
+- **Une action sortante ou difficilement réversible** : `git push`, publication,
+  réécriture d'historique, suppression de données.
+- **Un choix structurant s'impose** qui contredirait
+  [ARCHITECTURE.md](./ARCHITECTURE.md) ou [SPECS.md](./SPECS.md).
+
+Hors de ces cas : décider, documenter la décision dans le message de commit, et
+continuer.
+
+> Note : [PROMPT.md](./PROMPT.md) demandait une validation à chaque étape. Ce
+> fichier est figé — il conserve l'intention initiale — mais la règle applicable
+> est celle ci-dessus, qui l'a remplacée sur ce point.
 
 ---
 
