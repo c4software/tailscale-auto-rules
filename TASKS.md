@@ -4,7 +4,7 @@ Ordre **impératif**. Aucune étape n'est sautée, aucune n'est fusionnée avec 
 suivante. Chaque étape se termine par un commit vérifié ; les étapes
 s'enchaînent sans validation intermédiaire (voir [AGENTS.md](./AGENTS.md) §1).
 
-Légende : `[x]` terminé · `[ ]` à faire
+Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 
 ---
 
@@ -198,13 +198,26 @@ Deux commits : le cas d'usage, puis les ViewModels.
 
 ---
 
-## 10. Interface Compose `[ ]`
+## 10. Interface Compose `[~]`
 
-- [ ] `AppNavHost` et destinations
-- [ ] Écran d'accueil ([SPECS.md](./SPECS.md) §6.1)
-- [ ] Écran blacklist, CRUD complet + ajout du SSID courant
-- [ ] Composants réutilisables, `@Preview` sans injection
-- [ ] Écran d'explication préalable à la demande de permission de localisation
+- [x] `AppNavHost` — seul endroit où l'état rejoint les écrans
+- [x] Écran d'accueil ([SPECS.md](./SPECS.md) §6.1) : état du tunnel, réseau,
+      SSID, dernier changement, bouton Synchroniser
+- [x] Écran blacklist : CRUD complet + ajout du SSID courant en un geste
+- [x] Libellés — `RuleId`, `TunnelState`, `NetworkTransport`, `BlacklistError`
+      traduits **dans la présentation**, `when` exhaustifs sans branche `else`
+- [x] `@Preview` sans injection sur les deux écrans
+- [x] 23 tests Compose sous Robolectric, repérage par `testTag`
+
+### Reste à faire
+
+- [ ] Écran d'explication préalable à la demande de permission de localisation —
+      dépend de la logique de permission, traitée avec le service (étape 11)
+- [ ] Navigation visible entre les destinations (barre de navigation) — arrive
+      avec les écrans Paramètres et Journal (étapes 12 et 13)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 190 tests, 0 échec.
 
 ---
 

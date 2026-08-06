@@ -267,6 +267,14 @@ MVVM strict :
 
 Une @Preview qui ne compile pas sans Hilt signale une fuite de responsabilité.
 
+`AppNavHost` est le **seul** endroit où un ViewModel rejoint un écran. Les
+écrans eux-mêmes ne reçoivent qu'un `UiState` et des lambdas, ce qui les rend
+prévisualisables et testables sans injection.
+
+Les tests d'interface repèrent les éléments par `testTag`, jamais par leur
+libellé : un libellé est traduisible, et un test qui s'y accroche casse à la
+première reformulation.
+
 ---
 
 ## 7. Injection de dépendances
@@ -314,7 +322,7 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 9 de [TASKS.md](./TASKS.md). 166 tests, 0 échec.
+Étapes 1 à 9 complètes, étape 10 partielle. 190 tests, 0 échec.
 
 ```
 .
@@ -342,13 +350,14 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 │       │   │   ├── di/                   7 modules Hilt
 │       │   │   └── presentation/
 │       │   │       ├── theme/           AppTheme, Color, Spacing
-│       │   │       ├── home/            HomeViewModel, HomeUiState
-│       │   │       ├── blacklist/       BlacklistViewModel, BlacklistUiState
+│       │   │       ├── navigation/      AppNavHost, AppRoutes
+│       │   │       ├── home/            HomeScreen + ViewModel + UiState
+│       │   │       ├── blacklist/       BlacklistScreen + ViewModel + UiState
 │       │   │       ├── settings/        SettingsViewModel, SettingsUiState
 │       │   │       └── journal/         JournalViewModel, JournalUiState
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          56 tests (Robolectric, DataStore, ViewModels)
+│       └── test/…/          80 tests (Robolectric, DataStore, ViewModels, Compose)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
@@ -365,8 +374,8 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-Les écrans Compose, les notifications et le service **n'existent pas encore** :
-ils sont créés par les étapes 10 à 13. Cette section est mise à jour à chaque étape.
+Les écrans Paramètres et Journal, les notifications et le service **n'existent
+pas encore** : ils sont créés par les étapes 11 à 13. Cette section est mise à jour à chaque étape.
 
 ---
 

@@ -9,6 +9,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistScreen
+import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistViewModel
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeScreen
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeViewModel
 
@@ -34,6 +36,20 @@ fun AppNavHost(
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             HomeScreen(uiState = uiState, onSynchronize = viewModel::synchronize)
+        }
+
+        composable(AppRoutes.BLACKLIST) {
+            val viewModel: BlacklistViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            BlacklistScreen(
+                uiState = uiState,
+                onAdd = viewModel::add,
+                onRename = viewModel::rename,
+                onRemove = viewModel::remove,
+                onAddCurrentSsid = viewModel::addCurrentSsid,
+                onDismissError = viewModel::dismissError,
+            )
         }
     }
 }

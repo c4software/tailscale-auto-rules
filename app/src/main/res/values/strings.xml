@@ -27,6 +27,21 @@
     <string name="home_tailscale_missing_title">Client Tailscale introuvable</string>
     <string name="home_tailscale_missing_body">Installez l\'application Tailscale officielle : sans elle, aucune règle ne peut être appliquée.</string>
 
+    <!-- Réseaux de confiance -->
+    <string name="blacklist_title">Réseaux de confiance</string>
+    <string name="blacklist_explanation">Sur ces réseaux Wi-Fi, le tunnel est désactivé. Partout ailleurs, il est activé.</string>
+    <string name="blacklist_empty">Aucun réseau de confiance. Le tunnel restera activé sur tous les Wi-Fi.</string>
+    <string name="blacklist_add">Ajouter un réseau</string>
+    <string name="blacklist_add_current">Ajouter « %1$s »</string>
+    <string name="blacklist_ssid_label">Nom du réseau (SSID)</string>
+    <string name="blacklist_rename">Renommer</string>
+    <string name="blacklist_remove">Supprimer « %1$s »</string>
+    <string name="blacklist_confirm">Valider</string>
+    <string name="blacklist_cancel">Annuler</string>
+    <string name="blacklist_error_duplicate">Ce réseau figure déjà dans la liste.</string>
+    <string name="blacklist_error_blank">Le nom du réseau ne peut pas être vide.</string>
+    <string name="blacklist_error_unknown">L\'enregistrement a échoué.</string>
+
     <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
     <string name="rule_airplane_mode">Mode avion</string>
     <string name="rule_blacklisted_wifi">Wi-Fi de confiance</string>

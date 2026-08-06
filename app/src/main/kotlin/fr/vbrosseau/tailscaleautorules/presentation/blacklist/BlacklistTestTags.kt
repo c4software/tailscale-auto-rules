@@ -1,0 +1,18 @@
+package fr.vbrosseau.tailscaleautorules.presentation.blacklist
+
+/** Repères de test, indépendants des libellés traduisibles. */
+object BlacklistTestTags {
+    const val EMPTY = "blacklist:empty"
+    const val LIST = "blacklist:list"
+    const val ADD = "blacklist:add"
+    const val ADD_CURRENT = "blacklist:add-current"
+    const val ERROR = "blacklist:error"
+    const val DIALOG_FIELD = "blacklist:dialog-field"
+    const val DIALOG_CONFIRM = "blacklist:dialog-confirm"
+
+    fun entry(id: Long) = "blacklist:entry:$id"
+
+    fun remove(id: Long) = "blacklist:remove:$id"
+
+    fun rename(id: Long) = "blacklist:rename:$id"
+}
