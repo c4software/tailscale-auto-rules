@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Thème plateforme minimal : l'apparence réelle est portée par AppTheme
+      (Compose Material 3). Il ne sert qu'à la fenêtre avant le premier rendu.
+    -->
+    <style name="Theme.TailscaleAutoRules" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

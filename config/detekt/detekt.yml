@@ -1,0 +1,31 @@
+# Surcharges du profil Detekt par défaut (`buildUponDefaultConfig = true`).
+# On ne redéclare ici que ce qui diverge réellement du défaut.
+
+build:
+  maxIssues: 0
+
+complexity:
+  LongParameterList:
+    # Les @Composable acceptent naturellement beaucoup de paramètres (état + callbacks).
+    functionThreshold: 8
+    constructorThreshold: 8
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    ignoreAnnotatedFunctions: ['Composable']
+
+naming:
+  FunctionNaming:
+    # Les @Composable suivent la convention PascalCase.
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    # Une valeur nommée (jeton de couleur, seuil, durée) est déjà la forme
+    # recommandée : la signaler à nouveau n'apporte rien.
+    ignorePropertyDeclaration: true
+    ignoreAnnotated: ['Composable', 'Preview']
+  MaxLineLength:
+    maxLineLength: 120
+  UnusedPrivateMember:
+    # Les @Preview ne sont appelées que par l'outillage Android Studio.
+    ignoreAnnotated: ['Preview']
