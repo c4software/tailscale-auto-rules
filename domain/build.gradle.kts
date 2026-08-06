@@ -5,6 +5,7 @@ plugins {
     // Expose les Fakes du domaine aux tests des autres modules.
     `java-test-fixtures`
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
     alias(libs.plugins.ktlint)
 }
 
@@ -30,6 +31,27 @@ detekt {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Les Fakes et fabriques de test ne sont pas du code de
+                // production : les compter fausserait la mesure dans les deux
+                // sens.
+                classes("*.Fake*", "*.Contexts")
+            }
+        }
+        verify {
+            rule {
+                // Le moteur et les règles sont le cœur du projet : c'est le
+                // seul endroit où une couverture quasi totale est exigée, et
+                // la pureté de `evaluate` la rend atteignable.
+                minBound(95)
+            }
+        }
+    }
 }
 
 dependencies {

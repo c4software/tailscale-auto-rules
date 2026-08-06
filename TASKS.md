@@ -113,27 +113,42 @@ Matérialiser les couches, sans logique métier.
 
 ---
 
-## 6. Moteur de règles `[ ]`
+## 6. Moteur de règles `[x]`
 
-- [ ] Contrat `Rule` + `RuleEngine` (filtre, tri, première décision ferme)
-- [ ] Règle mode avion (prio 100)
-- [ ] Règle Wi-Fi blacklisté (prio 200)
-- [ ] Règle Wi-Fi non blacklisté (prio 300)
-- [ ] Règle réseau mobile (prio 400)
-- [ ] Enregistrement des règles via `@IntoSet`
+- [x] Contrat `Rule` — `id`, `defaultSettings`, `evaluate(RuleContext)` pure
+- [x] `RuleContext` — état réseau **et** configuration utilisateur, ce qui
+      garde `evaluate` sans dépendance
+- [x] `RuleEngine` — filtre les règles actives, trie par priorité puis par
+      identifiant, s'arrête à la première décision ferme
+- [x] `RuleEvaluation` — décision + règle l'ayant rendue, invariant vérifié
+- [x] `AirplaneModeRule` (100), `BlacklistedWifiRule` (200), `OtherWifiRule`
+      (300), `MobileNetworkRule` (400)
+- [x] `RuleModule` — enregistrement via `@Provides @IntoSet`, `:domain` restant
+      exempt de toute annotation d'injection
 
-**Fait quand** ajouter une règle ne demande aucune modification du moteur.
+**Fait :** ajouter une règle = une classe dans `:domain/rule/` + une ligne dans
+`RuleModule`. Le moteur n'est pas touché.
 
 ---
 
-## 7. Tests unitaires du moteur `[ ]`
+## 7. Tests unitaires du moteur `[x]`
 
-- [ ] Ordre de priorité, y compris priorités égales (tri stable)
-- [ ] Arrêt à la première décision ferme
-- [ ] Règles désactivées ignorées
-- [ ] Ensemble de règles vide → `NO_DECISION`
-- [ ] Chaque branche de chaque règle, `NO_DECISION` compris
-- [ ] Mesure de couverture et vérification de l'objectif ~100 % sur `:domain`
+- [x] Ordre de priorité, priorités égales départagées par identifiant (ordre
+      total, vérifié sur 10 exécutions)
+- [x] Arrêt à la première décision ferme, **et** non-évaluation des suivantes
+- [x] Règles désactivées jamais évaluées ; toutes désactivées → `NO_DECISION`
+- [x] Ensemble vide → `NO_DECISION`
+- [x] Surcharge utilisateur de la priorité et de l'activation
+- [x] Chaque branche de chaque règle, `NO_DECISION` compris
+- [x] `ShippedRulesTest` rejoue le tableau de [SPECS.md](./SPECS.md) §4 avec
+      l'ensemble réel de règles
+- [x] Kover 0.9.9, seuil bloquant à 95 % sur `:domain`, intégré à la CI
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 81 tests, 0 échec.
+
+Couverture `:domain` — **`rule` et `engine` : 100 % d'instructions et 100 % de
+branches**. Total module : 95,5 % d'instructions, 100 % de branches.
 
 ---
 

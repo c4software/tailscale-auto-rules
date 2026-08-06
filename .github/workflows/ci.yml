@@ -38,6 +38,9 @@ jobs:
       - name: Tests unitaires
         run: ./gradlew test
 
+      - name: Couverture du domaine
+        run: ./gradlew :domain:koverVerify :domain:koverXmlReport
+
       - name: Compilation
         run: ./gradlew assembleDebug
 

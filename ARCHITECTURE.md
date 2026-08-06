@@ -103,23 +103,35 @@ n'est jamais modifié.**
 ### 3.2 Contrat
 
 ```kotlin
-enum class RuleDecision { ENABLE, DISABLE, NO_DECISION }
-
 interface Rule {
     val id: RuleId
-    val priority: Int          // croissant = évalué en premier
-    val isEnabled: Boolean
-
-    fun evaluate(context: NetworkContext): RuleDecision
+    val defaultSettings: RuleSettings      // isEnabled + priority
+    fun evaluate(context: RuleContext): RuleDecision
 }
+
+data class RuleContext(
+    val network: NetworkContext,
+    val blacklistedSsids: Set<String> = emptySet(),
+    val settings: Map<RuleId, RuleSettings> = emptyMap(),
+)
 ```
 
 `evaluate` est **pure** : pas d'I/O, pas d'horloge, pas de journalisation, pas
 d'accès à l'état du tunnel. Tout ce dont une règle a besoin est dans
-`NetworkContext`.
+`RuleContext` — état réseau **et** configuration de l'utilisateur.
 
-C'est cette pureté qui rend la couverture exhaustive atteignable : une règle se
-teste en construisant un contexte et en comparant la décision attendue.
+Regrouper les deux dans un même contexte, plutôt qu'injecter des dépendances
+dans chaque règle, a trois conséquences :
+
+- une règle est un objet **sans état**, donc un singleton sans risque ;
+- les réglages restent modifiables à l'exécution sans que les règles changent ;
+- la couverture exhaustive devient atteignable : une règle se teste en
+  construisant un contexte et en comparant la décision attendue.
+
+`RuleEvaluation` porte la décision **et** l'identifiant de la règle qui l'a
+rendue, avec l'invariant qu'une décision ferme désigne toujours sa règle. Le
+domaine ne porte aucun libellé : traduire un `RuleId` en texte lisible
+appartient à la présentation, seule à connaître la langue de l'utilisateur.
 
 ### 3.3 Cycle de synchronisation
 
@@ -156,7 +168,10 @@ sequenceDiagram
    cas retournant `NO_DECISION`.
 4. Enrichir `NetworkContext` **uniquement** si la donnée nécessaire n'y est pas
    déjà — et alors mettre à jour les fabriques de test.
-5. L'enregistrer dans le module Hilt des règles.
+5. L'enregistrer dans `RuleModule` — **le seul fichier de l'application à
+   modifier**. Les règles y sont construites via `@Provides @IntoSet` plutôt
+   qu'annotées `@Inject`, ce qui garde `:domain` exempt de toute annotation
+   d'injection, `javax.inject` comprise.
 
 Aucune modification du moteur, ni des règles existantes, n'est requise. Si une
 étape vous impose d'en modifier une, c'est le signe que l'abstraction est à
@@ -290,35 +305,43 @@ versionnées dans le dépôt — et non des mocks générés :
 `FakeClock`, `FakeLogger`. Un Fake se lit, se déboguer et ne casse pas quand une
 signature bouge ailleurs.
 
-Objectif de couverture : **~100 % sur `:domain`**. Ailleurs, la couverture est
-une mesure, pas un objectif.
+Objectif de couverture : **~100 % sur `:domain`**, vérifié par Kover avec un
+seuil bloquant à 95 % (`./gradlew :domain:koverVerify`, également dans la CI).
+Les paquets `rule` et `engine` sont à **100 % d'instructions et de branches**.
+Ailleurs, la couverture est une mesure, pas un objectif.
 
 ---
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 4 de [TASKS.md](./TASKS.md). 26 tests, 0 échec.
+Étapes 1 à 7 de [TASKS.md](./TASKS.md). 81 tests, 0 échec.
 
 ```
 .
 ├── domain/                  module Kotlin/JVM pur
 │   └── src/
 │       ├── main/kotlin/…/domain/
-│       │   ├── model/       TunnelState, NetworkTransport, NetworkContext, RuleDecision
+│       │   ├── model/       TunnelState, NetworkTransport, NetworkContext,
+│       │   │                 RuleDecision, asSsidKey
+│       │   ├── network/     NetworkObserver, stabilized(window)
+│       │   ├── rule/        Rule, RuleContext, RuleId, RuleSettings, Priorities
+│       │   │                + les 4 règles de la version 1
+│       │   ├── engine/      RuleEngine, RuleEvaluation
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
-│       ├── testFixtures/…/  FakeTailscaleController
-│       └── test/…/          18 tests JVM
+│       ├── testFixtures/…/  FakeTailscaleController, FakeNetworkObserver, Contexts
+│       └── test/…/          69 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/
 │       │   ├── kotlin/fr/vbrosseau/tailscaleautorules/
 │       │   │   ├── TailscaleAutoRulesApplication.kt · MainActivity.kt
+│       │   │   ├── data/network/         AndroidNetworkObserver
 │       │   │   ├── data/tailscale/       AndroidTailscaleController
-│       │   │   ├── di/                   DispatcherModule, TailscaleModule, qualifiers
+│       │   │   ├── di/                   Dispatcher, Tailscale, Network, RuleModule
 │       │   │   └── presentation/theme/   AppTheme, Color, Spacing
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          8 tests Robolectric
+│       └── test/…/          12 tests Robolectric
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
 ├── build.gradle.kts · settings.gradle.kts · gradle.properties
@@ -334,8 +357,8 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-L'observation réseau, les règles, le moteur, la persistance et les écrans
-**n'existent pas encore** : ils sont créés par les étapes 5 à 10. Cette section est mise à jour à chaque étape.
+La persistance, les cas d'usage, les ViewModels et les écrans **n'existent pas
+encore** : ils sont créés par les étapes 8 à 13. Cette section est mise à jour à chaque étape.
 
 ---
 
@@ -354,3 +377,6 @@ L'observation réseau, les règles, le moteur, la persistance et les écrans
 | 9 | Room pour les collections, DataStore pour les scalaires | Chaque outil sur son terrain, aucun recouvrement |
 | 10 | Compose androidx (et non Compose Multiplatform) | Le projet est mono-plateforme ; API Android officielle |
 | 11 | Fakes dans `testFixtures` de `:domain` | Partagés par les tests des deux modules, absents de l'APK |
+| 12 | Réglages dans `RuleContext`, pas dans la règle | Les règles restent sans état ; les réglages deviennent modifiables sans les toucher |
+| 13 | Départage par `RuleId` à priorité égale | Ordre total : le résultat ne dépend pas de l'itération d'un `Set` |
+| 14 | Aucun libellé dans le domaine | La traduction d'un `RuleId` appartient à la présentation |

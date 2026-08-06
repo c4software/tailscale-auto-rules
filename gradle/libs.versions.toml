@@ -12,6 +12,7 @@ detekt = "1.23.7"
 hilt = "2.60.1"
 junit = "4.13.2"
 kotlin = "2.4.10"
+kover = "0.9.9"
 kotlinxCoroutines = "1.11.0"
 ksp = "2.3.11"
 ktlintPlugin = "12.1.1"
@@ -48,5 +49,6 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

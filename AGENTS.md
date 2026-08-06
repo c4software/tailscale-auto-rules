@@ -129,8 +129,12 @@ export PATH="$JAVA_HOME/bin:$PATH"
 Commande de vérification, à passer **avant tout commit** :
 
 ```bash
-./gradlew ktlintCheck detekt lint test assembleDebug
+./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug
 ```
+
+`koverVerify` échoue sous 95 % de couverture sur `:domain`. Ce n'est pas un
+chiffre décoratif : la pureté de `Rule.evaluate` rend ce niveau atteignable
+sans échafaudage, donc ne pas l'atteindre signale une branche oubliée.
 
 Correction automatique du formatage :
 
@@ -144,7 +148,7 @@ annoncer un succès non observé.
 
 ### Définition de « terminé »
 
-- [ ] `./gradlew ktlintCheck detekt lint test assembleDebug` passe.
+- [ ] `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug` passe.
 - [ ] Les tests couvrent le comportement ajouté, y compris ses cas limites.
 - [ ] Aucun code mort, aucun `TODO` orphelin.
 - [ ] [ARCHITECTURE.md](./ARCHITECTURE.md) §9 reflète l'état réel du dépôt.
