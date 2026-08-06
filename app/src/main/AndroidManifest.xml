@@ -20,6 +20,9 @@
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Réarmer l'automatisation après un redémarrage du terminal. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!--
       Sans cette déclaration, Android 11+ répond « paquet introuvable » et
       l'application conclut à tort que le client Tailscale est absent.
@@ -46,6 +49,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          Réveillé par le système via le PendingIntent enregistré auprès de
+          ConnectivityManager. Non exporté : personne d'autre n'a à le déclencher.
+        -->
+        <receiver
+            android:name=".automation.NetworkChangeReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".automation.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -2,13 +2,43 @@ package fr.vbrosseau.tailscaleautorules
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
+import fr.vbrosseau.tailscaleautorules.automation.AutomationCoordinator
+import fr.vbrosseau.tailscaleautorules.di.ApplicationScope
+import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Point d'entrée de l'application et racine du graphe d'injection.
  *
- * Elle ne porte aucune logique : tout ce qui doit vivre à l'échelle du
- * processus est déclaré `@Singleton` dans un module Hilt, jamais initialisé
- * ici. C'est ce qui permet de substituer n'importe quelle dépendance en test.
+ * Elle ne porte aucune logique métier. Sa seule responsabilité propre est de
+ * maintenir la plateforme alignée sur les préférences : armer ou désarmer le
+ * réveil automatique, afficher ou retirer la notification. Sans cette
+ * observation, une modification des paramètres ne prendrait effet qu'au
+ * redémarrage suivant.
  */
 @HiltAndroidApp
-class TailscaleAutoRulesApplication : Application()
+class TailscaleAutoRulesApplication : Application() {
+
+    @Inject
+    lateinit var coordinator: AutomationCoordinator
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    @ApplicationScope
+    lateinit var scope: CoroutineScope
+
+    override fun onCreate() {
+        super.onCreate()
+
+        scope.launch {
+            settingsRepository.observeAppSettings()
+                .distinctUntilChanged()
+                .collect { settings -> coordinator.applySettings(settings) }
+        }
+    }
+}

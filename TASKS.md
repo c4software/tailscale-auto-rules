@@ -221,13 +221,42 @@ Deux commits : le cas d'usage, puis les ViewModels.
 
 ---
 
-## 11. Notifications `[ ]`
+## 11. Notifications et déclenchement `[x]`
 
-- [ ] Canal de notification
-- [ ] Notification persistante optionnelle (tunnel + raison)
-- [ ] Demande de `POST_NOTIFICATIONS` **uniquement** si l'option est activée
-- [ ] Service de premier plan et son cycle de vie
-- [ ] Receiver `BOOT_COMPLETED`
+> **Écart assumé avec l'intitulé initial.** Cette étape prévoyait un *service de
+> premier plan*. Sur Android 8 et suivants, un tel service **impose** une
+> notification permanente — ce qui contredit [SPECS.md](./SPECS.md) §7, qui
+> l'exige optionnelle et désactivée par défaut. La spécification l'emporte :
+> l'application se fait **réveiller** par le système plutôt que de veiller
+> elle-même.
+
+- [x] Canal de notification, importance basse (sinon un son à chaque
+      changement de réseau)
+- [x] Notification persistante optionnelle : état du tunnel + règle appliquée
+- [x] `POST_NOTIFICATIONS` demandée **uniquement** si l'option est activée ;
+      son absence est un cas nominal
+- [x] `NetworkCallbackTrigger` — `registerNetworkCallback(request, PendingIntent)` :
+      le système réveille l'application, qui ne consomme rien entre-temps
+- [x] `NetworkChangeReceiver` et `BootReceiver`, tous deux non exportés,
+      prolongés par `goAsync()`
+- [x] `AutomationCoordinator` — charnière entre préférences et plateforme
+- [x] L'`Application` observe les préférences : un changement prend effet
+      immédiatement, pas au redémarrage suivant
+- [x] 16 tests (7 sur le notifier, 9 sur le coordinateur)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 206 tests, 0 échec.
+
+### Suivi ouvert
+
+- [ ] **Bascule du mode avion sans changement de réseau.** Le réveil est
+      déclenché par les changements réseau ; couper le mode avion alors que le
+      Wi-Fi reste associé pourrait n'en produire aucun. À mesurer sur terminal
+      réel avant d'ajouter un déclencheur dédié.
+- [ ] **Debounce sur le chemin des réveils.** Chaque réveil déclenche une
+      synchronisation. L'effet est amorti par le court-circuit « état déjà
+      atteint » du cas d'usage : une rafale produit au plus une commande et une
+      entrée de journal. À revoir si la mesure montre le contraire.
 
 ---
 
