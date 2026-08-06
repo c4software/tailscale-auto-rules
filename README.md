@@ -1,6 +1,7 @@
 # Tailscale Auto Rules
 
-**Active ou désactive votre tunnel Tailscale automatiquement, selon vos règles.**
+**Active ou désactive votre tunnel Tailscale automatiquement, selon vos
+connexions de confiance.**
 
 [![CI](https://github.com/c4software/tailscale-auto-rules/actions/workflows/ci.yml/badge.svg)](https://github.com/c4software/tailscale-auto-rules/actions/workflows/ci.yml)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
@@ -21,8 +22,8 @@ réseau de l'aéroport, **inactif** à la maison où le tunnel n'apporte rien et
 coûte de la batterie. Le faire à la main, c'est l'oublier une fois sur deux.
 
 **Tailscale Auto Rules** s'en charge. L'application observe le réseau et
-demande au client Tailscale officiel de s'activer ou de se désactiver selon des
-règles que vous définissez.
+demande au client Tailscale officiel de s'activer ou de se désactiver selon les
+connexions que vous jugez de confiance.
 
 Elle **ne remplace pas Tailscale** et n'implémente aucune pile VPN : le client
 officiel reste indispensable.
