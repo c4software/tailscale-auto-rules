@@ -314,7 +314,7 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 7 de [TASKS.md](./TASKS.md). 81 tests, 0 échec.
+Étapes 1 à 8 de [TASKS.md](./TASKS.md). 128 tests, 0 échec.
 
 ```
 .
@@ -335,13 +335,16 @@ Ailleurs, la couverture est une mesure, pas un objectif.
 │       ├── main/
 │       │   ├── kotlin/fr/vbrosseau/tailscaleautorules/
 │       │   │   ├── TailscaleAutoRulesApplication.kt · MainActivity.kt
+│       │   │   ├── data/local/           Room (base, DAO, entités), clés DataStore
 │       │   │   ├── data/network/         AndroidNetworkObserver
+│       │   │   ├── data/repository/      Room…Repository, DataStoreSettingsRepository
 │       │   │   ├── data/tailscale/       AndroidTailscaleController
-│       │   │   ├── di/                   Dispatcher, Tailscale, Network, RuleModule
+│       │   │   ├── di/                   7 modules Hilt
 │       │   │   └── presentation/theme/   AppTheme, Color, Spacing
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          12 tests Robolectric
+│       └── test/…/          31 tests (Robolectric + DataStore en JVM)
+├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
 ├── build.gradle.kts · settings.gradle.kts · gradle.properties
@@ -357,8 +360,8 @@ compileClasspath - Compile classpath for 'main'.
      \--- org.jetbrains:annotations:13.0
 ```
 
-La persistance, les cas d'usage, les ViewModels et les écrans **n'existent pas
-encore** : ils sont créés par les étapes 8 à 13. Cette section est mise à jour à chaque étape.
+Les cas d'usage, les ViewModels et les écrans **n'existent pas encore** : ils
+sont créés par les étapes 9 à 13. Cette section est mise à jour à chaque étape.
 
 ---
 
@@ -380,3 +383,7 @@ encore** : ils sont créés par les étapes 8 à 13. Cette section est mise à j
 | 12 | Réglages dans `RuleContext`, pas dans la règle | Les règles restent sans état ; les réglages deviennent modifiables sans les toucher |
 | 13 | Départage par `RuleId` à priorité égale | Ordre total : le résultat ne dépend pas de l'itération d'un `Set` |
 | 14 | Aucun libellé dans le domaine | La traduction d'un `RuleId` appartient à la présentation |
+| 15 | Unicité des SSID par index de base | Un contrôle applicatif laisse passer deux écritures concurrentes |
+| 16 | Purge du journal dans la transaction d'insertion | Sinon la capacité peut être dépassée sans purge |
+| 17 | Ligne de journal illisible ignorée | Une base venue d'une version ultérieure ne doit pas casser l'affichage |
+| 18 | Seuls les écarts de réglage sont persistés | Ajouter une règle ne demande aucune migration |

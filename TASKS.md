@@ -1,8 +1,8 @@
 # Feuille de route
 
 Ordre **impératif**. Aucune étape n'est sautée, aucune n'est fusionnée avec la
-suivante. Chaque étape se termine par une validation explicite (voir
-[AGENTS.md](./AGENTS.md) §1).
+suivante. Chaque étape se termine par un commit vérifié ; les étapes
+s'enchaînent sans validation intermédiaire (voir [AGENTS.md](./AGENTS.md) §1).
 
 Légende : `[x]` terminé · `[ ]` à faire
 
@@ -152,14 +152,26 @@ branches**. Total module : 95,5 % d'instructions, 100 % de branches.
 
 ---
 
-## 8. Persistance `[ ]`
+## 8. Persistance `[x]`
 
-- [ ] Room : entité + DAO blacklist (unicité du SSID, insensible à la casse)
-- [ ] Room : entité + DAO journal, purge au-delà de 500 entrées
-- [ ] DataStore : préférences de [SPECS.md](./SPECS.md) §6.3
-- [ ] DataStore : `enabled` / `priority` par règle
-- [ ] Implémentation des repositories du domaine
-- [ ] Tests DAO, tests DataStore, tests de la purge
+Découpée en trois commits — contrats, Room, DataStore — la traiter d'un bloc
+aurait produit un diff illisible.
+
+- [x] Contrats du domaine : `BlacklistRepository`, `JournalRepository`,
+      `SettingsRepository`, plus l'abstraction `Clock`
+- [x] Room : blacklist avec **index unique sur la forme canonique** du SSID —
+      l'unicité est garantie par la base, pas par une vérification applicative
+- [x] Room : journal, purge à 500 entrées **dans la transaction d'insertion**
+- [x] Schémas Room exportés et versionnés (`app/schemas/`)
+- [x] DataStore : préférences de [SPECS.md](./SPECS.md) §6.3
+- [x] DataStore : `isEnabled` / `priority` par règle, clés dérivées de
+      l'identifiant — ajouter une règle ne demande aucune migration
+- [x] Quatre Fakes appliquant réellement ces règles, unicité et purge comprises
+- [x] 47 tests : 12 sur les Fakes, 21 Room sur base SQLite en mémoire, 10 sur
+      DataStore, 4 sur les nouveaux modèles
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 128 tests, 0 échec.
 
 ---
 
