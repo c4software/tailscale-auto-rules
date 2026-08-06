@@ -1,3 +1,36 @@
 <resources>
     <string name="app_name">Tailscale Auto Rules</string>
+
+    <!-- Navigation -->
+    <string name="destination_home">Accueil</string>
+    <string name="destination_blacklist">Réseaux de confiance</string>
+    <string name="destination_journal">Journal</string>
+    <string name="destination_settings">Paramètres</string>
+
+    <!-- Accueil -->
+    <string name="home_tunnel_title">Tunnel Tailscale</string>
+    <string name="home_tunnel_enabled">Activé</string>
+    <string name="home_tunnel_disabled">Désactivé</string>
+    <string name="home_tunnel_unknown">Indéterminé</string>
+    <string name="home_network_title">Réseau</string>
+    <string name="home_transport_none">Aucun réseau</string>
+    <string name="home_transport_wifi">Wi-Fi</string>
+    <string name="home_transport_cellular">Réseau mobile</string>
+    <string name="home_transport_ethernet">Ethernet</string>
+    <string name="home_transport_other">Autre</string>
+    <string name="home_ssid_unavailable">SSID indisponible</string>
+    <string name="home_last_change_title">Dernier changement</string>
+    <string name="home_no_change_yet">Aucun changement enregistré</string>
+    <string name="home_change_summary">%1$s → %2$s</string>
+    <string name="home_synchronize">Synchroniser</string>
+    <string name="home_synchronizing">Synchronisation…</string>
+    <string name="home_tailscale_missing_title">Client Tailscale introuvable</string>
+    <string name="home_tailscale_missing_body">Installez l\'application Tailscale officielle : sans elle, aucune règle ne peut être appliquée.</string>
+
+    <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
+    <string name="rule_airplane_mode">Mode avion</string>
+    <string name="rule_blacklisted_wifi">Wi-Fi de confiance</string>
+    <string name="rule_other_wifi">Wi-Fi non reconnu</string>
+    <string name="rule_mobile_network">Réseau mobile</string>
+    <string name="rule_unknown">Règle inconnue</string>
 </resources>

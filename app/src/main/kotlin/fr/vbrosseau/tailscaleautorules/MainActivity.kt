@@ -4,17 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import dagger.hilt.android.AndroidEntryPoint
+import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppNavHost
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 
 @AndroidEntryPoint
@@ -31,27 +31,18 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Racine de l'interface.
+ * Ossature commune : barre de titre et graphe de navigation.
  *
- * Écran d'attente tant que l'étape « Interface Compose » de la feuille de route
- * n'est pas atteinte : il valide la chaîne Activity → thème → Compose.
+ * `TopAppBar` est encore expérimental dans Material 3 ; l'opt-in est local
+ * plutôt que déclaré pour tout le module, afin que la dette reste visible.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppRoot(modifier: Modifier = Modifier) {
-    Surface(modifier = modifier.fillMaxSize()) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AppRootPreview() {
-    AppTheme(dynamicColor = false) {
-        AppRoot()
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+    ) { innerPadding ->
+        AppNavHost(modifier = Modifier.padding(innerPadding))
     }
 }
