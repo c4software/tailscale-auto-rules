@@ -29,6 +29,7 @@ class HomeViewModelTest {
     private val controller = FakeTailscaleController()
     private val observer = FakeNetworkObserver()
     private val journal = FakeJournalRepository(FakeClock(1_000))
+    private val settings = FakeSettingsRepository()
 
     private fun viewModel() = HomeViewModel(
         networkObserver = observer,
@@ -37,11 +38,12 @@ class HomeViewModelTest {
         synchronizeTunnel = SynchronizeTunnelUseCase(
             networkObserver = observer,
             blacklistRepository = FakeBlacklistRepository(),
-            settingsRepository = FakeSettingsRepository(),
+            settingsRepository = settings,
             engine = RuleEngine(setOf(MobileNetworkRule())),
             controller = controller,
             journalRepository = journal,
         ),
+        settingsRepository = settings,
     )
 
     private val cellular = NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true)
@@ -113,6 +115,19 @@ class HomeViewModelTest {
         journal.record(TunnelState.DISABLED, TunnelState.ENABLED, RuleId("mobile-network"))
 
         assertEquals(RuleId("mobile-network"), model.uiState.value.lastChange?.ruleId)
+    }
+
+    @Test
+    fun disablingTheAutomationOnlyFlipsThePreference() = runTest {
+        // L'arrêt du service et le retrait de la notification appartiennent à
+        // l'observation applicative : ici, seule la préférence doit bouger, et
+        // l'écran doit la refléter.
+        val model = viewModel()
+
+        model.disableAutomation()
+
+        assertTrue(!settings.currentAppSettings().isServiceEnabled)
+        assertTrue(!model.uiState.value.isAutomationEnabled)
     }
 
     @Test

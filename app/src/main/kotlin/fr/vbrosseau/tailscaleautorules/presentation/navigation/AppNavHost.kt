@@ -49,7 +49,11 @@ fun AppNavHost(
             val viewModel: HomeViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-            HomeScreen(uiState = uiState, onSynchronize = viewModel::synchronize)
+            HomeScreen(
+                uiState = uiState,
+                onSynchronize = viewModel::synchronize,
+                onDisableAutomation = viewModel::disableAutomation,
+            )
         }
 
         composable(AppRoutes.BLACKLIST) {

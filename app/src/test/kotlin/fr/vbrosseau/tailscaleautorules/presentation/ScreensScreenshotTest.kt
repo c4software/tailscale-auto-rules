@@ -50,6 +50,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
                 lastChange = lastChange,
             ),
             onSynchronize = {},
+            onDisableAutomation = {},
         )
     }
 
@@ -60,6 +61,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
         HomeScreen(
             uiState = HomeUiState(isTailscaleInstalled = false),
             onSynchronize = {},
+            onDisableAutomation = {},
         )
     }
 
@@ -72,6 +74,23 @@ class ScreensScreenshotTest : ScreenshotTest() {
                 isSynchronizing = true,
             ),
             onSynchronize = {},
+            onDisableAutomation = {},
+        )
+    }
+
+    @Test
+    fun accueilAutomatisationCoupee() = capture("accueil-automatisation-coupee") {
+        // La carte remplace le bouton : c'est elle qui doit rester lisible,
+        // en particulier en thème sombre.
+        HomeScreen(
+            uiState = HomeUiState(
+                tunnelState = TunnelState.DISABLED,
+                transport = NetworkTransport.WIFI,
+                ssid = "Aéroport CDG",
+                isAutomationEnabled = false,
+            ),
+            onSynchronize = {},
+            onDisableAutomation = {},
         )
     }
 

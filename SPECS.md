@@ -185,7 +185,9 @@ Affiche, en lecture seule :
 - le type de réseau courant (Wi-Fi / cellulaire / Ethernet / aucun) ;
 - le SSID courant, ou une mention explicite s'il est indisponible ;
 - la dernière décision : règle déclenchante, sens de la décision, horodatage ;
-- un bouton **Synchroniser** forçant un cycle immédiat.
+- un bouton **Synchroniser** forçant un cycle immédiat ;
+- un bouton **Désactiver l'automatisation** — remplacé, lorsqu'elle est déjà
+  inactive, par une mention explicite renvoyant aux paramètres.
 
 ### 6.2 Blacklist Wi-Fi
 
@@ -223,6 +225,12 @@ Persistante lorsqu'elle est visible, elle affiche :
 - **Tunnel :** Activé / Désactivé
 - **Raison :** libellé court de la règle ayant décidé (« Réseau mobile »,
   « Wi-Fi de confiance », « Mode avion »…)
+
+Elle porte une action **Désactiver l'automatisation** : persistante et non
+rejetable, elle doit offrir le moyen de faire cesser ce qu'elle décrit sans
+repasser par l'application. L'action bascule la préférence — la même que
+l'interrupteur des paramètres — ce qui arrête le service et retire la
+notification.
 
 ### 7.1 Elle n'est pas un réglage
 

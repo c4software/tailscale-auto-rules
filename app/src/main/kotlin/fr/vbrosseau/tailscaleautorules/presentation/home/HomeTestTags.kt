@@ -8,4 +8,6 @@ object HomeTestTags {
     const val LAST_CHANGE = "home:last-change"
     const val SYNCHRONIZE = "home:synchronize"
     const val TAILSCALE_MISSING = "home:tailscale-missing"
+    const val DISABLE_AUTOMATION = "home:disable-automation"
+    const val AUTOMATION_DISABLED = "home:automation-disabled"
 }

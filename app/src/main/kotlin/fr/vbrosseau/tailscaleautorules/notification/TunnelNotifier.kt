@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.vbrosseau.tailscaleautorules.MainActivity
 import fr.vbrosseau.tailscaleautorules.R
+import fr.vbrosseau.tailscaleautorules.automation.DisableAutomationReceiver
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.presentation.labelRes
@@ -87,6 +88,14 @@ class TunnelNotifier @Inject constructor(
             .setOngoing(true)
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
+            // Une notification qu'on ne peut pas retirer doit offrir le moyen
+            // de faire cesser ce qu'elle décrit : couper l'automatisation,
+            // sans ouvrir l'application.
+            .addAction(
+                0,
+                context.getString(R.string.notification_disable_automation),
+                disableAutomationIntent(),
+            )
             .build()
     }
 
@@ -100,6 +109,13 @@ class TunnelNotifier @Inject constructor(
     } else {
         context.getString(R.string.notification_reason, context.getString(ruleId.labelRes()))
     }
+
+    private fun disableAutomationIntent(): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        0,
+        DisableAutomationReceiver.intent(context),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 
     private fun openApplicationIntent(): PendingIntent = PendingIntent.getActivity(
         context,

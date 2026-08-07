@@ -29,10 +29,18 @@ class HomeScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private fun show(uiState: HomeUiState, onSynchronize: () -> Unit = {}) {
+    private fun show(
+        uiState: HomeUiState,
+        onSynchronize: () -> Unit = {},
+        onDisableAutomation: () -> Unit = {},
+    ) {
         composeRule.setContent {
             AppTheme(dynamicColor = false) {
-                HomeScreen(uiState = uiState, onSynchronize = onSynchronize)
+                HomeScreen(
+                    uiState = uiState,
+                    onSynchronize = onSynchronize,
+                    onDisableAutomation = onDisableAutomation,
+                )
             }
         }
     }
@@ -136,6 +144,25 @@ class HomeScreenTest {
         show(HomeUiState(isTailscaleInstalled = true))
 
         composeRule.onNodeWithTag(HomeTestTags.TAILSCALE_MISSING).assertDoesNotExist()
+    }
+
+    @Test
+    fun disablingTheAutomationGoesThroughTheButton() {
+        var disableCount = 0
+        show(HomeUiState(isAutomationEnabled = true), onDisableAutomation = { disableCount++ })
+
+        composeRule.onNodeWithTag(HomeTestTags.DISABLE_AUTOMATION).performClick()
+
+        assertEquals(1, disableCount)
+        composeRule.onNodeWithTag(HomeTestTags.AUTOMATION_DISABLED).assertDoesNotExist()
+    }
+
+    @Test
+    fun aDisabledAutomationIsStatedRatherThanLeftBlank() {
+        show(HomeUiState(isAutomationEnabled = false))
+
+        composeRule.onNodeWithTag(HomeTestTags.AUTOMATION_DISABLED).assertIsDisplayed()
+        composeRule.onNodeWithTag(HomeTestTags.DISABLE_AUTOMATION).assertDoesNotExist()
     }
 
     @Test

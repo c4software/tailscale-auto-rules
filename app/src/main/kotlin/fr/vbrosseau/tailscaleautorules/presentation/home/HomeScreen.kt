@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -40,6 +41,7 @@ import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 fun HomeScreen(
     uiState: HomeUiState,
     onSynchronize: () -> Unit,
+    onDisableAutomation: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (uiState.isLoading) {
@@ -90,6 +92,52 @@ fun HomeScreen(
             isSynchronizing = uiState.isSynchronizing,
             onSynchronize = onSynchronize,
         )
+
+        AutomationSection(
+            isAutomationEnabled = uiState.isAutomationEnabled,
+            onDisableAutomation = onDisableAutomation,
+        )
+    }
+}
+
+/**
+ * Coupe l'automatisation, ou constate qu'elle l'est déjà.
+ *
+ * Le bouton ne disparaît pas sans laisser de trace : une carte prend sa place,
+ * sans quoi l'utilisateur ne saurait ni que son geste a porté, ni pourquoi le
+ * tunnel ne bouge plus tout seul.
+ */
+@Composable
+private fun AutomationSection(
+    isAutomationEnabled: Boolean,
+    onDisableAutomation: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (isAutomationEnabled) {
+        OutlinedButton(
+            onClick = onDisableAutomation,
+            modifier = modifier
+                .fillMaxWidth()
+                .testTag(HomeTestTags.DISABLE_AUTOMATION),
+        ) {
+            Text(stringResource(R.string.home_disable_automation))
+        }
+    } else {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .testTag(HomeTestTags.AUTOMATION_DISABLED),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
+        ) {
+            Text(
+                text = stringResource(R.string.home_automation_disabled),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(Spacing.md),
+            )
+        }
     }
 }
 
@@ -204,6 +252,7 @@ private fun HomeScreenPreview() {
                 ),
             ),
             onSynchronize = {},
+            onDisableAutomation = {},
         )
     }
 }
@@ -215,6 +264,7 @@ private fun HomeScreenWithoutClientPreview() {
         HomeScreen(
             uiState = HomeUiState(isTailscaleInstalled = false),
             onSynchronize = {},
+            onDisableAutomation = {},
         )
     }
 }

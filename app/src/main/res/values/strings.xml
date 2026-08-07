@@ -34,6 +34,8 @@
     <string name="home_change_summary">%1$s → %2$s</string>
     <string name="home_synchronize">Synchroniser</string>
     <string name="home_synchronizing">Synchronisation…</string>
+    <string name="home_disable_automation">Désactiver l\'automatisation</string>
+    <string name="home_automation_disabled">Automatisation désactivée : le tunnel ne bougera plus tout seul. Elle se réactive depuis les paramètres.</string>
     <string name="home_tailscale_missing_title">Client Tailscale introuvable</string>
     <string name="home_tailscale_missing_body">Installez l\'application Tailscale officielle : sans elle, aucune règle ne peut être appliquée.</string>
 
@@ -92,6 +94,7 @@
     <string name="notification_tunnel_unknown">État du tunnel indéterminé</string>
     <string name="notification_reason">Raison : %1$s</string>
     <string name="notification_no_reason">Aucune règle appliquée pour l\'instant</string>
+    <string name="notification_disable_automation">Désactiver l\'automatisation</string>
 
     <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
     <string name="rule_airplane_mode">Mode avion</string>

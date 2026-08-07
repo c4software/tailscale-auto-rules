@@ -5,6 +5,8 @@ import android.app.Application
 import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import fr.vbrosseau.tailscaleautorules.R
+import fr.vbrosseau.tailscaleautorules.automation.DisableAutomationReceiver
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import org.junit.Before
@@ -57,6 +59,26 @@ class TunnelNotifierTest {
 
     private fun channel() = context.getSystemService(NotificationManager::class.java)
         .getNotificationChannel(NotificationChannels.TUNNEL_STATE)
+
+    @Test
+    fun theNotificationOffersToDisableTheAutomation() {
+        // Persistante et non rejetable, elle doit offrir le moyen de faire
+        // cesser ce qu'elle décrit — sans repasser par l'application.
+        notifier.show(TunnelState.ENABLED, RuleId("mobile-network"))
+
+        val action = assertNotNull(postedNotification()).actions.single()
+        assertEquals(
+            context.getString(R.string.notification_disable_automation),
+            action.title.toString(),
+        )
+
+        val intent = Shadows.shadowOf(action.actionIntent).savedIntent
+        assertEquals(DisableAutomationReceiver.ACTION_DISABLE_AUTOMATION, intent.action)
+        assertEquals(
+            DisableAutomationReceiver::class.java.name,
+            assertNotNull(intent.component).className,
+        )
+    }
 
     @Test
     fun theChannelIsCreatedOnDemand() {

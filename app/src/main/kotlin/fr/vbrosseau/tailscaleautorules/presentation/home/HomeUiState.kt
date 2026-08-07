@@ -22,5 +22,6 @@ data class HomeUiState(
     val isTailscaleInstalled: Boolean = true,
     val isSynchronizing: Boolean = false,
     val lastChange: JournalEntry? = null,
+    val isAutomationEnabled: Boolean = true,
     val isLoading: Boolean = false,
 )

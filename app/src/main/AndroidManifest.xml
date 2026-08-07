@@ -81,6 +81,10 @@
         </service>
 
         <receiver
+            android:name=".automation.DisableAutomationReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".automation.BootReceiver"
             android:exported="false">
             <intent-filter>

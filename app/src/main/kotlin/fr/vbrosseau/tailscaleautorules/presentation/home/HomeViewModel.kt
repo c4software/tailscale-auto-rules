@@ -3,9 +3,13 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
+import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +39,7 @@ class HomeViewModel @Inject constructor(
     private val journalRepository: JournalRepository,
     private val controller: TailscaleController,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
@@ -66,8 +71,22 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Les trois sources sont **combinées** : rien ne s'affiche tant que chacune
-     * n'a pas livré un premier constat. Collectées séparément, elles rempliraient
+     * Coupe l'automatisation depuis l'accueil.
+     *
+     * Comme l'action de la notification, elle ne fait que basculer la
+     * préférence : l'observation des réglages tenue par l'application arrête le
+     * service et retire la notification, et `observeEverything` reflète le
+     * nouvel état.
+     */
+    fun disableAutomation() {
+        viewModelScope.launch {
+            settingsRepository.updateAppSettings { it.copy(isServiceEnabled = false) }
+        }
+    }
+
+    /**
+     * Les sources sont **combinées** : rien ne s'affiche tant que chacune n'a
+     * pas livré un premier constat. Collectées séparément, elles rempliraient
      * l'écran morceau par morceau — tunnel inconnu, puis réseau, puis journal —
      * et chaque valeur par défaut passerait à l'écran pour une donnée.
      */
@@ -81,17 +100,18 @@ class HomeViewModel @Inject constructor(
                 networkObserver.observe().onStart { emit(networkObserver.current()) },
                 tunnelSnapshots(),
                 journalRepository.observeRecent(),
-            ) { network, tunnel, entries ->
-                Triple(network, tunnel, entries)
-            }.collect { (network, tunnel, entries) ->
+                settingsRepository.observeAppSettings(),
+                ::Observation,
+            ).collect { observed ->
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        transport = network.transport,
-                        ssid = network.ssid,
-                        isTailscaleInstalled = tunnel.isInstalled,
-                        tunnelState = tunnel.state,
-                        lastChange = entries.firstOrNull(),
+                        transport = observed.network.transport,
+                        ssid = observed.network.ssid,
+                        isTailscaleInstalled = observed.tunnel.isInstalled,
+                        tunnelState = observed.tunnel.state,
+                        lastChange = observed.entries.firstOrNull(),
+                        isAutomationEnabled = observed.settings.isServiceEnabled,
                     )
                 }
             }
@@ -123,4 +143,12 @@ class HomeViewModel @Inject constructor(
 
     /** Ce que le client Tailscale laisse constater : présent, et actif ou non. */
     private data class TunnelSnapshot(val isInstalled: Boolean, val state: TunnelState)
+
+    /** Premier constat complet, tel que `combine` le livre. */
+    private data class Observation(
+        val network: NetworkContext,
+        val tunnel: TunnelSnapshot,
+        val entries: List<JournalEntry>,
+        val settings: AppSettings,
+    )
 }

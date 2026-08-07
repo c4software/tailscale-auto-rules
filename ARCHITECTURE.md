@@ -343,7 +343,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 14 complètes. 243 tests, 0 échec.
+Étapes 1 à 14 complètes. 273 tests, 0 échec.
 
 ```
 .
@@ -362,13 +362,13 @@ est une mesure, pas un objectif.
 │       │   ├── usecase/     SynchronizeTunnelUseCase, SynchronizationOutcome
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
 │       ├── testFixtures/…/  les 6 Fakes + fabriques Contexts
-│       └── test/…/          110 tests JVM
+│       └── test/…/          99 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/
 │       │   ├── kotlin/fr/vbrosseau/tailscaleautorules/
 │       │   │   ├── TailscaleAutoRulesApplication.kt · MainActivity.kt
-│       │   │   ├── automation/           Trigger, Coordinator, 2 receveurs
+│       │   │   ├── automation/           Trigger, Coordinator, 3 receveurs
 │       │   │   ├── data/local/           Room (base, DAO, entités), clés DataStore
 │       │   │   ├── data/network/         AndroidNetworkObserver
 │       │   │   ├── data/repository/      Room…Repository, DataStoreSettingsRepository
@@ -384,7 +384,7 @@ est une mesure, pas un objectif.
 │       │   │       └── journal/         écran + ViewModel + UiState + mise en forme
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          133 tests (Robolectric, DataStore, ViewModels, Compose)
+│       └── test/…/          174 tests (Robolectric, DataStore, ViewModels, Compose)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
