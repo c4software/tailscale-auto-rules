@@ -1,0 +1,64 @@
+name: Publication
+
+# Construit l'APK de production, signé avec le keystore conservé dans les
+# secrets du dépôt. Se déclenche sur un tag `v*` — l'APK est alors attaché à
+# une Release GitHub — ou à la main, auquel cas il n'est publié qu'en artefact.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# `contents: write` est requis pour créer la Release sur tag ; le job manuel
+# n'écrit rien d'autre que ses artefacts.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: APK signé de production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurer le JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configurer Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          # Ce workflow consomme le cache constitué par la CI, sans le modifier.
+          cache-read-only: true
+
+      - name: Restaurer le keystore
+        # Reconstitué dans le répertoire temporaire du job, jamais dans
+        # l'arborescence des sources : il ne peut ni finir dans un artefact ni
+        # être committé par accident.
+        run: printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+
+      - name: Construire l'APK signé
+        run: ./gradlew :app:assembleRelease
+        env:
+          RELEASE_KEYSTORE: ${{ runner.temp }}/release.keystore
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+
+      - name: Publier l'artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Attacher l'APK à la Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" app/build/outputs/apk/release/app-release.apk --generate-notes

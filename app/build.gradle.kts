@@ -66,6 +66,21 @@ android {
         }
     }
 
+    signingConfigs {
+        // Renseignée par la CI seulement : le keystore de production vit dans
+        // les secrets du dépôt, jamais dans les copies de travail. En son
+        // absence, `assembleRelease` produit un APK non signé — suffisant pour
+        // vérifier que la construction de production passe.
+        create("release") {
+            System.getenv("RELEASE_KEYSTORE")?.let { keystorePath ->
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -74,6 +89,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
         }
     }
 

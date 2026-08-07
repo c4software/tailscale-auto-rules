@@ -37,6 +37,10 @@ voir les réserves de [TASKS.md](./TASKS.md).
   encore suivi — sans ce délai de grâce, chaque transition affichait
   fugitivement « Modifié manuellement ».
 - Explications de permission avant chaque demande (localisation, notification).
+- **Chaîne de publication** : un tag `v*` (ou un déclenchement manuel) construit
+  en CI l'APK de production signé. Le keystore vit exclusivement dans les
+  secrets du dépôt ; en son absence, `assembleRelease` produit un APK non
+  signé.
 - **Tests de rendu visuel** (Roborazzi) : 28 références couvrant les états les
   plus exposés des quatre écrans, en thème clair et sombre. Vérification
   volontairement hors CI — trop coûteuse par Pull Request — donc à la charge de
