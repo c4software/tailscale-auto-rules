@@ -10,6 +10,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.time.Clock
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import javax.inject.Singleton
@@ -49,10 +50,12 @@ object UseCaseModule {
         blacklistRepository: BlacklistRepository,
         settingsRepository: SettingsRepository,
         engine: RuleEngine,
+        clock: Clock,
     ): DetectManualOverrideUseCase = DetectManualOverrideUseCase(
         networkObserver = networkObserver,
         blacklistRepository = blacklistRepository,
         settingsRepository = settingsRepository,
         engine = engine,
+        clock = clock,
     )
 }

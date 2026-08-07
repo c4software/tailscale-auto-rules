@@ -17,6 +17,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
@@ -29,6 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -63,7 +65,8 @@ class AutomationCoordinatorTest {
     private val trigger = FakeAutomationTrigger()
     private val controller = FakeTailscaleController()
     private val settings = FakeSettingsRepository()
-    private val journal = FakeJournalRepository()
+    private val clock = FakeClock()
+    private val journal = FakeJournalRepository(clock)
     private val observer = FakeNetworkObserver()
     private lateinit var coordinator: AutomationCoordinator
 
@@ -92,6 +95,7 @@ class AutomationCoordinatorTest {
                 blacklistRepository = blacklist,
                 settingsRepository = settings,
                 engine = engine,
+                clock = clock,
             ),
             controller = controller,
             journalRepository = journal,
@@ -178,11 +182,31 @@ class AutomationCoordinatorTest {
         observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
         coordinator.synchronize()
 
+        clock.advanceBy(60_000)
         controller.disable()
         coordinator.refreshNotificationIfEnabled()
 
         val notification = assertNotNull(postedNotification())
         assertEquals(
+            context.getString(R.string.notification_manual_override),
+            notification.extras.getString(Notification.EXTRA_TEXT),
+        )
+    }
+
+    @Test
+    fun aDivergenceInsideTheGraceWindowStaysAttributedToTheRule() = runTest {
+        // Le journal consigne la commande à l'envoi ; le tunnel met quelques
+        // secondes à suivre. Pendant ce délai, chaque transition affichait à
+        // tort « Modifié manuellement » : la notification doit s'en tenir à
+        // la règle.
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        coordinator.synchronize()
+
+        controller.disable()
+        coordinator.refreshNotificationIfEnabled()
+
+        val notification = assertNotNull(postedNotification())
+        assertNotEquals(
             context.getString(R.string.notification_manual_override),
             notification.extras.getString(Notification.EXTRA_TEXT),
         )

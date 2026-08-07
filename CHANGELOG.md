@@ -32,7 +32,10 @@ voir les réserves de [TASKS.md](./TASKS.md).
   sur un réseau de confiance (ou coupé depuis le client officiel) est signalé
   comme tel sur l'accueil et dans la notification, au lieu d'être attribué à
   une règle. Le geste est respecté ; les règles reprennent la main au prochain
-  changement de réseau.
+  changement de réseau. Une entrée de journal plus jeune que dix secondes
+  n'atteste de rien : la commande vient d'être envoyée et le tunnel n'a pas
+  encore suivi — sans ce délai de grâce, chaque transition affichait
+  fugitivement « Modifié manuellement ».
 - Explications de permission avant chaque demande (localisation, notification).
 - **Tests de rendu visuel** (Roborazzi) : 28 références couvrant les états les
   plus exposés des quatre écrans, en thème clair et sombre. Vérification

@@ -9,6 +9,9 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.domain.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Le tunnel a été mis dans cet état à la main, contre l'avis d'une règle.
@@ -32,6 +35,11 @@ data class ManualOverride(
  * appliquée** — le journal en atteste — et le tunnel est pourtant dans l'état
  * opposé. Seule une main extérieure a pu l'y mettre.
  *
+ * Le journal consigne la commande **à l'envoi**, or le client met quelques
+ * secondes à l'exécuter : pendant ce court délai, l'état constaté contredit une
+ * décision « déjà appliquée » sans qu'aucune main n'y soit pour rien. Une
+ * entrée plus jeune que [CommandSettleGrace] n'atteste donc de rien.
+ *
  * Le constat est purement dérivé : rien n'est mémorisé, rien n'est commandé.
  * L'automatisation ne combat pas ce choix — aucun cycle ne se déclenche tant
  * que le réseau ne change pas — et le prochain changement de réseau le
@@ -42,6 +50,7 @@ class DetectManualOverrideUseCase(
     private val blacklistRepository: BlacklistRepository,
     private val settingsRepository: SettingsRepository,
     private val engine: RuleEngine,
+    private val clock: Clock,
 ) {
     /**
      * Constat sur le contexte réseau courant — la forme qu'emploie la
@@ -65,8 +74,12 @@ class DetectManualOverrideUseCase(
         lastChange: JournalEntry?,
     ): ManualOverride? {
         // Sans journal, aucune décision n'a jamais été appliquée : rien ne
-        // permet d'attribuer l'état constaté à qui que ce soit.
-        if (tunnelState == TunnelState.UNKNOWN || lastChange == null) return null
+        // permet d'attribuer l'état constaté à qui que ce soit. Et une entrée
+        // trop fraîche non plus : le tunnel n'a pas encore eu le temps de
+        // suivre la commande.
+        if (tunnelState == TunnelState.UNKNOWN || lastChange == null || isStillSettling(lastChange)) {
+            return null
+        }
 
         val evaluation =
             engine.evaluate(
@@ -89,5 +102,19 @@ class DetectManualOverrideUseCase(
         } else {
             null
         }
+    }
+
+    private fun isStillSettling(lastChange: JournalEntry): Boolean =
+        clock.nowEpochMillis() - lastChange.epochMillis < CommandSettleGrace.inWholeMilliseconds
+
+    companion object {
+        /**
+         * Délai laissé au client pour exécuter une commande journalisée.
+         *
+         * Largement supérieur aux une à trois secondes constatées sur
+         * appareil : un vrai geste manuel survient bien après, alors qu'un
+         * faux positif s'affichait à chaque transition de réseau.
+         */
+        val CommandSettleGrace: Duration = 10.seconds
     }
 }

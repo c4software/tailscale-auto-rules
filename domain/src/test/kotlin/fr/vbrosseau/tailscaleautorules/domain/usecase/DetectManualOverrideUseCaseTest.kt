@@ -11,6 +11,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,12 +20,18 @@ import kotlin.test.assertNull
 class DetectManualOverrideUseCaseTest {
     private val observer = FakeNetworkObserver()
 
+    // Les entrées de journal des tests datent de l'instant 0 : l'horloge
+    // démarre bien au-delà du délai de grâce pour que ce dernier ne masque pas
+    // ce que chaque test veut constater.
+    private val clock = FakeClock(60_000)
+
     private val detect =
         DetectManualOverrideUseCase(
             networkObserver = observer,
             blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
             settingsRepository = FakeSettingsRepository(),
             engine = RuleEngine(setOf(BlacklistedWifiRule(), MobileNetworkRule())),
+            clock = clock,
         )
 
     private val trustedWifi =
@@ -127,6 +134,23 @@ class DetectManualOverrideUseCaseTest {
             assertEquals(
                 ManualOverride(TunnelState.ENABLED, RuleId("blacklisted-wifi")),
                 detect(TunnelState.ENABLED, applied(TunnelState.DISABLED, "blacklisted-wifi")),
+            )
+        }
+
+    @Test
+    fun aJustIssuedCommandIsNotMistakenForAManualGesture() =
+        runTest {
+            // La commande est journalisée à l'envoi, mais le client met
+            // quelques secondes à l'exécuter : tant que ce délai court, la
+            // divergence est la latence du tunnel, pas un geste.
+            clock.setTo(2_000)
+
+            assertNull(
+                detect(
+                    trustedWifi,
+                    TunnelState.ENABLED,
+                    applied(TunnelState.DISABLED, "blacklisted-wifi"),
+                ),
             )
         }
 

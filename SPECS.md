@@ -122,7 +122,10 @@ précis : la décision courante des règles a déjà été appliquée — le jou
 atteste — et l'état constaté du tunnel la contredit pourtant. Une simple
 divergence ne suffit pas : elle est normale pendant les quelques secondes qui
 séparent un changement de réseau de l'application de la décision, et ne doit
-pas s'afficher comme un geste de l'utilisateur.
+pas s'afficher comme un geste de l'utilisateur. Le journal consignant la
+commande à l'envoi — alors que le client met quelques secondes à l'exécuter —
+une entrée plus jeune que dix secondes n'atteste de rien : sans ce délai de
+grâce, chaque transition affichait fugitivement « Modifié manuellement ».
 
 ---
 

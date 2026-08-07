@@ -32,7 +32,8 @@ class HomeViewModelTest {
 
     private val controller = FakeTailscaleController()
     private val observer = FakeNetworkObserver()
-    private val journal = FakeJournalRepository(FakeClock(1_000))
+    private val clock = FakeClock(1_000)
+    private val journal = FakeJournalRepository(clock)
     private val settings = FakeSettingsRepository()
     private val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
     private val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
@@ -54,6 +55,7 @@ class HomeViewModelTest {
             blacklistRepository = blacklist,
             settingsRepository = settings,
             engine = engine,
+            clock = clock,
         ),
         settingsRepository = settings,
     ).also { keepCollecting(it.uiState) }
@@ -148,6 +150,9 @@ class HomeViewModelTest {
         // puis l'utilisateur l'a rallumé depuis le client officiel. L'accueil
         // doit nommer ce geste au lieu d'attribuer l'état à une règle.
         journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+        // Le geste survient après le délai de grâce : la coupure journalisée a
+        // eu tout le temps de s'exécuter, la divergence ne peut pas être elle.
+        clock.advanceBy(60_000)
         controller.enable()
         observer.emit(
             NetworkContext(NetworkTransport.WIFI, isInternetValidated = true, ssid = "Maison"),
