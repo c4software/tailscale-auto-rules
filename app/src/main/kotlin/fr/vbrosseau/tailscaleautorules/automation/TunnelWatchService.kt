@@ -21,10 +21,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Observe le réseau en continu et synchronise le tunnel à chaque changement.
@@ -115,9 +117,16 @@ class TunnelWatchService : Service() {
      * depuis le client officiel, ou activé à la main sur un réseau de
      * confiance. Aucun changement de réseau physique n'accompagne ces gestes,
      * et la notification resterait sinon figée sur un état périmé.
+     *
+     * Le rafraîchissement attend que l'état se pose : au moment même de
+     * l'événement, le réseau actif est encore en retard sur la bascule, et
+     * l'état relu figerait dans la notification un constat déjà faux — un
+     * « tunnel activé » qui vient pourtant d'être coupé. `collectLatest`
+     * remet l'attente à zéro si le tunnel rebascule entre-temps.
      */
     private suspend fun watchTunnel() {
         controller.observeRunning().collectLatest {
+            delay(TUNNEL_SETTLE_WINDOW)
             runCatching { coordinator.refreshNotificationIfEnabled() }
                 .onFailure { Timber.e(it, "Rafraîchissement de la notification en échec") }
         }
@@ -170,6 +179,9 @@ class TunnelWatchService : Service() {
     }
 
     companion object {
+        /** Laisse la bascule du tunnel se terminer avant de relire son état. */
+        private val TUNNEL_SETTLE_WINDOW = 2.seconds
+
         /** Démarre l'observation continue, sans effet si elle tourne déjà. */
         fun start(context: Context) {
             val intent = Intent(context, TunnelWatchService::class.java)

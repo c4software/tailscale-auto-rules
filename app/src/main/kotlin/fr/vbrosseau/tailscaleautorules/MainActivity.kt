@@ -17,25 +17,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import fr.vbrosseau.tailscaleautorules.automation.AutomationCoordinator
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppDestination
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppNavHost
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppNavigationBar
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.navigateToTopLevel
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var coordinator: AutomationCoordinator
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             AppTheme {
-                AppRoot()
+                AppRoot(onLocationPermissionGranted = ::onLocationPermissionGranted)
             }
         }
+    }
+
+    private fun onLocationPermissionGranted() {
+        lifecycleScope.launch { coordinator.onLocationPermissionGranted() }
     }
 }
 
@@ -47,7 +59,10 @@ class MainActivity : ComponentActivity() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppRoot(modifier: Modifier = Modifier) {
+private fun AppRoot(
+    onLocationPermissionGranted: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -61,10 +76,15 @@ private fun AppRoot(modifier: Modifier = Modifier) {
     ) { }
 
     // La localisation grossière est demandée conjointement : Android refuse la
-    // permission fine seule depuis la version 12.
+    // permission fine seule depuis la version 12. Seule la permission fine
+    // donne accès au SSID : c'est elle, et elle seule, qui vaut octroi.
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
-    ) { }
+    ) { results ->
+        if (results[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            onLocationPermissionGranted()
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

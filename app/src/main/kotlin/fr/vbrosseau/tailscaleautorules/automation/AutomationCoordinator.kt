@@ -76,6 +76,24 @@ class AutomationCoordinator @Inject constructor(
         }
     }
 
+    /**
+     * Redémarre l'observation continue après l'octroi de la localisation.
+     *
+     * Les types du service de premier plan — dont « localisation », qui
+     * conditionne la lecture du SSID en arrière-plan — sont figés à son
+     * démarrage. Un octroi survenu service déjà lancé resterait donc lettre
+     * morte : le SSID demeurerait expurgé et la règle des réseaux de confiance
+     * muette hors de l'écran, jusqu'au prochain redémarrage du service. Le
+     * cycle complet arrêt-démarrage réenregistre au passage l'observation
+     * réseau, dont les capacités mémorisées avaient été livrées expurgées.
+     */
+    suspend fun onLocationPermissionGranted() {
+        if (!settingsRepository.currentAppSettings().isServiceEnabled) return
+
+        trigger.disarm()
+        trigger.arm()
+    }
+
     /** Exécute un cycle et met à jour la notification si elle est visible. */
     suspend fun synchronize(): SynchronizationOutcome {
         val outcome = synchronizeTunnel()

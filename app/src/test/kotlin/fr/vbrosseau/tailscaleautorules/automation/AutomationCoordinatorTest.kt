@@ -189,6 +189,30 @@ class AutomationCoordinatorTest {
     }
 
     @Test
+    fun aFreshLocationGrantRestartsAnEnabledService() = runTest {
+        // Les types du service — dont « localisation », qui conditionne la
+        // lecture du SSID en arrière-plan — sont figés à son démarrage. Sans
+        // redémarrage, un octroi tardif laisserait la règle des réseaux de
+        // confiance muette jusqu'au prochain reboot.
+        coordinator.applySettings(AppSettings(isServiceEnabled = true))
+
+        coordinator.onLocationPermissionGranted()
+
+        assertTrue(trigger.isArmed)
+        assertEquals(2, trigger.armCount, "Un cycle complet arrêt-démarrage a eu lieu.")
+    }
+
+    @Test
+    fun aLocationGrantLeavesADisabledAutomationAlone() = runTest {
+        settings.updateAppSettings { it.copy(isServiceEnabled = false) }
+
+        coordinator.onLocationPermissionGranted()
+
+        assertTrue(!trigger.isArmed)
+        assertEquals(0, trigger.armCount)
+    }
+
+    @Test
     fun reapplyingIdenticalSettingsStaysArmedWithoutPilingUp() = runTest {
         val enabled = AppSettings(isServiceEnabled = true)
 

@@ -39,6 +39,18 @@ voir les réserves de [TASKS.md](./TASKS.md).
   volontairement hors CI — trop coûteuse par Pull Request — donc à la charge de
   l'auteur d'un changement d'interface.
 
+### Corrigé
+
+- **L'octroi de la localisation redémarre l'observation continue.** Les types
+  du service de premier plan — dont « localisation », qui conditionne la
+  lecture du SSID en arrière-plan — sont figés à son démarrage. Accordée
+  service déjà lancé, la permission restait sans effet : le SSID demeurait
+  expurgé et la règle des réseaux de confiance ne s'appliquait plus qu'à
+  l'écran, via le bouton « Synchroniser ».
+- **La notification laisse la bascule du tunnel se terminer** avant de relire
+  son état : lu au moment même de l'événement, le réseau actif était encore en
+  retard et la notification pouvait figer un état déjà faux.
+
 ### Notes de conception
 
 - La notification est optionnelle **parce que** l'application n'emploie pas de
