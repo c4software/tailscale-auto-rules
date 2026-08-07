@@ -3,9 +3,13 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
+import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -30,9 +34,30 @@ class BlacklistViewModelTest {
 
     @Test
     fun theFirstEmissionEndsTheLoadingState() = runTest {
-        // Le dispatcher unconfined a déjà livré la première combinaison : un
-        // état encore « en chargement » signifierait que le drapeau ne retombe pas.
+        // Le dispatcher unconfined a déjà livré la première liste : un état
+        // encore « en chargement » signifierait que le drapeau ne retombe pas.
         assertTrue(!viewModel().uiState.value.isLoading)
+    }
+
+    @Test
+    fun theListDoesNotWaitForTheNetwork() = runTest {
+        // Hors ligne, le flux réseau peut ne jamais émettre — aucun rappel
+        // système n'arrive. La liste, elle, vient de Room : elle s'affiche.
+        repository.add("Maison")
+        val model = BlacklistViewModel(repository, systemStatus, SilentNetworkObserver())
+
+        val state = model.uiState.value
+        assertTrue(!state.isLoading)
+        assertEquals(listOf("Maison"), state.entries.map { it.value })
+        assertNull(state.currentSsid)
+        assertTrue(!state.canAddCurrentSsid)
+    }
+
+    /** Observateur qui n'émet jamais : le cas d'un terminal sans aucun réseau. */
+    private class SilentNetworkObserver : NetworkObserver {
+        override fun observe(): Flow<NetworkContext> = flow { awaitCancellation() }
+
+        override suspend fun current(): NetworkContext = NetworkContext.Disconnected
     }
 
     @Test

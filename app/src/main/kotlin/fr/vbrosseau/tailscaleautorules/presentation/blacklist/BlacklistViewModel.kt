@@ -3,6 +3,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.asSsidKey
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
@@ -11,7 +12,7 @@ import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,30 +27,53 @@ import javax.inject.Inject
 class BlacklistViewModel @Inject constructor(
     private val repository: BlacklistRepository,
     private val systemStatus: SystemStatus,
-    networkObserver: NetworkObserver,
+    private val networkObserver: NetworkObserver,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BlacklistUiState(isLoading = true))
     val uiState: StateFlow<BlacklistUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            combine(
-                repository.observeAll(),
-                networkObserver.observe(),
-            ) { entries, network -> entries to network.ssid }
-                .collect { (entries, ssid) ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        entries = entries,
-                        currentSsid = ssid,
-                        isCurrentSsidAlreadyListed = ssid != null &&
-                            entries.any { it.value.asSsidKey() == ssid.asSsidKey() },
-                    )
-                }
-        }
+        observeSources()
         refreshSystemStatus()
     }
+
+    /**
+     * Deux collectes **indépendantes**, et c'est le cœur de l'écran.
+     *
+     * La liste lève seule l'état de chargement : elle vient de Room, quasi
+     * immédiate. La faire attendre le réseau — stabilisé par une fenêtre de
+     * deux secondes, et muet tant qu'aucun réseau ne correspond — retenait
+     * l'écran entier pour une information qui ne sert qu'à l'ajout rapide.
+     * Le SSID courant arrive donc quand il arrive, sans rien bloquer.
+     */
+    private fun observeSources() {
+        viewModelScope.launch {
+            repository.observeAll().collect { entries ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        entries = entries,
+                        isCurrentSsidAlreadyListed = isListed(entries, it.currentSsid),
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            networkObserver.observe().collect { network ->
+                _uiState.update {
+                    it.copy(
+                        currentSsid = network.ssid,
+                        isCurrentSsidAlreadyListed = isListed(it.entries, network.ssid),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun isListed(entries: List<BlacklistedSsid>, ssid: String?): Boolean =
+        ssid != null && entries.any { it.value.asSsidKey() == ssid.asSsidKey() }
 
     /**
      * Relit l'autorisation de lecture du SSID.
@@ -59,7 +83,7 @@ class BlacklistViewModel @Inject constructor(
      * d'être donnée.
      */
     fun refreshSystemStatus() {
-        _uiState.value = _uiState.value.copy(canReadSsid = systemStatus.canReadSsid())
+        _uiState.update { it.copy(canReadSsid = systemStatus.canReadSsid()) }
     }
 
     fun add(ssid: String) {
@@ -81,12 +105,13 @@ class BlacklistViewModel @Inject constructor(
     }
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
     private fun submit(action: suspend () -> Result<Unit>) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(error = action().toError())
+            val error = action().toError()
+            _uiState.update { it.copy(error = error) }
         }
     }
 
