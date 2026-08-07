@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 
@@ -36,6 +37,11 @@ fun SettingsScreen(
     onOpenBatterySettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (uiState.isLoading) {
+        LoadingIndicator(modifier = modifier)
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()

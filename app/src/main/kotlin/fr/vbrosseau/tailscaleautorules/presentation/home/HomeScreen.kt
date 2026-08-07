@@ -24,6 +24,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.labelRes
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
@@ -41,6 +42,11 @@ fun HomeScreen(
     onSynchronize: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (uiState.isLoading) {
+        LoadingIndicator(modifier = modifier)
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -80,25 +86,37 @@ fun HomeScreen(
             secondary = uiState.lastChange?.let { stringResource(it.ruleId.labelRes()) },
         )
 
-        Button(
-            onClick = onSynchronize,
-            enabled = !uiState.isSynchronizing,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(HomeTestTags.SYNCHRONIZE),
-        ) {
-            if (uiState.isSynchronizing) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(Spacing.md),
-                    strokeWidth = 2.dp,
-                )
-                Text(
-                    text = stringResource(R.string.home_synchronizing),
-                    modifier = Modifier.padding(start = Spacing.sm),
-                )
-            } else {
-                Text(stringResource(R.string.home_synchronize))
-            }
+        SynchronizeButton(
+            isSynchronizing = uiState.isSynchronizing,
+            onSynchronize = onSynchronize,
+        )
+    }
+}
+
+@Composable
+private fun SynchronizeButton(
+    isSynchronizing: Boolean,
+    onSynchronize: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Button(
+        onClick = onSynchronize,
+        enabled = !isSynchronizing,
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(HomeTestTags.SYNCHRONIZE),
+    ) {
+        if (isSynchronizing) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(Spacing.md),
+                strokeWidth = 2.dp,
+            )
+            Text(
+                text = stringResource(R.string.home_synchronizing),
+                modifier = Modifier.padding(start = Spacing.sm),
+            )
+        } else {
+            Text(stringResource(R.string.home_synchronize))
         }
     }
 }

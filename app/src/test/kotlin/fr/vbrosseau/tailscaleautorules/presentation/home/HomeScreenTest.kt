@@ -11,6 +11,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -135,5 +136,16 @@ class HomeScreenTest {
         show(HomeUiState(isTailscaleInstalled = true))
 
         composeRule.onNodeWithTag(HomeTestTags.TAILSCALE_MISSING).assertDoesNotExist()
+    }
+
+    @Test
+    fun whileLoadingOnlyTheIndicatorIsShown() {
+        // Les valeurs par défaut — tunnel indéterminé, aucun réseau — se
+        // liraient comme des données : elles ne doivent pas apparaître.
+        show(HomeUiState(isLoading = true))
+
+        composeRule.onNodeWithTag(LoadingTestTags.INDICATOR).assertIsDisplayed()
+        composeRule.onNodeWithTag(HomeTestTags.TUNNEL_STATE).assertDoesNotExist()
+        composeRule.onNodeWithTag(HomeTestTags.SYNCHRONIZE).assertDoesNotExist()
     }
 }

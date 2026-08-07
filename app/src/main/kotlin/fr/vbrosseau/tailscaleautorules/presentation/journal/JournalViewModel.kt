@@ -14,6 +14,7 @@ import javax.inject.Inject
 /** État de l'écran du journal. */
 data class JournalUiState(
     val entries: List<JournalEntry> = emptyList(),
+    val isLoading: Boolean = false,
 ) {
     val isEmpty: Boolean get() = entries.isEmpty()
 }
@@ -30,13 +31,13 @@ class JournalViewModel @Inject constructor(
     private val repository: JournalRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(JournalUiState())
+    private val _uiState = MutableStateFlow(JournalUiState(isLoading = true))
     val uiState: StateFlow<JournalUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             repository.observeRecent().collect { entries ->
-                _uiState.value = JournalUiState(entries)
+                _uiState.value = JournalUiState(entries = entries)
             }
         }
     }

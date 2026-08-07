@@ -29,7 +29,7 @@ class BlacklistViewModel @Inject constructor(
     networkObserver: NetworkObserver,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BlacklistUiState())
+    private val _uiState = MutableStateFlow(BlacklistUiState(isLoading = true))
     val uiState: StateFlow<BlacklistUiState> = _uiState.asStateFlow()
 
     init {
@@ -40,6 +40,7 @@ class BlacklistViewModel @Inject constructor(
             ) { entries, network -> entries to network.ssid }
                 .collect { (entries, ssid) ->
                     _uiState.value = _uiState.value.copy(
+                        isLoading = false,
                         entries = entries,
                         currentSsid = ssid,
                         isCurrentSsidAlreadyListed = ssid != null &&

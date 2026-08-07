@@ -15,6 +15,7 @@ data class BlacklistUiState(
     val isCurrentSsidAlreadyListed: Boolean = false,
     val canReadSsid: Boolean = true,
     val error: BlacklistError? = null,
+    val isLoading: Boolean = false,
 ) {
     val canAddCurrentSsid: Boolean
         get() = currentSsid != null && !isCurrentSsidAlreadyListed

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -176,5 +177,16 @@ class BlacklistScreenTest {
         show(BlacklistUiState(canReadSsid = true))
 
         composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_RATIONALE).assertDoesNotExist()
+    }
+
+    @Test
+    fun whileLoadingOnlyTheIndicatorIsShown() {
+        // Sans ce garde-fou, la liste encore vide s'afficherait comme « aucun
+        // réseau de confiance » le temps de la première lecture de Room.
+        show(BlacklistUiState(isLoading = true))
+
+        composeRule.onNodeWithTag(LoadingTestTags.INDICATOR).assertIsDisplayed()
+        composeRule.onNodeWithTag(BlacklistTestTags.EMPTY).assertDoesNotExist()
+        composeRule.onNodeWithTag(BlacklistTestTags.ADD).assertDoesNotExist()
     }
 }

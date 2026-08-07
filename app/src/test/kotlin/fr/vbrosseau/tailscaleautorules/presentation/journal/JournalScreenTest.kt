@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -129,5 +130,15 @@ class JournalScreenTest {
         composeRule.onNodeWithTag(JournalTestTags.CLEAR_CONFIRM).performClick()
 
         composeRule.onNodeWithTag(JournalTestTags.CLEAR_CONFIRM).assertDoesNotExist()
+    }
+
+    @Test
+    fun whileLoadingOnlyTheIndicatorIsShown() {
+        // « Aucun changement pour l'instant » est une information ; l'afficher
+        // avant la première lecture de Room en ferait un mensonge d'un instant.
+        show(JournalUiState(isLoading = true))
+
+        composeRule.onNodeWithTag(LoadingTestTags.INDICATOR).assertIsDisplayed()
+        composeRule.onNodeWithTag(JournalTestTags.EMPTY).assertDoesNotExist()
     }
 }

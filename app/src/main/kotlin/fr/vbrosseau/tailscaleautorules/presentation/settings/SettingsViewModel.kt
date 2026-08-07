@@ -25,6 +25,7 @@ data class SettingsUiState(
     val canNotify: Boolean = true,
     val isIgnoringBatteryOptimizations: Boolean = true,
     val versionName: String = "",
+    val isLoading: Boolean = false,
 ) {
     /**
      * L'automatisation est active, mais la permission de notification manque.
@@ -50,13 +51,17 @@ class SettingsViewModel @Inject constructor(
     private val notificationRefresher: NotificationRefresher,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _uiState = MutableStateFlow(SettingsUiState(isLoading = true))
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             repository.observeAppSettings().collect { settings ->
-                _uiState.update { it.copy(settings = settings) }
+                // Les valeurs par défaut d'`AppSettings` sont indiscernables de
+                // réglages réels : sans attendre cette première lecture, chaque
+                // interrupteur s'afficherait en position d'usine avant de sauter
+                // sur sa vraie valeur.
+                _uiState.update { it.copy(isLoading = false, settings = settings) }
             }
         }
         refreshSystemStatus()

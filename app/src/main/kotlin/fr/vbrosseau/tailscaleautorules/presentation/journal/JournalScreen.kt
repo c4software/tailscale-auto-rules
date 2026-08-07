@@ -28,6 +28,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.labelRes
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
@@ -49,6 +50,11 @@ fun JournalScreen(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ) {
+    if (uiState.isLoading) {
+        LoadingIndicator(modifier = modifier)
+        return
+    }
+
     var confirmingClear by remember { mutableStateOf(false) }
 
     Column(
@@ -89,29 +95,40 @@ fun JournalScreen(
     }
 
     if (confirmingClear) {
-        // L'effacement est irréversible : il se confirme.
-        AlertDialog(
-            onDismissRequest = { confirmingClear = false },
-            title = { Text(stringResource(R.string.journal_clear_confirm_title)) },
-            text = { Text(stringResource(R.string.journal_clear_confirm_body)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onClear()
-                        confirmingClear = false
-                    },
-                    modifier = Modifier.testTag(JournalTestTags.CLEAR_CONFIRM),
-                ) {
-                    Text(stringResource(R.string.journal_clear_confirm))
-                }
+        ClearConfirmationDialog(
+            onConfirm = {
+                onClear()
+                confirmingClear = false
             },
-            dismissButton = {
-                TextButton(onClick = { confirmingClear = false }) {
-                    Text(stringResource(R.string.journal_cancel))
-                }
-            },
+            onDismiss = { confirmingClear = false },
         )
     }
+}
+
+/** L'effacement est irréversible : il se confirme. */
+@Composable
+private fun ClearConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.journal_clear_confirm_title)) },
+        text = { Text(stringResource(R.string.journal_clear_confirm_body)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(JournalTestTags.CLEAR_CONFIRM),
+            ) {
+                Text(stringResource(R.string.journal_clear_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.journal_cancel))
+            }
+        },
+    )
 }
 
 @Composable

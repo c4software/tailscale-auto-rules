@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 
@@ -49,6 +50,11 @@ fun BlacklistScreen(
     modifier: Modifier = Modifier,
     onRequestLocationPermission: () -> Unit = {},
 ) {
+    if (uiState.isLoading) {
+        LoadingIndicator(modifier = modifier)
+        return
+    }
+
     var editing by remember { mutableStateOf<EditingState?>(null) }
 
     Column(

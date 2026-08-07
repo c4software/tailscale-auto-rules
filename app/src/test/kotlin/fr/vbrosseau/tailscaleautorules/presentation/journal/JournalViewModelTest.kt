@@ -29,6 +29,13 @@ class JournalViewModelTest {
     }
 
     @Test
+    fun theFirstEmissionEndsTheLoadingState() = runTest {
+        // Le dispatcher unconfined a déjà livré la première liste : un état
+        // encore « en chargement » signifierait que le drapeau ne retombe pas.
+        assertTrue(!viewModel().uiState.value.isLoading)
+    }
+
+    @Test
     fun entriesArriveMostRecentFirst() = runTest {
         val model = viewModel()
 

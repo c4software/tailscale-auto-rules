@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -165,5 +166,16 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag(SettingsTestTags.VERSION)
             .performScrollTo()
             .assertTextEquals("Version 1.2.3")
+    }
+
+    @Test
+    fun whileLoadingOnlyTheIndicatorIsShown() {
+        // Les valeurs d'usine d'`AppSettings` sont indiscernables de réglages
+        // réels : afficher les interrupteurs avant la première lecture de
+        // DataStore les ferait sauter sous les yeux de l'utilisateur.
+        show(SettingsUiState(isLoading = true))
+
+        composeRule.onNodeWithTag(LoadingTestTags.INDICATOR).assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsTestTags.SERVICE).assertDoesNotExist()
     }
 }

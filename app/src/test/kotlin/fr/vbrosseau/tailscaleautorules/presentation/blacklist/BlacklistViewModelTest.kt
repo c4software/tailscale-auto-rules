@@ -29,6 +29,13 @@ class BlacklistViewModelTest {
     )
 
     @Test
+    fun theFirstEmissionEndsTheLoadingState() = runTest {
+        // Le dispatcher unconfined a déjà livré la première combinaison : un
+        // état encore « en chargement » signifierait que le drapeau ne retombe pas.
+        assertTrue(!viewModel().uiState.value.isLoading)
+    }
+
+    @Test
     fun theListFollowsTheRepository() = runTest {
         val model = viewModel()
 

@@ -56,6 +56,7 @@ class HomeViewModelTest {
         assertEquals(TunnelState.DISABLED, state.tunnelState)
         assertNull(state.ssid)
         assertNull(state.lastChange)
+        assertTrue(!state.isLoading, "Le premier constat complet met fin au chargement.")
     }
 
     @Test

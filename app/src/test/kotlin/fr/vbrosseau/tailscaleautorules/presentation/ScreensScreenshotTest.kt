@@ -168,6 +168,19 @@ class ScreensScreenshotTest : ScreenshotTest() {
     }
 
     @Test
+    fun journalEnChargement() = capture("journal-chargement") {
+        // L'indicateur de chargement est commun aux quatre écrans : une seule
+        // référence suffit, prise ici parce que le journal est l'écran où
+        // l'état vide et l'état « pas encore lu » se confondent le plus.
+        JournalScreen(
+            uiState = JournalUiState(isLoading = true),
+            onClear = {},
+            zoneId = paris,
+            locale = Locale.FRANCE,
+        )
+    }
+
+    @Test
     fun journalVide() = capture("journal-vide") {
         JournalScreen(
             uiState = JournalUiState(),

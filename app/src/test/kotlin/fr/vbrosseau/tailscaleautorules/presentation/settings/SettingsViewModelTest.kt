@@ -41,6 +41,13 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun theFirstEmissionEndsTheLoadingState() = runTest {
+        // Le dispatcher unconfined a déjà livré les réglages : un état encore
+        // « en chargement » signifierait que le drapeau ne retombe pas.
+        assertTrue(!viewModel().uiState.value.isLoading)
+    }
+
+    @Test
     fun eachToggleAffectsOnlyItsOwnPreference() = runTest {
         val model = viewModel()
 

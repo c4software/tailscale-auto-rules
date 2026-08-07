@@ -8,9 +8,15 @@ import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,13 +37,11 @@ class HomeViewModel @Inject constructor(
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeUiState())
+    private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        observeNetwork()
-        observeJournal()
-        observeTunnel()
+        observeEverything()
     }
 
     /**
@@ -54,17 +58,42 @@ class HomeViewModel @Inject constructor(
             synchronizeTunnel()
             // L'état affiché n'est pas relu ici : la commande est asynchrone et
             // la relecture arriverait avant que le tunnel ait bougé.
-            // `observeTunnel` le mettra à jour dès que le changement aura eu
+            // `observeEverything` le mettra à jour dès que le changement aura eu
             // lieu — ou ne le mettra pas à jour s'il n'a pas lieu, ce qui est
             // précisément l'information utile.
             _uiState.update { it.copy(isSynchronizing = false) }
         }
     }
 
-    private fun observeNetwork() {
+    /**
+     * Les trois sources sont **combinées** : rien ne s'affiche tant que chacune
+     * n'a pas livré un premier constat. Collectées séparément, elles rempliraient
+     * l'écran morceau par morceau — tunnel inconnu, puis réseau, puis journal —
+     * et chaque valeur par défaut passerait à l'écran pour une donnée.
+     */
+    private fun observeEverything() {
         viewModelScope.launch {
-            networkObserver.observe().collect { context ->
-                _uiState.update { it.copy(transport = context.transport, ssid = context.ssid) }
+            combine(
+                // Le flux stabilisé n'émet qu'après sa fenêtre de debounce : à
+                // l'ouverture de l'écran, cette attente serait un écran vide.
+                // Un premier constat immédiat la couvre ; la stabilisation
+                // reprend ses droits pour les transitions suivantes.
+                networkObserver.observe().onStart { emit(networkObserver.current()) },
+                tunnelSnapshots(),
+                journalRepository.observeRecent(),
+            ) { network, tunnel, entries ->
+                Triple(network, tunnel, entries)
+            }.collect { (network, tunnel, entries) ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        transport = network.transport,
+                        ssid = network.ssid,
+                        isTailscaleInstalled = tunnel.isInstalled,
+                        tunnelState = tunnel.state,
+                        lastChange = entries.firstOrNull(),
+                    )
+                }
             }
         }
     }
@@ -76,32 +105,22 @@ class HomeViewModel @Inject constructor(
      * rapides, sans que l'application y soit pour rien. L'observer est le seul
      * moyen d'afficher un état constaté plutôt que supposé.
      */
-    private fun observeTunnel() {
-        viewModelScope.launch {
-            val isInstalled = controller.isAvailable()
-            _uiState.update { it.copy(isTailscaleInstalled = isInstalled) }
-
-            if (!isInstalled) {
-                _uiState.update { it.copy(tunnelState = TunnelState.UNKNOWN) }
-                return@launch
-            }
-
-            controller.observeRunning().collect { isRunning ->
-                _uiState.update {
-                    it.copy(
-                        tunnelState = if (isRunning) TunnelState.ENABLED else TunnelState.DISABLED,
-                    )
-                }
-            }
+    private fun tunnelSnapshots(): Flow<TunnelSnapshot> = flow {
+        if (!controller.isAvailable()) {
+            emit(TunnelSnapshot(isInstalled = false, state = TunnelState.UNKNOWN))
+            return@flow
         }
+
+        emitAll(
+            controller.observeRunning().map { isRunning ->
+                TunnelSnapshot(
+                    isInstalled = true,
+                    state = if (isRunning) TunnelState.ENABLED else TunnelState.DISABLED,
+                )
+            },
+        )
     }
 
-    private fun observeJournal() {
-        viewModelScope.launch {
-            journalRepository.observeRecent().collect { entries ->
-                _uiState.update { it.copy(lastChange = entries.firstOrNull()) }
-            }
-        }
-    }
-
+    /** Ce que le client Tailscale laisse constater : présent, et actif ou non. */
+    private data class TunnelSnapshot(val isInstalled: Boolean, val state: TunnelState)
 }
