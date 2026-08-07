@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/icon.png" width="128" alt="Icône de l'application : un éclair sur une grille de points" />
+</p>
+
 # Tailscale Auto Rules
 
 **Active ou désactive votre tunnel Tailscale automatiquement, selon vos
