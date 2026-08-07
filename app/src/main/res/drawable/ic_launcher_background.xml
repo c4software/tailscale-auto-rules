@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Le bleu de la palette de repli (`Blue40`), fond uni de l'icône adaptative. -->
+<!-- Fond noir uni de l'icône adaptative ; les points et l'éclair blancs s'y détachent. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
   android:width="108dp"
   android:height="108dp"
   android:viewportWidth="108"
   android:viewportHeight="108">
   <path
-    android:fillColor="#FF3A5BC7"
+    android:fillColor="#FF000000"
     android:pathData="M0,0h108v108h-108z" />
 </vector>
