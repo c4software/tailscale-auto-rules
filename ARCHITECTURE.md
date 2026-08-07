@@ -347,7 +347,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 14 complètes. 273 tests, 0 échec.
+Étapes 1 à 14 complètes. 275 tests, 0 échec.
 
 ```
 .
@@ -388,7 +388,7 @@ est une mesure, pas un objectif.
 │       │   │       └── journal/         écran + ViewModel + UiState + mise en forme
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          174 tests (Robolectric, DataStore, ViewModels, Compose)
+│       └── test/…/          176 tests (Robolectric, DataStore, ViewModels, Compose)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
