@@ -35,5 +35,5 @@
   <!-- L'éclair, plein, au premier plan. -->
   <path
     android:fillColor="#FFFFFFFF"
-    android:pathData="M 60,24 L 42,56 H 52 L 46,84 L 68,50 H 57 Z" />
+    android:pathData="M 59.1,28.5 L 43.8,55.7 H 52.3 L 47.2,79.5 L 65.9,50.6 H 56.6 Z" />
 </vector>
