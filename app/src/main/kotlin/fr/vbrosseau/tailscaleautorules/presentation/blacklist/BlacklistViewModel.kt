@@ -3,16 +3,18 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.asSsidKey
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
 import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
+import fr.vbrosseau.tailscaleautorules.presentation.UiStateSharing
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,53 +29,41 @@ import javax.inject.Inject
 class BlacklistViewModel @Inject constructor(
     private val repository: BlacklistRepository,
     private val systemStatus: SystemStatus,
-    private val networkObserver: NetworkObserver,
+    networkObserver: NetworkObserver,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BlacklistUiState(isLoading = true))
-    val uiState: StateFlow<BlacklistUiState> = _uiState.asStateFlow()
-
-    init {
-        observeSources()
-        refreshSystemStatus()
-    }
+    private val error = MutableStateFlow<BlacklistError?>(null)
+    private val canReadSsid = MutableStateFlow(systemStatus.canReadSsid())
 
     /**
-     * Deux collectes **indépendantes**, et c'est le cœur de l'écran.
-     *
-     * La liste lève seule l'état de chargement : elle vient de Room, quasi
-     * immédiate. La faire attendre le réseau — stabilisé par une fenêtre de
-     * deux secondes, et muet tant qu'aucun réseau ne correspond — retenait
-     * l'écran entier pour une information qui ne sert qu'à l'ajout rapide.
-     * Le SSID courant arrive donc quand il arrive, sans rien bloquer.
+     * Le SSID courant n'enrichit que l'ajout rapide : il démarre à « inconnu »
+     * pour que la liste ne l'attende jamais. Le flux réseau est stabilisé par
+     * une fenêtre de deux secondes et reste muet tant qu'aucun réseau ne
+     * correspond — en faire une condition d'affichage retenait l'écran entier.
      */
-    private fun observeSources() {
-        viewModelScope.launch {
-            repository.observeAll().collect { entries ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        entries = entries,
-                        isCurrentSsidAlreadyListed = isListed(entries, it.currentSsid),
-                    )
-                }
-            }
-        }
+    private val currentSsid = networkObserver.observe()
+        .map { it.ssid }
+        .onStart { emit(null) }
 
-        viewModelScope.launch {
-            networkObserver.observe().collect { network ->
-                _uiState.update {
-                    it.copy(
-                        currentSsid = network.ssid,
-                        isCurrentSsidAlreadyListed = isListed(it.entries, network.ssid),
-                    )
-                }
-            }
-        }
-    }
-
-    private fun isListed(entries: List<BlacklistedSsid>, ssid: String?): Boolean =
-        ssid != null && entries.any { it.value.asSsidKey() == ssid.asSsidKey() }
+    /**
+     * Publié en `WhileSubscribed` : l'observation du réseau ne vit que
+     * lorsqu'un écran regarde.
+     */
+    val uiState: StateFlow<BlacklistUiState> = combine(
+        repository.observeAll(),
+        currentSsid,
+        canReadSsid,
+        error,
+    ) { entries, ssid, canRead, currentError ->
+        BlacklistUiState(
+            entries = entries,
+            currentSsid = ssid,
+            isCurrentSsidAlreadyListed = ssid != null &&
+                entries.any { it.value.asSsidKey() == ssid.asSsidKey() },
+            canReadSsid = canRead,
+            error = currentError,
+        )
+    }.stateIn(viewModelScope, UiStateSharing, BlacklistUiState(isLoading = true))
 
     /**
      * Relit l'autorisation de lecture du SSID.
@@ -83,7 +73,7 @@ class BlacklistViewModel @Inject constructor(
      * d'être donnée.
      */
     fun refreshSystemStatus() {
-        _uiState.update { it.copy(canReadSsid = systemStatus.canReadSsid()) }
+        canReadSsid.value = systemStatus.canReadSsid()
     }
 
     fun add(ssid: String) {
@@ -92,7 +82,7 @@ class BlacklistViewModel @Inject constructor(
 
     /** Ajoute le réseau auquel le terminal est connecté. */
     fun addCurrentSsid() {
-        val ssid = _uiState.value.currentSsid ?: return
+        val ssid = uiState.value.currentSsid ?: return
         add(ssid)
     }
 
@@ -105,13 +95,12 @@ class BlacklistViewModel @Inject constructor(
     }
 
     fun dismissError() {
-        _uiState.update { it.copy(error = null) }
+        error.value = null
     }
 
     private fun submit(action: suspend () -> Result<Unit>) {
         viewModelScope.launch {
-            val error = action().toError()
-            _uiState.update { it.copy(error = error) }
+            error.value = action().toError()
         }
     }
 

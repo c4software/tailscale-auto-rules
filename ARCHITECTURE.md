@@ -258,6 +258,10 @@ Le temps est abstrait derrière une interface `Clock` du domaine. Aucun appel à
 MVVM strict :
 
 - Le ViewModel expose **un** `StateFlow<XxxUiState>` et rien d'autre.
+- Cet état est publié via `stateIn(viewModelScope, WhileSubscribed(5 s), …)`
+  (`UiStateSharing`) : les observations — rappels réseau, lecture continue de
+  Room — ne vivent que lorsqu'un écran collecte, et le délai de grâce couvre
+  une rotation sans tout réenregistrer.
 - `UiState` est immuable et **complètement** descriptif de l'écran : un
   Composable ne calcule jamais.
 - Le ViewModel **traduit** ; il ne décide pas. Toute logique métier vit dans un

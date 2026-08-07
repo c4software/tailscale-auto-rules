@@ -5,6 +5,8 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
+import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -18,7 +20,9 @@ class JournalViewModelTest {
 
     private val clock = FakeClock(1_000)
     private val repository = FakeJournalRepository(clock)
-    private fun viewModel() = JournalViewModel(repository)
+
+    private fun TestScope.viewModel() = JournalViewModel(repository)
+        .also { keepCollecting(it.uiState) }
 
     @Test
     fun anEmptyJournalIsReportedAsSuch() = runTest {
@@ -26,6 +30,18 @@ class JournalViewModelTest {
 
         assertTrue(state.isEmpty)
         assertTrue(state.entries.isEmpty())
+    }
+
+    @Test
+    fun nothingIsObservedWithoutASubscriber() = runTest {
+        // `WhileSubscribed` : sans écran abonné, la lecture de Room ne démarre
+        // pas — c'est elle qu'on économise — et l'état reste celui d'origine.
+        val model = JournalViewModel(repository)
+
+        repository.record(TunnelState.DISABLED, TunnelState.ENABLED, RuleId("mobile-network"))
+
+        assertTrue(model.uiState.value.isLoading)
+        assertTrue(model.uiState.value.entries.isEmpty())
     }
 
     @Test

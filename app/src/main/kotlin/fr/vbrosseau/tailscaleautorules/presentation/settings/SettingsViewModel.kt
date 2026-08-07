@@ -7,10 +7,11 @@ import fr.vbrosseau.tailscaleautorules.automation.NotificationRefresher
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
+import fr.vbrosseau.tailscaleautorules.presentation.UiStateSharing
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -51,19 +52,27 @@ class SettingsViewModel @Inject constructor(
     private val notificationRefresher: NotificationRefresher,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState(isLoading = true))
-    val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+    private val systemState = MutableStateFlow(SystemState())
+
+    /**
+     * Les valeurs d'usine d'`AppSettings` sont indiscernables de réglages
+     * réels : l'état attend la première lecture de DataStore, sans quoi chaque
+     * interrupteur s'afficherait en position d'usine avant de sauter sur sa
+     * vraie valeur.
+     */
+    val uiState: StateFlow<SettingsUiState> = combine(
+        repository.observeAppSettings(),
+        systemState,
+    ) { settings, system ->
+        SettingsUiState(
+            settings = settings,
+            canNotify = system.canNotify,
+            isIgnoringBatteryOptimizations = system.isIgnoringBatteryOptimizations,
+            versionName = system.versionName,
+        )
+    }.stateIn(viewModelScope, UiStateSharing, SettingsUiState(isLoading = true))
 
     init {
-        viewModelScope.launch {
-            repository.observeAppSettings().collect { settings ->
-                // Les valeurs par défaut d'`AppSettings` sont indiscernables de
-                // réglages réels : sans attendre cette première lecture, chaque
-                // interrupteur s'afficherait en position d'usine avant de sauter
-                // sur sa vraie valeur.
-                _uiState.update { it.copy(isLoading = false, settings = settings) }
-            }
-        }
         refreshSystemStatus()
     }
 
@@ -75,13 +84,11 @@ class SettingsViewModel @Inject constructor(
      * de quoi l'interface afficherait durablement un état périmé.
      */
     fun refreshSystemStatus() {
-        _uiState.update {
-            it.copy(
-                canNotify = systemStatus.canNotify(),
-                isIgnoringBatteryOptimizations = systemStatus.isIgnoringBatteryOptimizations(),
-                versionName = systemStatus.versionName,
-            )
-        }
+        systemState.value = SystemState(
+            canNotify = systemStatus.canNotify(),
+            isIgnoringBatteryOptimizations = systemStatus.isIgnoringBatteryOptimizations(),
+            versionName = systemStatus.versionName,
+        )
 
         // L'utilisateur peut avoir accordé la permission depuis les réglages
         // système : sans ce rappel, la notification ne serait publiée qu'à la
@@ -101,4 +108,11 @@ class SettingsViewModel @Inject constructor(
     private fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch { repository.updateAppSettings(transform) }
     }
+
+    /** Ce que seule la plateforme sait, reconstaté à chaque reprise d'écran. */
+    private data class SystemState(
+        val canNotify: Boolean = true,
+        val isIgnoringBatteryOptimizations: Boolean = true,
+        val versionName: String = "",
+    )
 }

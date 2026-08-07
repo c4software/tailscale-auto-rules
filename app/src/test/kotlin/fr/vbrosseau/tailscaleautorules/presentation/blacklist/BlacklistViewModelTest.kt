@@ -7,9 +7,11 @@ import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
+import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +28,8 @@ class BlacklistViewModelTest {
     private val observer = FakeNetworkObserver()
     private val systemStatus = FakeSystemStatus()
 
-    private fun viewModel() = BlacklistViewModel(repository, systemStatus, observer)
+    private fun TestScope.viewModel() = BlacklistViewModel(repository, systemStatus, observer)
+        .also { keepCollecting(it.uiState) }
 
     private fun onWifi(ssid: String?) = observer.emit(
         NetworkContext(NetworkTransport.WIFI, isInternetValidated = true, ssid = ssid),
@@ -45,6 +48,7 @@ class BlacklistViewModelTest {
         // système n'arrive. La liste, elle, vient de Room : elle s'affiche.
         repository.add("Maison")
         val model = BlacklistViewModel(repository, systemStatus, SilentNetworkObserver())
+        keepCollecting(model.uiState)
 
         val state = model.uiState.value
         assertTrue(!state.isLoading)

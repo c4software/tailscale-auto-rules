@@ -5,9 +5,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import fr.vbrosseau.tailscaleautorules.presentation.UiStateSharing
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,16 +32,9 @@ class JournalViewModel @Inject constructor(
     private val repository: JournalRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(JournalUiState(isLoading = true))
-    val uiState: StateFlow<JournalUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            repository.observeRecent().collect { entries ->
-                _uiState.value = JournalUiState(entries = entries)
-            }
-        }
-    }
+    val uiState: StateFlow<JournalUiState> = repository.observeRecent()
+        .map { entries -> JournalUiState(entries = entries) }
+        .stateIn(viewModelScope, UiStateSharing, JournalUiState(isLoading = true))
 
     fun clear() {
         viewModelScope.launch { repository.clear() }

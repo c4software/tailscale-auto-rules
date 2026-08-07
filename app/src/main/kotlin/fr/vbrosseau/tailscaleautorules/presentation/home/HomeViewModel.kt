@@ -3,25 +3,22 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
+import fr.vbrosseau.tailscaleautorules.presentation.UiStateSharing
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,19 +32,46 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val networkObserver: NetworkObserver,
-    private val journalRepository: JournalRepository,
+    networkObserver: NetworkObserver,
+    journalRepository: JournalRepository,
     private val controller: TailscaleController,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val isSynchronizing = MutableStateFlow(false)
 
-    init {
-        observeEverything()
-    }
+    /**
+     * Les sources sont **combinées** : rien ne s'affiche tant que chacune n'a
+     * pas livré un premier constat. Collectées séparément, elles rempliraient
+     * l'écran morceau par morceau — tunnel inconnu, puis réseau, puis journal —
+     * et chaque valeur par défaut passerait à l'écran pour une donnée.
+     *
+     * Publié en `WhileSubscribed` : les rappels système — réseau et VPN — ne
+     * restent pas enregistrés quand aucun écran ne regarde, et chaque retour à
+     * l'écran repart d'un constat frais.
+     */
+    val uiState: StateFlow<HomeUiState> = combine(
+        // Le flux stabilisé n'émet qu'après sa fenêtre de debounce : à
+        // l'ouverture de l'écran, cette attente serait un écran vide. Un
+        // premier constat immédiat la couvre ; la stabilisation reprend ses
+        // droits pour les transitions suivantes.
+        networkObserver.observe().onStart { emit(networkObserver.current()) },
+        tunnelSnapshots(),
+        journalRepository.observeRecent(),
+        settingsRepository.observeAppSettings(),
+        isSynchronizing,
+    ) { network, tunnel, entries, settings, synchronizing ->
+        HomeUiState(
+            tunnelState = tunnel.state,
+            transport = network.transport,
+            ssid = network.ssid,
+            isTailscaleInstalled = tunnel.isInstalled,
+            isSynchronizing = synchronizing,
+            lastChange = entries.firstOrNull(),
+            isAutomationEnabled = settings.isServiceEnabled,
+        )
+    }.stateIn(viewModelScope, UiStateSharing, HomeUiState(isLoading = true))
 
     /**
      * Synchronisation manuelle.
@@ -56,17 +80,17 @@ class HomeViewModel @Inject constructor(
      * sans attendre le debounce — c'est ce que l'utilisateur attend d'un bouton.
      */
     fun synchronize() {
-        if (_uiState.value.isSynchronizing) return
+        if (isSynchronizing.value) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSynchronizing = true) }
+            isSynchronizing.value = true
             synchronizeTunnel()
             // L'état affiché n'est pas relu ici : la commande est asynchrone et
-            // la relecture arriverait avant que le tunnel ait bougé.
-            // `observeEverything` le mettra à jour dès que le changement aura eu
-            // lieu — ou ne le mettra pas à jour s'il n'a pas lieu, ce qui est
-            // précisément l'information utile.
-            _uiState.update { it.copy(isSynchronizing = false) }
+            // la relecture arriverait avant que le tunnel ait bougé. Le flux
+            // combiné le mettra à jour dès que le changement aura eu lieu — ou
+            // ne le mettra pas à jour s'il n'a pas lieu, ce qui est précisément
+            // l'information utile.
+            isSynchronizing.value = false
         }
     }
 
@@ -75,46 +99,12 @@ class HomeViewModel @Inject constructor(
      *
      * Comme l'action de la notification, elle ne fait que basculer la
      * préférence : l'observation des réglages tenue par l'application arrête le
-     * service et retire la notification, et `observeEverything` reflète le
-     * nouvel état.
+     * service et retire la notification, et le flux combiné reflète le nouvel
+     * état.
      */
     fun disableAutomation() {
         viewModelScope.launch {
             settingsRepository.updateAppSettings { it.copy(isServiceEnabled = false) }
-        }
-    }
-
-    /**
-     * Les sources sont **combinées** : rien ne s'affiche tant que chacune n'a
-     * pas livré un premier constat. Collectées séparément, elles rempliraient
-     * l'écran morceau par morceau — tunnel inconnu, puis réseau, puis journal —
-     * et chaque valeur par défaut passerait à l'écran pour une donnée.
-     */
-    private fun observeEverything() {
-        viewModelScope.launch {
-            combine(
-                // Le flux stabilisé n'émet qu'après sa fenêtre de debounce : à
-                // l'ouverture de l'écran, cette attente serait un écran vide.
-                // Un premier constat immédiat la couvre ; la stabilisation
-                // reprend ses droits pour les transitions suivantes.
-                networkObserver.observe().onStart { emit(networkObserver.current()) },
-                tunnelSnapshots(),
-                journalRepository.observeRecent(),
-                settingsRepository.observeAppSettings(),
-                ::Observation,
-            ).collect { observed ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        transport = observed.network.transport,
-                        ssid = observed.network.ssid,
-                        isTailscaleInstalled = observed.tunnel.isInstalled,
-                        tunnelState = observed.tunnel.state,
-                        lastChange = observed.entries.firstOrNull(),
-                        isAutomationEnabled = observed.settings.isServiceEnabled,
-                    )
-                }
-            }
         }
     }
 
@@ -143,12 +133,4 @@ class HomeViewModel @Inject constructor(
 
     /** Ce que le client Tailscale laisse constater : présent, et actif ou non. */
     private data class TunnelSnapshot(val isInstalled: Boolean, val state: TunnelState)
-
-    /** Premier constat complet, tel que `combine` le livre. */
-    private data class Observation(
-        val network: NetworkContext,
-        val tunnel: TunnelSnapshot,
-        val entries: List<JournalEntry>,
-        val settings: AppSettings,
-    )
 }

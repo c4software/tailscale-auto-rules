@@ -14,6 +14,8 @@ import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
+import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -31,7 +33,7 @@ class HomeViewModelTest {
     private val journal = FakeJournalRepository(FakeClock(1_000))
     private val settings = FakeSettingsRepository()
 
-    private fun viewModel() = HomeViewModel(
+    private fun TestScope.viewModel() = HomeViewModel(
         networkObserver = observer,
         journalRepository = journal,
         controller = controller,
@@ -44,7 +46,7 @@ class HomeViewModelTest {
             journalRepository = journal,
         ),
         settingsRepository = settings,
-    )
+    ).also { keepCollecting(it.uiState) }
 
     private val cellular = NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true)
 

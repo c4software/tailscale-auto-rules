@@ -4,6 +4,8 @@ import fr.vbrosseau.tailscaleautorules.automation.NotificationRefresher
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
+import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +31,8 @@ class SettingsViewModelTest {
     private val systemStatus = FakeSystemStatus()
     private val refresher = RecordingNotificationRefresher()
 
-    private fun viewModel() = SettingsViewModel(repository, systemStatus, refresher)
+    private fun TestScope.viewModel() = SettingsViewModel(repository, systemStatus, refresher)
+        .also { keepCollecting(it.uiState) }
 
     @Test
     fun theInitialStateCarriesTheStoredPreferences() = runTest {
