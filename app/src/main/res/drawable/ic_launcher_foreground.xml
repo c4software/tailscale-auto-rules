@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Grille de 3 × 3 points, clin d'œil assumé au logotype de Tailscale — mais
-    volontairement distincte : la marque officielle est déposée. Ici la
-    diagonale montante est pleine, figure de la bascule automatique du tunnel,
-    et les six autres points s'effacent. Les points tiennent dans la zone sûre
-    de 66 dp de l'icône adaptative ; le calque unique en blanc sert aussi de
-    couche monochrome pour les icônes thématiques (API 33+).
+    Un éclair — le geste déclenché tout seul — sur quatre points en retrait,
+    héritage discret de la grille du logotype Tailscale. L'éclair suit la
+    diagonale que les points pleins dessinaient auparavant ; la grille complète
+    rendait l'icône trop proche de la marque officielle, qui est déposée.
+    Tout tient dans la zone sûre de 66 dp de l'icône adaptative ; le calque
+    unique en blanc sert aussi de couche monochrome (icônes thématiques,
+    API 33+).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
   android:width="108dp"
@@ -13,18 +14,7 @@
   android:viewportWidth="108"
   android:viewportHeight="108">
 
-  <!-- Diagonale montante : bas-gauche, centre, haut-droite. -->
-  <path
-    android:fillColor="#FFFFFFFF"
-    android:pathData="M 36,72 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
-  <path
-    android:fillColor="#FFFFFFFF"
-    android:pathData="M 54,54 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
-  <path
-    android:fillColor="#FFFFFFFF"
-    android:pathData="M 72,36 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
-
-  <!-- Les six autres points, en retrait. -->
+  <!-- Les quatre coins de la grille, en retrait. -->
   <path
     android:fillColor="#FFFFFFFF"
     android:fillAlpha="0.4"
@@ -32,21 +22,18 @@
   <path
     android:fillColor="#FFFFFFFF"
     android:fillAlpha="0.4"
-    android:pathData="M 54,36 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
+    android:pathData="M 72,36 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
   <path
     android:fillColor="#FFFFFFFF"
     android:fillAlpha="0.4"
-    android:pathData="M 36,54 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
-  <path
-    android:fillColor="#FFFFFFFF"
-    android:fillAlpha="0.4"
-    android:pathData="M 72,54 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
-  <path
-    android:fillColor="#FFFFFFFF"
-    android:fillAlpha="0.4"
-    android:pathData="M 54,72 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
+    android:pathData="M 36,72 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
   <path
     android:fillColor="#FFFFFFFF"
     android:fillAlpha="0.4"
     android:pathData="M 72,72 m -6.5,0 a 6.5,6.5 0 1,1 13,0 a 6.5,6.5 0 1,1 -13,0" />
+
+  <!-- L'éclair, plein, au premier plan. -->
+  <path
+    android:fillColor="#FFFFFFFF"
+    android:pathData="M 60,24 L 42,56 H 52 L 46,84 L 68,50 H 57 Z" />
 </vector>
