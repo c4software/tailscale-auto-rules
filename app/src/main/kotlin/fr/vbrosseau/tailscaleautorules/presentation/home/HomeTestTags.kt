@@ -10,4 +10,5 @@ object HomeTestTags {
     const val TAILSCALE_MISSING = "home:tailscale-missing"
     const val DISABLE_AUTOMATION = "home:disable-automation"
     const val AUTOMATION_DISABLED = "home:automation-disabled"
+    const val MANUAL_OVERRIDE = "home:manual-override"
 }

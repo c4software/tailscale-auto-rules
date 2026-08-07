@@ -28,8 +28,13 @@ voir les réserves de [TASKS.md](./TASKS.md).
 - **Quatre écrans** : accueil, réseaux de confiance, journal, paramètres.
 - **Notification d'état** persistante et réellement optionnelle.
 - **Journal** des 500 derniers changements, avec la règle qui a décidé.
+- **Reconnaissance des interventions manuelles** : un tunnel activé à la main
+  sur un réseau de confiance (ou coupé depuis le client officiel) est signalé
+  comme tel sur l'accueil et dans la notification, au lieu d'être attribué à
+  une règle. Le geste est respecté ; les règles reprennent la main au prochain
+  changement de réseau.
 - Explications de permission avant chaque demande (localisation, notification).
-- **Tests de rendu visuel** (Roborazzi) : 22 références couvrant les états les
+- **Tests de rendu visuel** (Roborazzi) : 28 références couvrant les états les
   plus exposés des quatre écrans, en thème clair et sombre. Vérification
   volontairement hors CI — trop coûteuse par Pull Request — donc à la charge de
   l'auteur d'un changement d'interface.

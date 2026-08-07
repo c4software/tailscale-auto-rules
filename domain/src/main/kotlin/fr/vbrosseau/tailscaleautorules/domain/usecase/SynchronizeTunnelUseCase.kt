@@ -2,7 +2,6 @@ package fr.vbrosseau.tailscaleautorules.domain.usecase
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
@@ -59,7 +58,7 @@ class SynchronizeTunnelUseCase(
             )
 
         val ruleId = evaluation.ruleId
-        val targetState = evaluation.decision.toTargetState()
+        val targetState = evaluation.decision.asTunnelState()
 
         return if (ruleId == null || targetState == null) {
             SynchronizationOutcome.NoDecision
@@ -100,12 +99,5 @@ class SynchronizeTunnelUseCase(
             !controller.isAvailable() -> null
             controller.isRunning() -> TunnelState.ENABLED
             else -> TunnelState.DISABLED
-        }
-
-    private fun RuleDecision.toTargetState(): TunnelState? =
-        when (this) {
-            RuleDecision.ENABLE -> TunnelState.ENABLED
-            RuleDecision.DISABLE -> TunnelState.DISABLED
-            RuleDecision.NO_DECISION -> null
         }
 }

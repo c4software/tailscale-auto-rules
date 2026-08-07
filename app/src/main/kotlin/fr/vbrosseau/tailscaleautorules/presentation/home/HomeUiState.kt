@@ -3,6 +3,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
+import fr.vbrosseau.tailscaleautorules.domain.usecase.ManualOverride
 
 /**
  * Tout ce que l'écran d'accueil affiche, et rien d'autre.
@@ -23,5 +24,6 @@ data class HomeUiState(
     val isSynchronizing: Boolean = false,
     val lastChange: JournalEntry? = null,
     val isAutomationEnabled: Boolean = true,
+    val manualOverride: ManualOverride? = null,
     val isLoading: Boolean = false,
 )

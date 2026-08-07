@@ -14,6 +14,13 @@ class RuleDecisionTest {
     }
 
     @Test
+    fun eachFirmDecisionTargetsATunnelStateAndTheAbstentionNone() {
+        assertEquals(TunnelState.ENABLED, RuleDecision.ENABLE.asTunnelState())
+        assertEquals(TunnelState.DISABLED, RuleDecision.DISABLE.asTunnelState())
+        assertEquals(null, RuleDecision.NO_DECISION.asTunnelState())
+    }
+
+    @Test
     fun exactlyOneDecisionAllowsTheEngineToContinue() {
         // Le moteur s'arrête à la première décision ferme : il ne doit exister
         // qu'une seule façon de ne pas se prononcer.

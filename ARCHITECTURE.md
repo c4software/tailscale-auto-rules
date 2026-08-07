@@ -68,6 +68,7 @@ réutilisables indépendamment.
 ├── repository/     Interfaces : BlacklistRepository, JournalRepository, SettingsRepository
 ├── tailscale/      Interface TailscaleController
 └── usecase/        SynchronizeTunnelUseCase — orchestration d'un cycle complet
+                    DetectManualOverrideUseCase — reconnaît un geste manuel sur le tunnel
 
 :app     fr.vbrosseau.tailscaleautorules
 ├── presentation/
@@ -347,7 +348,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 14 complètes. 275 tests, 0 échec.
+Étapes 1 à 14 complètes. 291 tests, 0 échec.
 
 ```
 .
@@ -363,10 +364,11 @@ est une mesure, pas un objectif.
 │       │   ├── repository/  Blacklist, Journal, Settings (contrats)
 │       │   ├── settings/    AppSettings
 │       │   ├── time/        Clock
-│       │   ├── usecase/     SynchronizeTunnelUseCase, SynchronizationOutcome
+│       │   ├── usecase/     SynchronizeTunnelUseCase, SynchronizationOutcome,
+│       │   │                 DetectManualOverrideUseCase
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
 │       ├── testFixtures/…/  les 6 Fakes + fabriques Contexts
-│       └── test/…/          99 tests JVM
+│       └── test/…/          108 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/
@@ -388,7 +390,7 @@ est une mesure, pas un objectif.
 │       │   │       └── journal/         écran + ViewModel + UiState + mise en forme
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          176 tests (Robolectric, DataStore, ViewModels, Compose)
+│       └── test/…/          183 tests (Robolectric, DataStore, ViewModels, Compose)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml

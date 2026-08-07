@@ -11,6 +11,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.domain.usecase.ManualOverride
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
@@ -57,6 +58,30 @@ class HomeScreenTest {
         show(HomeUiState(tunnelState = TunnelState.UNKNOWN))
 
         composeRule.onNodeWithTag(HomeTestTags.TUNNEL_STATE).assertTextEquals("Indéterminé")
+    }
+
+    @Test
+    fun aManualOverrideShowsItsCardAndNamesTheContradictedRule() {
+        show(
+            HomeUiState(
+                tunnelState = TunnelState.ENABLED,
+                transport = NetworkTransport.WIFI,
+                ssid = "Maison",
+                manualOverride = ManualOverride(
+                    observedState = TunnelState.ENABLED,
+                    ruleId = RuleId("blacklisted-wifi"),
+                ),
+            ),
+        )
+
+        composeRule.onNodeWithTag(HomeTestTags.MANUAL_OVERRIDE).assertIsDisplayed()
+    }
+
+    @Test
+    fun withoutManualOverrideTheCardStaysAbsent() {
+        show(HomeUiState(tunnelState = TunnelState.ENABLED))
+
+        composeRule.onNodeWithTag(HomeTestTags.MANUAL_OVERRIDE).assertDoesNotExist()
     }
 
     @Test

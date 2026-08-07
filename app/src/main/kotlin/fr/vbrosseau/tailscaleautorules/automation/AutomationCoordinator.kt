@@ -7,6 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
@@ -28,6 +29,7 @@ class AutomationCoordinator @Inject constructor(
     private val trigger: AutomationTrigger,
     private val settingsRepository: SettingsRepository,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
+    private val detectManualOverride: DetectManualOverrideUseCase,
     private val controller: TailscaleController,
     private val journalRepository: JournalRepository,
     private val notifier: TunnelNotifier,
@@ -100,11 +102,27 @@ class AutomationCoordinator @Inject constructor(
      * Le service de premier plan doit en fournir une à `startForeground` dès
      * son démarrage, avant tout cycle.
      */
-    suspend fun currentNotification(): Notification = notifier.build(tunnelState(), lastRuleId())
+    suspend fun currentNotification(): Notification =
+        currentStatus().let { notifier.build(it.state, it.ruleId, it.isManuallyOverridden) }
 
     private suspend fun refreshNotification() {
         Timber.d("Rafraîchissement de la notification")
-        notifier.show(tunnelState(), lastRuleId())
+        currentStatus().let { notifier.show(it.state, it.ruleId, it.isManuallyOverridden) }
+    }
+
+    /**
+     * Ce que la notification raconte : l'état constaté, la dernière règle
+     * appliquée — lue au journal, donc jamais une décision seulement
+     * envisagée — et l'éventuelle intervention manuelle qui contredit cette
+     * règle. Sans ce dernier constat, la notification attribuerait à une règle
+     * un état qu'elle n'a pas produit.
+     */
+    private suspend fun currentStatus(): TunnelStatus {
+        val state = tunnelState()
+        val lastChange = journalRepository.observeRecent().first().firstOrNull()
+        val override = detectManualOverride(state, lastChange)
+
+        return TunnelStatus(state, lastChange?.ruleId, override != null)
     }
 
     private suspend fun tunnelState(): TunnelState = when {
@@ -113,10 +131,9 @@ class AutomationCoordinator @Inject constructor(
         else -> TunnelState.DISABLED
     }
 
-    /**
-     * La raison affichée vient du journal, donc du dernier changement
-     * réellement appliqué — et non de la dernière décision envisagée.
-     */
-    private suspend fun lastRuleId(): RuleId? =
-        journalRepository.observeRecent().first().firstOrNull()?.ruleId
+    private data class TunnelStatus(
+        val state: TunnelState,
+        val ruleId: RuleId?,
+        val isManuallyOverridden: Boolean,
+    )
 }

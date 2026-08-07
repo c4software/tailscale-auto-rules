@@ -6,6 +6,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
+import fr.vbrosseau.tailscaleautorules.domain.usecase.ManualOverride
 import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistError
 import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistScreen
 import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistUiState
@@ -88,6 +89,32 @@ class ScreensScreenshotTest : ScreenshotTest() {
                 transport = NetworkTransport.WIFI,
                 ssid = "Aéroport CDG",
                 isAutomationEnabled = false,
+            ),
+            onSynchronize = {},
+            onDisableAutomation = {},
+        )
+    }
+
+    @Test
+    fun accueilTunnelModifieManuellement() = capture("accueil-modification-manuelle") {
+        // La carte doit se distinguer de celle de l'automatisation coupée :
+        // ici l'automatisation veille toujours, elle constate un geste.
+        HomeScreen(
+            uiState = HomeUiState(
+                tunnelState = TunnelState.ENABLED,
+                transport = NetworkTransport.WIFI,
+                ssid = "Maison",
+                lastChange = JournalEntry(
+                    id = 2,
+                    epochMillis = 1_770_000_000_000,
+                    previousState = TunnelState.ENABLED,
+                    newState = TunnelState.DISABLED,
+                    ruleId = RuleId("blacklisted-wifi"),
+                ),
+                manualOverride = ManualOverride(
+                    observedState = TunnelState.ENABLED,
+                    ruleId = RuleId("blacklisted-wifi"),
+                ),
             ),
             onSynchronize = {},
             onDisableAutomation = {},

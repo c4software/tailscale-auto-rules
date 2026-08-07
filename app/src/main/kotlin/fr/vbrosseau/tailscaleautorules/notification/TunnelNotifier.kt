@@ -49,14 +49,17 @@ class TunnelNotifier @Inject constructor(
      *
      * @param ruleId règle ayant décidé en dernier, ou `null` si aucune décision
      *   n'a encore été appliquée.
+     * @param isManuallyOverridden l'état constaté vient d'un geste de
+     *   l'utilisateur, pas d'une règle : la raison affichée le dit, plutôt que
+     *   d'attribuer à une règle un état qu'elle n'a pas produit.
      */
-    fun show(state: TunnelState, ruleId: RuleId?) {
+    fun show(state: TunnelState, ruleId: RuleId?, isManuallyOverridden: Boolean = false) {
         if (!canNotify()) {
             Timber.w("Notification non publiée : permission absente")
             return
         }
 
-        val notification = build(state, ruleId)
+        val notification = build(state, ruleId, isManuallyOverridden)
 
         try {
             manager.notify(NOTIFICATION_ID, notification)
@@ -76,13 +79,13 @@ class TunnelNotifier @Inject constructor(
      * il ne peut pas se contenter de la voir publiée, la plateforme exige de la
      * recevoir. C'est la même notification, décrite au même endroit.
      */
-    fun build(state: TunnelState, ruleId: RuleId?): Notification {
+    fun build(state: TunnelState, ruleId: RuleId?, isManuallyOverridden: Boolean = false): Notification {
         NotificationChannels.ensureCreated(context)
 
         return NotificationCompat.Builder(context, NotificationChannels.TUNNEL_STATE)
             .setSmallIcon(R.drawable.ic_notification_tunnel)
             .setContentTitle(context.getString(state.notificationTitleRes()))
-            .setContentText(reasonText(ruleId))
+            .setContentText(if (isManuallyOverridden) manualOverrideText() else reasonText(ruleId))
             .setContentIntent(openApplicationIntent())
             // Persistante : elle décrit un état continu, pas un événement.
             .setOngoing(true)
@@ -103,6 +106,9 @@ class TunnelNotifier @Inject constructor(
         Timber.i("Notification retirée")
         manager.cancel(NOTIFICATION_ID)
     }
+
+    private fun manualOverrideText(): String =
+        context.getString(R.string.notification_manual_override)
 
     private fun reasonText(ruleId: RuleId?): String = if (ruleId == null) {
         context.getString(R.string.notification_no_reason)

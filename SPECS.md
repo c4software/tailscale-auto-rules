@@ -108,6 +108,22 @@ reste possible. Il est visible dans l'application : l'écran d'accueil affiche
 l'état **constaté** du tunnel, pas la dernière décision. Une divergence entre
 les deux se voit donc, au lieu d'être masquée.
 
+#### Intervention manuelle de l'utilisateur
+
+L'utilisateur peut changer l'état du tunnel sans passer par l'application —
+typiquement l'activer depuis le client officiel alors qu'il est sur un réseau
+de confiance. Ce geste est **respecté** : aucun cycle ne se déclenche tant que
+le réseau ne change pas, donc l'automatisation ne le combat pas. Les règles
+reprennent la main au changement de réseau suivant — ou immédiatement si
+l'utilisateur presse « Synchroniser ».
+
+Le geste est **reconnu et affiché** (accueil et notification) sur un critère
+précis : la décision courante des règles a déjà été appliquée — le journal en
+atteste — et l'état constaté du tunnel la contredit pourtant. Une simple
+divergence ne suffit pas : elle est normale pendant les quelques secondes qui
+séparent un changement de réseau de l'application de la décision, et ne doit
+pas s'afficher comme un geste de l'utilisateur.
+
 ---
 
 ## 4. Règles de la version 1
@@ -185,6 +201,10 @@ Affiche, en lecture seule :
 - le type de réseau courant (Wi-Fi / cellulaire / Ethernet / aucun) ;
 - le SSID courant, ou une mention explicite s'il est indisponible ;
 - la dernière décision : règle déclenchante, sens de la décision, horodatage ;
+- une carte signalant une **intervention manuelle** lorsque l'état constaté
+  contredit une décision déjà appliquée (§3.3) : elle nomme la règle
+  contredite, dit que le choix est respecté, et annonce que les règles
+  reprendront la main au prochain changement de réseau ;
 - un bouton **Synchroniser** forçant un cycle immédiat ;
 - un bouton **Désactiver l'automatisation** — remplacé, lorsqu'elle est déjà
   inactive, par une mention explicite renvoyant aux paramètres.
@@ -224,7 +244,14 @@ Persistante lorsqu'elle est visible, elle affiche :
 
 - **Tunnel :** Activé / Désactivé
 - **Raison :** libellé court de la règle ayant décidé (« Réseau mobile »,
-  « Wi-Fi de confiance », « Mode avion »…)
+  « Wi-Fi de confiance », « Mode avion »…) — ou la mention d'une intervention
+  manuelle lorsque l'état constaté contredit une décision déjà appliquée
+  (§3.3) : attribuer à une règle un état qu'elle n'a pas produit serait un
+  mensonge.
+
+Elle se rafraîchit à chaque cycle **et** à chaque mouvement du tunnel constaté
+hors cycle — activé à la main sur un réseau de confiance, coupé depuis le
+client officiel — sans quoi elle décrirait un état périmé.
 
 Elle porte une action **Désactiver l'automatisation** : persistante et non
 rejetable, elle doit offrir le moyen de faire cesser ce qu'elle décrit sans

@@ -2,9 +2,11 @@ package fr.vbrosseau.tailscaleautorules.automation
 
 import android.Manifest
 import android.app.Application
+import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
@@ -15,6 +17,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
@@ -70,16 +73,25 @@ class AutomationCoordinatorTest {
         Shadows.shadowOf(context as Application)
             .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
+        val engine = RuleEngine(setOf(MobileNetworkRule()))
+        val blacklist = FakeBlacklistRepository()
+
         coordinator = AutomationCoordinator(
             trigger = trigger,
             settingsRepository = settings,
             synchronizeTunnel = SynchronizeTunnelUseCase(
                 networkObserver = observer,
-                blacklistRepository = FakeBlacklistRepository(),
+                blacklistRepository = blacklist,
                 settingsRepository = settings,
-                engine = RuleEngine(setOf(MobileNetworkRule())),
+                engine = engine,
                 controller = controller,
                 journalRepository = journal,
+            ),
+            detectManualOverride = DetectManualOverrideUseCase(
+                networkObserver = observer,
+                blacklistRepository = blacklist,
+                settingsRepository = settings,
+                engine = engine,
             ),
             controller = controller,
             journalRepository = journal,
@@ -156,6 +168,24 @@ class AutomationCoordinatorTest {
         coordinator.synchronize()
 
         assertNull(postedNotification())
+    }
+
+    @Test
+    fun theNotificationCallsOutAManuallyChangedTunnel() = runTest {
+        // Sur réseau mobile, la règle a activé le tunnel, puis l'utilisateur
+        // l'a coupé depuis le client officiel. La notification doit le dire,
+        // au lieu d'attribuer l'état constaté à la dernière règle appliquée.
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        coordinator.synchronize()
+
+        controller.disable()
+        coordinator.refreshNotificationIfEnabled()
+
+        val notification = assertNotNull(postedNotification())
+        assertEquals(
+            context.getString(R.string.notification_manual_override),
+            notification.extras.getString(Notification.EXTRA_TEXT),
+        )
     }
 
     @Test

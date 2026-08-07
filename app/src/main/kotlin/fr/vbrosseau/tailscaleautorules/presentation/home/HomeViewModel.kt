@@ -8,6 +8,7 @@ import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.UiStateSharing
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ class HomeViewModel @Inject constructor(
     journalRepository: JournalRepository,
     private val controller: TailscaleController,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
+    private val detectManualOverride: DetectManualOverrideUseCase,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
@@ -62,14 +64,20 @@ class HomeViewModel @Inject constructor(
         settingsRepository.observeAppSettings(),
         isSynchronizing,
     ) { network, tunnel, entries, settings, synchronizing ->
+        val lastChange = entries.firstOrNull()
+
         HomeUiState(
             tunnelState = tunnel.state,
             transport = network.transport,
             ssid = network.ssid,
             isTailscaleInstalled = tunnel.isInstalled,
             isSynchronizing = synchronizing,
-            lastChange = entries.firstOrNull(),
+            lastChange = lastChange,
             isAutomationEnabled = settings.isServiceEnabled,
+            // Recalculé à chaque constat : un tunnel activé à la main sur un
+            // réseau de confiance doit se dire comme tel, pas s'afficher comme
+            // si une règle l'avait voulu.
+            manualOverride = detectManualOverride(network, tunnel.state, lastChange),
         )
     }.stateIn(viewModelScope, UiStateSharing, HomeUiState(isLoading = true))
 

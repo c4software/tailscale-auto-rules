@@ -25,6 +25,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.domain.usecase.ManualOverride
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.labelRes
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
@@ -66,6 +67,10 @@ fun HomeScreen(
             valueTestTag = HomeTestTags.TUNNEL_STATE,
         )
 
+        if (uiState.manualOverride != null) {
+            ManualOverrideCard(uiState.manualOverride)
+        }
+
         InfoCard(
             title = stringResource(R.string.home_network_title),
             value = stringResource(uiState.transport.labelRes()),
@@ -96,6 +101,43 @@ fun HomeScreen(
         AutomationSection(
             isAutomationEnabled = uiState.isAutomationEnabled,
             onDisableAutomation = onDisableAutomation,
+        )
+    }
+}
+
+/**
+ * Signale un tunnel mis à la main dans l'état inverse de ce qu'une règle a
+ * décidé — typiquement activé sur un réseau de confiance.
+ *
+ * Sans cette carte, l'écran juxtaposerait un état constaté et une règle qui
+ * dit le contraire, en laissant l'utilisateur arbitrer. La carte assume le
+ * constat : c'est son geste, il est respecté, et les règles reprendront la
+ * main au prochain changement de réseau.
+ */
+@Composable
+private fun ManualOverrideCard(
+    manualOverride: ManualOverride,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(HomeTestTags.MANUAL_OVERRIDE),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        ),
+    ) {
+        val bodyRes = if (manualOverride.observedState == TunnelState.ENABLED) {
+            R.string.home_manual_override_enabled
+        } else {
+            R.string.home_manual_override_disabled
+        }
+
+        Text(
+            text = stringResource(bodyRes, stringResource(manualOverride.ruleId.labelRes())),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(Spacing.md),
         )
     }
 }

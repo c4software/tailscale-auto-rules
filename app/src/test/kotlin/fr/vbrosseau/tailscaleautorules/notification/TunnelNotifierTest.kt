@@ -81,6 +81,18 @@ class TunnelNotifierTest {
     }
 
     @Test
+    fun aManualOverrideReplacesTheRuleAsTheDisplayedReason() {
+        // Attribuer à une règle un état qu'elle n'a pas produit serait un
+        // mensonge : le texte doit dire que le geste vient de l'utilisateur.
+        notifier.show(TunnelState.ENABLED, RuleId("blacklisted-wifi"), isManuallyOverridden = true)
+
+        assertEquals(
+            context.getString(R.string.notification_manual_override),
+            assertNotNull(postedNotification()).extras.getString(android.app.Notification.EXTRA_TEXT),
+        )
+    }
+
+    @Test
     fun theChannelIsCreatedOnDemand() {
         notifier.show(TunnelState.ENABLED, null)
 

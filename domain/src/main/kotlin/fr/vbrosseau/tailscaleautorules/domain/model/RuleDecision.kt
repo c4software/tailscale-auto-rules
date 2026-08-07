@@ -17,4 +17,18 @@ enum class RuleDecision {
      * l'évaluation. C'est le seul critère d'arrêt du moteur.
      */
     val isFirm: Boolean get() = this != NO_DECISION
+
+    /**
+     * État du tunnel que la décision vise, ou `null` pour une abstention.
+     *
+     * La correspondance vit ici pour que « ce que la règle veut » et « ce que
+     * le tunnel est » se comparent au même endroit chez tous les lecteurs —
+     * synchronisation comme détection d'une intervention manuelle.
+     */
+    fun asTunnelState(): TunnelState? =
+        when (this) {
+            ENABLE -> TunnelState.ENABLED
+            DISABLE -> TunnelState.DISABLED
+            NO_DECISION -> null
+        }
 }

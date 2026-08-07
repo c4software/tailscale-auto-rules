@@ -14,6 +14,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
+import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +55,9 @@ class TunnelWatchService : Service() {
     lateinit var networkObserver: NetworkObserver
 
     @Inject
+    lateinit var controller: TailscaleController
+
+    @Inject
     lateinit var notifier: TunnelNotifier
 
     @Inject
@@ -80,6 +84,7 @@ class TunnelWatchService : Service() {
 
         if (watchJob == null) {
             watchJob = scope.launch { watchNetwork() }
+            scope.launch { watchTunnel() }
             Timber.i("Observation continue démarrée")
         }
 
@@ -102,6 +107,19 @@ class TunnelWatchService : Service() {
             runCatching { coordinator.synchronize(networkContext) }
                 .onSuccess { Timber.i("Cycle terminé : %s", it) }
                 .onFailure { Timber.e(it, "Cycle en échec") }
+        }
+    }
+
+    /**
+     * Réaligne la notification quand le tunnel bouge **sans** cycle : coupé
+     * depuis le client officiel, ou activé à la main sur un réseau de
+     * confiance. Aucun changement de réseau physique n'accompagne ces gestes,
+     * et la notification resterait sinon figée sur un état périmé.
+     */
+    private suspend fun watchTunnel() {
+        controller.observeRunning().collectLatest {
+            runCatching { coordinator.refreshNotificationIfEnabled() }
+                .onFailure { Timber.e(it, "Rafraîchissement de la notification en échec") }
         }
     }
 
