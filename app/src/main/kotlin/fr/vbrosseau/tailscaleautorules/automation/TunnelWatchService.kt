@@ -84,6 +84,16 @@ class TunnelWatchService : Service() {
         // qui suivent son démarrage.
         startInForeground()
 
+        // Hors de la garde ci-dessous, et c'est le point : [startInForeground]
+        // vient de publier un état indéterminé. Quand l'observation tourne
+        // déjà — redémarrage `START_STICKY`, octroi tardif de la localisation —
+        // rien ne la corrigerait avant le prochain changement de réseau, que le
+        // flux stabilisé peut faire attendre des heures.
+        scope.launch {
+            runCatching { coordinator.refreshNotificationIfEnabled() }
+                .onFailure { Timber.e(it, "Recalage de la notification en échec") }
+        }
+
         if (watchJob == null) {
             watchJob = scope.launch { watchNetwork() }
             scope.launch { watchTunnel() }
@@ -136,8 +146,8 @@ class TunnelWatchService : Service() {
      * Publie la notification exigée par la plateforme.
      *
      * L'état affiché est provisoirement inconnu : le lire demanderait une
-     * suspension, or l'appel doit être immédiat. Le premier cycle, quelques
-     * instants plus tard, le corrige.
+     * suspension, or l'appel doit être immédiat. Le recalage lancé juste après,
+     * quelques instants plus tard, le corrige.
      */
     private fun startInForeground() {
         val notification = notifier.build(TunnelState.UNKNOWN, ruleId = null)
