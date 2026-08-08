@@ -1,13 +1,10 @@
 package fr.vbrosseau.tailscaleautorules.domain.usecase
 
-import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 
@@ -21,9 +18,8 @@ import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
  */
 class SynchronizeTunnelUseCase(
     private val networkObserver: NetworkObserver,
-    private val blacklistRepository: BlacklistRepository,
     private val settingsRepository: SettingsRepository,
-    private val engine: RuleEngine,
+    private val evaluateRules: EvaluateRulesUseCase,
     private val controller: TailscaleController,
     private val journalRepository: JournalRepository,
 ) {
@@ -45,17 +41,7 @@ class SynchronizeTunnelUseCase(
         }
 
     private suspend fun decideAndApply(networkContext: NetworkContext): SynchronizationOutcome {
-        // La blacklist et les réglages sont relus à chaque cycle : une
-        // modification produit ainsi son effet dès la synchronisation suivante,
-        // sans invalidation de cache ni redémarrage.
-        val evaluation =
-            engine.evaluate(
-                RuleContext(
-                    network = networkContext,
-                    blacklistedSsids = blacklistRepository.currentSsids(),
-                    settings = settingsRepository.currentRuleSettings(),
-                ),
-            )
+        val evaluation = evaluateRules(networkContext)
 
         val ruleId = evaluation.ruleId
         val targetState = evaluation.decision.asTunnelState()

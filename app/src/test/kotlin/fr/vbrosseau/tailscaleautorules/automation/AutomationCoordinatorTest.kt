@@ -14,11 +14,14 @@ import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
+import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
@@ -76,29 +79,32 @@ class AutomationCoordinatorTest {
         Shadows.shadowOf(context as Application)
             .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-        val engine = RuleEngine(setOf(MobileNetworkRule()))
-        val blacklist = FakeBlacklistRepository()
+        val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
+        val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
+        val evaluateRules = EvaluateRulesUseCase(blacklist, settings, engine)
+        val detectManualOverride = DetectManualOverrideUseCase(
+            networkObserver = observer,
+            evaluateRules = evaluateRules,
+            clock = clock,
+        )
 
         coordinator = AutomationCoordinator(
             trigger = trigger,
             settingsRepository = settings,
             synchronizeTunnel = SynchronizeTunnelUseCase(
                 networkObserver = observer,
-                blacklistRepository = blacklist,
                 settingsRepository = settings,
-                engine = engine,
+                evaluateRules = evaluateRules,
                 controller = controller,
                 journalRepository = journal,
             ),
-            detectManualOverride = DetectManualOverrideUseCase(
+            describeTunnelStatus = DescribeTunnelStatusUseCase(
                 networkObserver = observer,
-                blacklistRepository = blacklist,
-                settingsRepository = settings,
-                engine = engine,
-                clock = clock,
+                evaluateRules = evaluateRules,
+                detectManualOverride = detectManualOverride,
+                journalRepository = journal,
+                controller = controller,
             ),
-            controller = controller,
-            journalRepository = journal,
             notifier = TunnelNotifier(context),
         )
     }
@@ -208,6 +214,29 @@ class AutomationCoordinatorTest {
         val notification = assertNotNull(postedNotification())
         assertNotEquals(
             context.getString(R.string.notification_manual_override),
+            notification.extras.getString(Notification.EXTRA_TEXT),
+        )
+    }
+
+    @Test
+    fun theReasonFollowsTheCurrentNetwork() = runTest {
+        // Le cas signalé : le tunnel a été coupé sur un Wi-Fi de confiance —
+        // seule trace au journal — puis rallumé à la main, et l'utilisateur est
+        // passé en données mobiles. La règle du réseau mobile confirme un
+        // tunnel déjà actif, donc n'écrit rien : la raison lue au journal
+        // restait « Wi-Fi de confiance » sous un titre « Tunnel activé ».
+        observer.emit(NetworkContext(NetworkTransport.WIFI, isInternetValidated = true, ssid = "Maison"))
+        controller.enable()
+        coordinator.synchronize()
+
+        clock.advanceBy(60_000)
+        controller.enable()
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        coordinator.refreshNotificationIfEnabled()
+
+        val notification = assertNotNull(postedNotification())
+        assertEquals(
+            context.getString(R.string.notification_reason, context.getString(R.string.rule_mobile_network)),
             notification.extras.getString(Notification.EXTRA_TEXT),
         )
     }

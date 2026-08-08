@@ -28,9 +28,12 @@ class DetectManualOverrideUseCaseTest {
     private val detect =
         DetectManualOverrideUseCase(
             networkObserver = observer,
-            blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
-            settingsRepository = FakeSettingsRepository(),
-            engine = RuleEngine(setOf(BlacklistedWifiRule(), MobileNetworkRule())),
+            evaluateRules =
+                EvaluateRulesUseCase(
+                    blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
+                    settingsRepository = FakeSettingsRepository(),
+                    engine = RuleEngine(setOf(BlacklistedWifiRule(), MobileNetworkRule())),
+                ),
             clock = clock,
         )
 

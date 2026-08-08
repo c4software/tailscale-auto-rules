@@ -11,7 +11,9 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import javax.inject.Singleton
 
@@ -27,18 +29,28 @@ object UseCaseModule {
 
     @Provides
     @Singleton
-    fun provideSynchronizeTunnelUseCase(
-        networkObserver: NetworkObserver,
+    fun provideEvaluateRulesUseCase(
         blacklistRepository: BlacklistRepository,
         settingsRepository: SettingsRepository,
         engine: RuleEngine,
+    ): EvaluateRulesUseCase = EvaluateRulesUseCase(
+        blacklistRepository = blacklistRepository,
+        settingsRepository = settingsRepository,
+        engine = engine,
+    )
+
+    @Provides
+    @Singleton
+    fun provideSynchronizeTunnelUseCase(
+        networkObserver: NetworkObserver,
+        settingsRepository: SettingsRepository,
+        evaluateRules: EvaluateRulesUseCase,
         controller: TailscaleController,
         journalRepository: JournalRepository,
     ): SynchronizeTunnelUseCase = SynchronizeTunnelUseCase(
         networkObserver = networkObserver,
-        blacklistRepository = blacklistRepository,
         settingsRepository = settingsRepository,
-        engine = engine,
+        evaluateRules = evaluateRules,
         controller = controller,
         journalRepository = journalRepository,
     )
@@ -47,15 +59,27 @@ object UseCaseModule {
     @Singleton
     fun provideDetectManualOverrideUseCase(
         networkObserver: NetworkObserver,
-        blacklistRepository: BlacklistRepository,
-        settingsRepository: SettingsRepository,
-        engine: RuleEngine,
+        evaluateRules: EvaluateRulesUseCase,
         clock: Clock,
     ): DetectManualOverrideUseCase = DetectManualOverrideUseCase(
         networkObserver = networkObserver,
-        blacklistRepository = blacklistRepository,
-        settingsRepository = settingsRepository,
-        engine = engine,
+        evaluateRules = evaluateRules,
         clock = clock,
+    )
+
+    @Provides
+    @Singleton
+    fun provideDescribeTunnelStatusUseCase(
+        networkObserver: NetworkObserver,
+        evaluateRules: EvaluateRulesUseCase,
+        detectManualOverride: DetectManualOverrideUseCase,
+        journalRepository: JournalRepository,
+        controller: TailscaleController,
+    ): DescribeTunnelStatusUseCase = DescribeTunnelStatusUseCase(
+        networkObserver = networkObserver,
+        evaluateRules = evaluateRules,
+        detectManualOverride = detectManualOverride,
+        journalRepository = journalRepository,
+        controller = controller,
     )
 }

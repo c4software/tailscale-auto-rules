@@ -14,6 +14,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
 import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
@@ -37,6 +38,7 @@ class HomeViewModelTest {
     private val settings = FakeSettingsRepository()
     private val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
     private val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
+    private val evaluateRules = EvaluateRulesUseCase(blacklist, settings, engine)
 
     private fun TestScope.viewModel() = HomeViewModel(
         networkObserver = observer,
@@ -44,17 +46,14 @@ class HomeViewModelTest {
         controller = controller,
         synchronizeTunnel = SynchronizeTunnelUseCase(
             networkObserver = observer,
-            blacklistRepository = blacklist,
             settingsRepository = settings,
-            engine = engine,
+            evaluateRules = evaluateRules,
             controller = controller,
             journalRepository = journal,
         ),
         detectManualOverride = DetectManualOverrideUseCase(
             networkObserver = observer,
-            blacklistRepository = blacklist,
-            settingsRepository = settings,
-            engine = engine,
+            evaluateRules = evaluateRules,
             clock = clock,
         ),
         settingsRepository = settings,

@@ -1,18 +1,12 @@
 package fr.vbrosseau.tailscaleautorules.automation
 
-import android.app.Notification
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
-import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
-import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
-import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,9 +23,7 @@ class AutomationCoordinator @Inject constructor(
     private val trigger: AutomationTrigger,
     private val settingsRepository: SettingsRepository,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
-    private val detectManualOverride: DetectManualOverrideUseCase,
-    private val controller: TailscaleController,
-    private val journalRepository: JournalRepository,
+    private val describeTunnelStatus: DescribeTunnelStatusUseCase,
     private val notifier: TunnelNotifier,
 ) : NotificationRefresher {
 
@@ -114,44 +106,16 @@ class AutomationCoordinator @Inject constructor(
         return outcome
     }
 
-    /**
-     * Notification décrivant l'état courant, sans la publier.
-     *
-     * Le service de premier plan doit en fournir une à `startForeground` dès
-     * son démarrage, avant tout cycle.
-     */
-    suspend fun currentNotification(): Notification =
-        currentStatus().let { notifier.build(it.state, it.ruleId, it.isManuallyOverridden) }
-
     private suspend fun refreshNotification() {
-        Timber.d("Rafraîchissement de la notification")
-        currentStatus().let { notifier.show(it.state, it.ruleId, it.isManuallyOverridden) }
+        val status = describeTunnelStatus()
+
+        Timber.i(
+            "Notification : état %s, règle %s, geste manuel %b",
+            status.state,
+            status.ruleId?.value ?: "aucune",
+            status.isManuallyOverridden,
+        )
+
+        notifier.show(status.state, status.ruleId, status.isManuallyOverridden)
     }
-
-    /**
-     * Ce que la notification raconte : l'état constaté, la dernière règle
-     * appliquée — lue au journal, donc jamais une décision seulement
-     * envisagée — et l'éventuelle intervention manuelle qui contredit cette
-     * règle. Sans ce dernier constat, la notification attribuerait à une règle
-     * un état qu'elle n'a pas produit.
-     */
-    private suspend fun currentStatus(): TunnelStatus {
-        val state = tunnelState()
-        val lastChange = journalRepository.observeRecent().first().firstOrNull()
-        val override = detectManualOverride(state, lastChange)
-
-        return TunnelStatus(state, lastChange?.ruleId, override != null)
-    }
-
-    private suspend fun tunnelState(): TunnelState = when {
-        !controller.isAvailable() -> TunnelState.UNKNOWN
-        controller.isRunning() -> TunnelState.ENABLED
-        else -> TunnelState.DISABLED
-    }
-
-    private data class TunnelStatus(
-        val state: TunnelState,
-        val ruleId: RuleId?,
-        val isManuallyOverridden: Boolean,
-    )
 }

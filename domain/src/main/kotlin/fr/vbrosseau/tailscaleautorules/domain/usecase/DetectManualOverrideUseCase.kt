@@ -1,13 +1,10 @@
 package fr.vbrosseau.tailscaleautorules.domain.usecase
 
-import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
+import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEvaluation
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
 import kotlin.time.Duration
@@ -47,9 +44,7 @@ data class ManualOverride(
  */
 class DetectManualOverrideUseCase(
     private val networkObserver: NetworkObserver,
-    private val blacklistRepository: BlacklistRepository,
-    private val settingsRepository: SettingsRepository,
-    private val engine: RuleEngine,
+    private val evaluateRules: EvaluateRulesUseCase,
     private val clock: Clock,
 ) {
     /**
@@ -72,6 +67,26 @@ class DetectManualOverrideUseCase(
         networkContext: NetworkContext,
         tunnelState: TunnelState,
         lastChange: JournalEntry?,
+    ): ManualOverride? = invoke(evaluateRules(networkContext), tunnelState, lastChange)
+
+    /**
+     * Constat sur une évaluation déjà faite.
+     *
+     * C'est la forme qu'emploie [DescribeTunnelStatusUseCase] : la règle
+     * applicable vient d'être calculée pour la notification, la réévaluer ici
+     * relirait le réseau une seconde fois et pourrait livrer un contexte
+     * différent de celui que la notification s'apprête à afficher.
+     *
+     * @param evaluation verdict des règles sur le contexte réseau courant.
+     * @param tunnelState état constaté du tunnel.
+     * @param lastChange dernier changement consigné au journal, ou `null`.
+     * @return la divergence attribuable à l'utilisateur, ou `null` si l'état
+     *   du tunnel s'explique sans lui.
+     */
+    operator fun invoke(
+        evaluation: RuleEvaluation,
+        tunnelState: TunnelState,
+        lastChange: JournalEntry?,
     ): ManualOverride? {
         // Sans journal, aucune décision n'a jamais été appliquée : rien ne
         // permet d'attribuer l'état constaté à qui que ce soit. Et une entrée
@@ -80,15 +95,6 @@ class DetectManualOverrideUseCase(
         if (tunnelState == TunnelState.UNKNOWN || lastChange == null || isStillSettling(lastChange)) {
             return null
         }
-
-        val evaluation =
-            engine.evaluate(
-                RuleContext(
-                    network = networkContext,
-                    blacklistedSsids = blacklistRepository.currentSsids(),
-                    settings = settingsRepository.currentRuleSettings(),
-                ),
-            )
 
         val ruleId = evaluation.ruleId
         val targetState = evaluation.decision.asTunnelState()

@@ -40,11 +40,15 @@ class SynchronizeTunnelUseCaseTest {
     private val useCase =
         SynchronizeTunnelUseCase(
             networkObserver = observer,
-            blacklistRepository = blacklist,
             settingsRepository = settings,
-            engine =
-                RuleEngine(
-                    setOf(AirplaneModeRule(), BlacklistedWifiRule(), OtherWifiRule(), MobileNetworkRule()),
+            evaluateRules =
+                EvaluateRulesUseCase(
+                    blacklistRepository = blacklist,
+                    settingsRepository = settings,
+                    engine =
+                        RuleEngine(
+                            setOf(AirplaneModeRule(), BlacklistedWifiRule(), OtherWifiRule(), MobileNetworkRule()),
+                        ),
                 ),
             controller = controller,
             journalRepository = journal,
