@@ -1,10 +1,23 @@
 package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
+import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
+import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
+import fr.vbrosseau.tailscaleautorules.domain.rule.RuleSettings
+import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
+import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
 import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
@@ -27,9 +40,26 @@ class BlacklistViewModelTest {
     private val repository = FakeBlacklistRepository()
     private val observer = FakeNetworkObserver()
     private val systemStatus = FakeSystemStatus()
+    private val settings = FakeSettingsRepository()
+    private val controller = FakeTailscaleController()
+    private val journal = FakeJournalRepository(FakeClock())
+    private val engine = RuleEngine(
+        setOf(AirplaneModeRule(), BlacklistedWifiRule(), OtherWifiRule(), MobileNetworkRule()),
+    )
 
-    private fun TestScope.viewModel() = BlacklistViewModel(repository, systemStatus, observer)
-        .also { keepCollecting(it.uiState) }
+    private fun TestScope.viewModel(networkObserver: NetworkObserver = observer) = BlacklistViewModel(
+        repository = repository,
+        settingsRepository = settings,
+        synchronizeTunnel = SynchronizeTunnelUseCase(
+            networkObserver = networkObserver,
+            settingsRepository = settings,
+            evaluateRules = EvaluateRulesUseCase(repository, settings, engine),
+            controller = controller,
+            journalRepository = journal,
+        ),
+        systemStatus = systemStatus,
+        networkObserver = networkObserver,
+    ).also { keepCollecting(it.uiState) }
 
     private fun onWifi(ssid: String?) = observer.emit(
         NetworkContext(NetworkTransport.WIFI, isInternetValidated = true, ssid = ssid),
@@ -47,8 +77,7 @@ class BlacklistViewModelTest {
         // Hors ligne, le flux réseau peut ne jamais émettre — aucun rappel
         // système n'arrive. La liste, elle, vient de Room : elle s'affiche.
         repository.add("Maison")
-        val model = BlacklistViewModel(repository, systemStatus, SilentNetworkObserver())
-        keepCollecting(model.uiState)
+        val model = viewModel(SilentNetworkObserver())
 
         val state = model.uiState.value
         assertTrue(!state.isLoading)
@@ -62,6 +91,66 @@ class BlacklistViewModelTest {
         override fun observe(): Flow<NetworkContext> = flow { awaitCancellation() }
 
         override suspend fun current(): NetworkContext = NetworkContext.Disconnected
+    }
+
+    @Test
+    fun theMobileRuleIsEnabledByDefault() = runTest {
+        assertTrue(viewModel().uiState.value.isMobileRuleEnabled)
+    }
+
+    @Test
+    fun disablingTheMobileRuleIsPersisted() = runTest {
+        val model = viewModel()
+
+        model.setMobileRuleEnabled(false)
+
+        assertTrue(!model.uiState.value.isMobileRuleEnabled)
+        assertEquals(
+            false,
+            settings.currentRuleSettings()[RuleId("mobile-network")]?.isEnabled,
+        )
+    }
+
+    @Test
+    fun enablingTheMobileRuleOnCellularStartsTheTunnelImmediately() = runTest {
+        // Attendre le prochain changement de réseau serait trop tard : le
+        // terminal est déjà en données mobiles au moment de la bascule.
+        settings.setRuleSettings(
+            RuleId("mobile-network"),
+            RuleSettings(isEnabled = false, priority = 400),
+        )
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        val model = viewModel()
+
+        model.setMobileRuleEnabled(true)
+
+        assertTrue(controller.isRunning())
+    }
+
+    @Test
+    fun disablingTheMobileRuleLeavesTheTunnelUntouched() = runTest {
+        // Aucune règle ne se prononce plus : l'état est conservé (SPECS.md §3.2).
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        val model = viewModel()
+        model.setMobileRuleEnabled(true)
+        assertTrue(controller.isRunning())
+
+        model.setMobileRuleEnabled(false)
+
+        assertTrue(controller.isRunning())
+    }
+
+    @Test
+    fun anOverriddenPrioritySurvivesTheToggle() = runTest {
+        settings.setRuleSettings(
+            RuleId("mobile-network"),
+            RuleSettings(isEnabled = true, priority = 42),
+        )
+        val model = viewModel()
+
+        model.setMobileRuleEnabled(false)
+
+        assertEquals(42, settings.currentRuleSettings()[RuleId("mobile-network")]?.priority)
     }
 
     @Test

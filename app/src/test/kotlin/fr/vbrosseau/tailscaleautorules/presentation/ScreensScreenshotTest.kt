@@ -139,6 +139,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onRemove = {},
             onAddCurrentSsid = {},
             onDismissError = {},
+            onMobileRuleChange = {},
         )
     }
 
@@ -151,6 +152,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onRemove = {},
             onAddCurrentSsid = {},
             onDismissError = {},
+            onMobileRuleChange = {},
         )
     }
 
@@ -166,6 +168,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onRemove = {},
             onAddCurrentSsid = {},
             onDismissError = {},
+            onMobileRuleChange = {},
         )
     }
 
@@ -180,6 +183,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onRemove = {},
             onAddCurrentSsid = {},
             onDismissError = {},
+            onMobileRuleChange = {},
         )
     }
 

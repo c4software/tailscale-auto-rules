@@ -75,6 +75,7 @@ fun AppNavHost(
                 onRemove = viewModel::remove,
                 onAddCurrentSsid = viewModel::addCurrentSsid,
                 onDismissError = viewModel::dismissError,
+                onMobileRuleChange = viewModel::setMobileRuleEnabled,
                 onRequestLocationPermission = onRequestLocationPermission,
             )
         }

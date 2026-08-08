@@ -14,6 +14,7 @@ data class BlacklistUiState(
     val currentSsid: String? = null,
     val isCurrentSsidAlreadyListed: Boolean = false,
     val canReadSsid: Boolean = true,
+    val isMobileRuleEnabled: Boolean = true,
     val error: BlacklistError? = null,
     val isLoading: Boolean = false,
 ) {

@@ -214,6 +214,11 @@ Affiche, en lecture seule :
 
 ### 6.2 Blacklist Wi-Fi
 
+- Un interrupteur **Réseau mobile** active ou désactive la règle du même nom
+  (§4.3). Il vit sur cet écran plutôt qu'aux paramètres : c'est là que
+  l'utilisateur décide sur quels réseaux le tunnel monte. Sa bascule déclenche
+  une synchronisation immédiate (§5) ; la désactivation laisse l'état du tunnel
+  inchangé, aucune règle ne se prononçant plus (§3.2).
 - Liste des SSID enregistrés.
 - Ajout manuel, modification, suppression (CRUD complet).
 - Action d'ajout rapide du **SSID courant**, désactivée si le SSID est

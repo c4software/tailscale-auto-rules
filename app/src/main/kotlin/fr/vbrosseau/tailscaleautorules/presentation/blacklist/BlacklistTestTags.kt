@@ -6,6 +6,7 @@ object BlacklistTestTags {
     const val LIST = "blacklist:list"
     const val ADD = "blacklist:add"
     const val ADD_CURRENT = "blacklist:add-current"
+    const val MOBILE_RULE = "blacklist:mobile-rule"
     const val ERROR = "blacklist:error"
     const val LOCATION_RATIONALE = "blacklist:location-rationale"
     const val LOCATION_GRANT = "blacklist:location-grant"

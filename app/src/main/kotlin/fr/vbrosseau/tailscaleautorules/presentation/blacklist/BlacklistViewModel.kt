@@ -7,6 +7,9 @@ import fr.vbrosseau.tailscaleautorules.domain.model.asSsidKey
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
+import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
+import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.UiStateSharing
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,12 +31,23 @@ import javax.inject.Inject
 @HiltViewModel
 class BlacklistViewModel @Inject constructor(
     private val repository: BlacklistRepository,
+    private val settingsRepository: SettingsRepository,
+    private val synchronizeTunnel: SynchronizeTunnelUseCase,
     private val systemStatus: SystemStatus,
     networkObserver: NetworkObserver,
 ) : ViewModel() {
 
     private val error = MutableStateFlow<BlacklistError?>(null)
     private val canReadSsid = MutableStateFlow(systemStatus.canReadSsid())
+
+    /**
+     * Instance locale plutôt qu'injectée : seuls son identifiant et ses
+     * réglages par défaut servent ici, et la règle est sans état.
+     */
+    private val mobileRule = MobileNetworkRule()
+
+    private val isMobileRuleEnabled = settingsRepository.observeRuleSettings()
+        .map { settings -> (settings[mobileRule.id] ?: mobileRule.defaultSettings).isEnabled }
 
     /**
      * Le SSID courant n'enrichit que l'ajout rapide : il démarre à « inconnu »
@@ -53,14 +67,16 @@ class BlacklistViewModel @Inject constructor(
         repository.observeAll(),
         currentSsid,
         canReadSsid,
+        isMobileRuleEnabled,
         error,
-    ) { entries, ssid, canRead, currentError ->
+    ) { entries, ssid, canRead, mobileRuleEnabled, currentError ->
         BlacklistUiState(
             entries = entries,
             currentSsid = ssid,
             isCurrentSsidAlreadyListed = ssid != null &&
                 entries.any { it.value.asSsidKey() == ssid.asSsidKey() },
             canReadSsid = canRead,
+            isMobileRuleEnabled = mobileRuleEnabled,
             error = currentError,
         )
     }.stateIn(viewModelScope, UiStateSharing, BlacklistUiState(isLoading = true))
@@ -74,6 +90,24 @@ class BlacklistViewModel @Inject constructor(
      */
     fun refreshSystemStatus() {
         canReadSsid.value = systemStatus.canReadSsid()
+    }
+
+    /**
+     * Active ou désactive la règle « Réseau mobile ».
+     *
+     * Un cycle est lancé dans la foulée (SPECS.md §5) : activer la règle en
+     * étant déjà en données mobiles doit monter le tunnel immédiatement, pas au
+     * prochain changement de réseau. La désactivation, elle, laisse l'état tel
+     * quel — aucune règle ne se prononçant plus, le cycle ne commande rien. La
+     * priorité éventuellement surchargée est conservée.
+     */
+    fun setMobileRuleEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = settingsRepository.currentRuleSettings()[mobileRule.id]
+                ?: mobileRule.defaultSettings
+            settingsRepository.setRuleSettings(mobileRule.id, current.copy(isEnabled = enabled))
+            synchronizeTunnel()
+        }
     }
 
     fun add(ssid: String) {

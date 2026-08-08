@@ -43,6 +43,8 @@
 
     <!-- Réseaux de confiance -->
     <string name="blacklist_title">Réseaux de confiance</string>
+    <string name="blacklist_mobile_title">Réseau mobile</string>
+    <string name="blacklist_mobile_summary">Active automatiquement le tunnel en données mobiles (4G/5G).</string>
     <string name="blacklist_explanation">Sur ces réseaux Wi-Fi, le tunnel est désactivé. Partout ailleurs, il est activé.</string>
     <string name="blacklist_empty">Aucun réseau de confiance. Le tunnel restera activé sur tous les Wi-Fi.</string>
     <string name="blacklist_add">Ajouter un réseau</string>

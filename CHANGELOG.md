@@ -8,6 +8,14 @@ Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 Première version fonctionnelle complète. Non encore publiée sur le Play Store :
 voir les réserves de [TASKS.md](./TASKS.md).
 
+### Ajouté depuis la première version
+
+- **Interrupteur « Réseau mobile »** sur l'écran des réseaux de confiance : la
+  règle qui active le tunnel en données mobiles peut désormais être coupée sans
+  toucher au reste de l'automatisation. La bascule déclenche une
+  synchronisation immédiate ; la priorité éventuellement personnalisée de la
+  règle est conservée.
+
 ### Ajouté
 
 - **Version dérivée de l'étiquette Git.** `versionName` et `versionCode` ne se

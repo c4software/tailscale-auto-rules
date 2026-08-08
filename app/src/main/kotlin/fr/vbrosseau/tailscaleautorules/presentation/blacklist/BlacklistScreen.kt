@@ -2,10 +2,12 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -29,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
+import fr.vbrosseau.tailscaleautorules.presentation.SwitchCard
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 
@@ -47,6 +50,7 @@ fun BlacklistScreen(
     onRemove: (Long) -> Unit,
     onAddCurrentSsid: () -> Unit,
     onDismissError: () -> Unit,
+    onMobileRuleChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onRequestLocationPermission: () -> Unit = {},
 ) {
@@ -57,54 +61,36 @@ fun BlacklistScreen(
 
     var editing by remember { mutableStateOf<EditingState?>(null) }
 
-    Column(
+    // Une seule liste défilante pour tout l'écran : avec la carte de la règle
+    // mobile, les cartes d'explication et la liste, le contenu déborde d'un
+    // petit écran — un en-tête figé rendrait le bas inatteignable.
+    LazyColumn(
         modifier = modifier
             .fillMaxWidth()
-            .padding(Spacing.md),
+            .testTag(BlacklistTestTags.LIST),
+        contentPadding = PaddingValues(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Text(
-            text = stringResource(R.string.blacklist_explanation),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-
-        // L'explication précède la demande, comme l'exige le Play Store, et
-        // n'apparaît que sur cet écran : c'est ici que l'utilisateur découvre
-        // que ses réseaux de confiance ne pourront pas être reconnus.
-        if (uiState.needsLocationPermission) {
-            LocationRationaleCard(onGrant = onRequestLocationPermission)
-        }
-
-        uiState.error?.let { error ->
-            ErrorCard(message = stringResource(error.labelRes()), onDismiss = onDismissError)
-        }
-
-        ActionRow(
+        headerItems(
             uiState = uiState,
-            onStartCreation = { editing = EditingState(id = null, value = "") },
-            onAddCurrentSsid = onAddCurrentSsid,
+            onMobileRuleChange = onMobileRuleChange,
+            onRequestLocationPermission = onRequestLocationPermission,
+            onDismissError = onDismissError,
         )
 
-        if (uiState.entries.isEmpty()) {
-            Text(
-                text = stringResource(R.string.blacklist_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(BlacklistTestTags.EMPTY),
+        item {
+            ActionRow(
+                uiState = uiState,
+                onStartCreation = { editing = EditingState(id = null, value = "") },
+                onAddCurrentSsid = onAddCurrentSsid,
             )
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                modifier = Modifier.testTag(BlacklistTestTags.LIST),
-            ) {
-                items(uiState.entries, key = { it.id }) { entry ->
-                    EntryRow(
-                        entry = entry,
-                        onRename = { editing = EditingState(entry.id, entry.value) },
-                        onRemove = { onRemove(entry.id) },
-                    )
-                }
-            }
         }
+
+        entryItems(
+            entries = uiState.entries,
+            onStartRename = { entry -> editing = EditingState(entry.id, entry.value) },
+            onRemove = onRemove,
+        )
     }
 
     editing?.let { state ->
@@ -116,6 +102,72 @@ fun BlacklistScreen(
                 editing = null
             },
         )
+    }
+}
+
+/** Cartes de tête : règle du réseau mobile, explication, permission, erreur. */
+private fun LazyListScope.headerItems(
+    uiState: BlacklistUiState,
+    onMobileRuleChange: (Boolean) -> Unit,
+    onRequestLocationPermission: () -> Unit,
+    onDismissError: () -> Unit,
+) {
+    item {
+        // La règle du réseau mobile vit sur cet écran plutôt qu'aux
+        // paramètres : c'est ici que l'utilisateur décide sur quels réseaux
+        // le tunnel monte.
+        SwitchCard(
+            title = stringResource(R.string.blacklist_mobile_title),
+            summary = stringResource(R.string.blacklist_mobile_summary),
+            checked = uiState.isMobileRuleEnabled,
+            onCheckedChange = onMobileRuleChange,
+            testTag = BlacklistTestTags.MOBILE_RULE,
+        )
+    }
+
+    item {
+        Text(
+            text = stringResource(R.string.blacklist_explanation),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+
+    // L'explication précède la demande, comme l'exige le Play Store, et
+    // n'apparaît que sur cet écran : c'est ici que l'utilisateur découvre que
+    // ses réseaux de confiance ne pourront pas être reconnus.
+    if (uiState.needsLocationPermission) {
+        item { LocationRationaleCard(onGrant = onRequestLocationPermission) }
+    }
+
+    uiState.error?.let { error ->
+        item {
+            ErrorCard(message = stringResource(error.labelRes()), onDismiss = onDismissError)
+        }
+    }
+}
+
+/** Les réseaux enregistrés — ou l'explication de leur absence. */
+private fun LazyListScope.entryItems(
+    entries: List<BlacklistedSsid>,
+    onStartRename: (BlacklistedSsid) -> Unit,
+    onRemove: (Long) -> Unit,
+) {
+    if (entries.isEmpty()) {
+        item {
+            Text(
+                text = stringResource(R.string.blacklist_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag(BlacklistTestTags.EMPTY),
+            )
+        }
+    } else {
+        items(entries, key = { it.id }) { entry ->
+            EntryRow(
+                entry = entry,
+                onRename = { onStartRename(entry) },
+                onRemove = { onRemove(entry.id) },
+            )
+        }
     }
 }
 
@@ -325,6 +377,7 @@ private fun BlacklistScreenPreview() {
             onRemove = {},
             onAddCurrentSsid = {},
             onDismissError = {},
+            onMobileRuleChange = {},
         )
     }
 }
@@ -340,6 +393,7 @@ private fun BlacklistScreenEmptyPreview() {
             onRemove = {},
             onAddCurrentSsid = {},
             onDismissError = {},
+            onMobileRuleChange = {},
         )
     }
 }

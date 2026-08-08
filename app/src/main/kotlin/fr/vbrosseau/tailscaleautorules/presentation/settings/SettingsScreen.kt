@@ -2,7 +2,6 @@ package fr.vbrosseau.tailscaleautorules.presentation.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +10,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
+import fr.vbrosseau.tailscaleautorules.presentation.SwitchCard
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 
@@ -58,7 +57,7 @@ fun SettingsScreen(
             )
         }
 
-        SwitchRow(
+        SwitchCard(
             title = stringResource(R.string.settings_service_title),
             summary = stringResource(R.string.settings_service_summary),
             checked = uiState.settings.isServiceEnabled,
@@ -66,7 +65,7 @@ fun SettingsScreen(
             testTag = SettingsTestTags.SERVICE,
         )
 
-        SwitchRow(
+        SwitchCard(
             title = stringResource(R.string.settings_boot_title),
             summary = stringResource(R.string.settings_boot_summary),
             checked = uiState.settings.startOnBoot,
@@ -79,7 +78,7 @@ fun SettingsScreen(
             onRequestNotificationPermission = onRequestNotificationPermission,
         )
 
-        SwitchRow(
+        SwitchCard(
             title = stringResource(R.string.settings_logging_title),
             summary = stringResource(R.string.settings_logging_summary),
             checked = uiState.settings.verboseLogging,
@@ -132,34 +131,6 @@ private fun NotificationSection(
                 actionLabel = stringResource(R.string.settings_notification_grant),
                 onAction = onRequestNotificationPermission,
                 testTag = SettingsTestTags.NOTIFICATION_PERMISSION,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SwitchRow(
-    title: String,
-    summary: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    testTag: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                Text(text = summary, style = MaterialTheme.typography.bodyMedium)
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag(testTag),
             )
         }
     }

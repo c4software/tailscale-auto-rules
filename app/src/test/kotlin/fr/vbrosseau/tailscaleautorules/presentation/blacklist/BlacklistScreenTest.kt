@@ -1,10 +1,14 @@
 package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
@@ -27,6 +31,7 @@ class BlacklistScreenTest {
     private val recordedRemovals = mutableListOf<Long>()
     private var quickAddCount = 0
     private var locationRequests = 0
+    private val recordedMobileRuleChanges = mutableListOf<Boolean>()
 
     private fun show(uiState: BlacklistUiState) {
         composeRule.setContent {
@@ -38,6 +43,7 @@ class BlacklistScreenTest {
                     onRemove = { recordedRemovals += it },
                     onAddCurrentSsid = { quickAddCount++ },
                     onDismissError = {},
+                    onMobileRuleChange = { recordedMobileRuleChanges += it },
                     onRequestLocationPermission = { locationRequests++ },
                 )
             }
@@ -49,19 +55,29 @@ class BlacklistScreenTest {
         BlacklistedSsid(id = 2, value = "Bureau"),
     )
 
+    /**
+     * Amène l'élément dans la fenêtre avant d'interagir : l'écran est une
+     * liste défilante, et un clic hors de la fenêtre se perd en silence.
+     */
+    private fun scrollTo(tag: String) {
+        composeRule.onNodeWithTag(BlacklistTestTags.LIST).performScrollToNode(hasTestTag(tag))
+    }
+
     @Test
     fun anEmptyListIsExplainedRatherThanLeftBlank() {
         show(BlacklistUiState())
 
+        scrollTo(BlacklistTestTags.EMPTY)
         composeRule.onNodeWithTag(BlacklistTestTags.EMPTY).assertIsDisplayed()
-        composeRule.onNodeWithTag(BlacklistTestTags.LIST).assertDoesNotExist()
     }
 
     @Test
     fun eachEntryIsDisplayed() {
         show(BlacklistUiState(entries = twoEntries))
 
+        scrollTo(BlacklistTestTags.entry(1))
         composeRule.onNodeWithTag(BlacklistTestTags.entry(1)).assertTextEquals("Maison")
+        scrollTo(BlacklistTestTags.entry(2))
         composeRule.onNodeWithTag(BlacklistTestTags.entry(2)).assertTextEquals("Bureau")
         composeRule.onNodeWithTag(BlacklistTestTags.EMPTY).assertDoesNotExist()
     }
@@ -91,6 +107,7 @@ class BlacklistScreenTest {
     fun renamingPrefillsTheCurrentValue() {
         show(BlacklistUiState(entries = twoEntries))
 
+        scrollTo(BlacklistTestTags.rename(1))
         composeRule.onNodeWithTag(BlacklistTestTags.rename(1)).performClick()
 
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).assertTextEquals("Maison")
@@ -100,6 +117,7 @@ class BlacklistScreenTest {
     fun renamingReportsTheEntryIdentity() {
         show(BlacklistUiState(entries = twoEntries))
 
+        scrollTo(BlacklistTestTags.rename(2))
         composeRule.onNodeWithTag(BlacklistTestTags.rename(2)).performClick()
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextClearance()
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextInput("Bureau Fibre")
@@ -112,6 +130,7 @@ class BlacklistScreenTest {
     fun removingReportsTheEntryIdentity() {
         show(BlacklistUiState(entries = twoEntries))
 
+        scrollTo(BlacklistTestTags.remove(2))
         composeRule.onNodeWithTag(BlacklistTestTags.remove(2)).performClick()
 
         assertEquals(listOf(2L), recordedRemovals)
@@ -147,6 +166,24 @@ class BlacklistScreenTest {
     }
 
     @Test
+    fun theMobileRuleSwitchReflectsTheState() {
+        show(BlacklistUiState(isMobileRuleEnabled = false))
+
+        composeRule.onNodeWithTag(BlacklistTestTags.MOBILE_RULE)
+            .assertIsDisplayed()
+            .assertIsOff()
+    }
+
+    @Test
+    fun togglingTheMobileRuleReportsTheNewValue() {
+        show(BlacklistUiState(isMobileRuleEnabled = true))
+
+        composeRule.onNodeWithTag(BlacklistTestTags.MOBILE_RULE).assertIsOn().performClick()
+
+        assertEquals(listOf(false), recordedMobileRuleChanges)
+    }
+
+    @Test
     fun anErrorIsShownAndNamed() {
         show(BlacklistUiState(error = BlacklistError.DUPLICATE))
 
@@ -166,7 +203,9 @@ class BlacklistScreenTest {
         // une demande non expliquée serait à juste titre refusée.
         show(BlacklistUiState(canReadSsid = false))
 
+        scrollTo(BlacklistTestTags.LOCATION_RATIONALE)
         composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_RATIONALE).assertIsDisplayed()
+        scrollTo(BlacklistTestTags.LOCATION_GRANT)
         composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_GRANT).performClick()
 
         assertEquals(1, locationRequests)
