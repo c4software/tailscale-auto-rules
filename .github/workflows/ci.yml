@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  # Volontairement neutralisé : chaque exécution consomme du crédit de build,
+  # et la vérification locale (AGENTS.md §5) est la même commande. À rebasculer
+  # sur [main] le jour où le coût se justifie.
   push:
     branches: [never]
   pull_request:

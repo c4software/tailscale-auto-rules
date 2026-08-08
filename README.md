@@ -162,15 +162,53 @@ automatique.
 
 ---
 
+## Version
+
+Elle n'est **pas écrite dans le dépôt** : `versionName` et `versionCode` sont
+tous deux dérivés de l'étiquette Git, pour qu'ils ne puissent pas diverger.
+
+| Ce qui est construit | `versionName` | `versionCode` |
+|---|---|---|
+| l'étiquette `v1.2.13` | `1.2.13` | `1002013` |
+| trois commits après elle | `1.2.13-3-gabc1234` | `1002013` |
+| sans étiquette ni `git` | `0.0.0-inconnue` | `1` |
+
+Le nom dit donc de lui-même si la construction est publiable, ce qu'une capture
+d'écran de rapport de bogue suffit à lire. La variable `RELEASE_VERSION` prend
+le pas sur `git describe` — c'est par elle que la CI transmet l'étiquette, son
+`checkout` ne rapatriant pas l'historique.
+
+**Publier une version, c'est poser une étiquette** : rien d'autre à modifier.
+
+```bash
+git tag -a v1.1.0 -m "…" && git push origin v1.1.0
+```
+
+Le workflow `release.yml` vérifie, signe, constate que l'artefact est bien signé
+et qu'il porte la version de l'étiquette, puis crée la publication GitHub. Il
+n'est **jamais** déclenché par un `push` : seulement à la main, ou par une
+étiquette `v*`.
+
+### Signature
+
+`assembleRelease` produit un artefact **signé** si quatre variables
+d'environnement décrivent un keystore — `RELEASE_KEYSTORE`,
+`RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` — et un
+artefact **non signé** sinon, sans échouer : quiconque construit le projet sans
+elles doit y parvenir. Rien de tout cela n'est écrit dans le dépôt.
+
+---
+
 ## Publication sur le Play Store
 
 > Trame vérifiée sur le papier, **pas encore éprouvée** : elle se complètera au
 > premier envoi réel sur la Play Console.
 
-1. Créer un keystore de release, **hors du dépôt**.
-2. Renseigner `keystore.properties` (ignoré par Git) et le référencer dans la
-   configuration de signature.
-3. `./gradlew bundleRelease` → App Bundle dans `app/build/outputs/bundle/`.
+1. Créer un keystore de release, **hors du dépôt**, et le déposer dans les
+   secrets du dépôt GitHub (voir *Signature* ci-dessus).
+2. Poser une étiquette `v*` : le workflow construit et signe l'App Bundle.
+3. Le récupérer dans les artefacts de l'exécution, ou dans la publication
+   GitHub qu'elle crée.
 4. Compléter la fiche Play Console : formulaire de sécurité des données,
    justification de chaque permission, politique de confidentialité.
 5. **Déclarer les types de service de premier plan.** L'application emploie

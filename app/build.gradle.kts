@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -24,6 +25,89 @@ val isScreenshotRun =
         it.contains("roborazzi", ignoreCase = true)
     }
 
+/**
+ * Version utilisée quand rien ne permet de la déduire — dépôt sans étiquette,
+ * archive téléchargée, `git` absent de la machine.
+ *
+ * Elle est **volontairement invalide comme numéro de publication** : une
+ * construction qui ne descend d'aucune étiquette n'est pas une version, et lui
+ * en donner une plausible ferait passer un artefact local pour une livraison.
+ */
+val fallbackVersionName = "0.0.0-inconnue"
+
+/**
+ * Le nom que `git describe` donne au commit construit.
+ *
+ * Trois formes, et chacune dit quelque chose de différent :
+ * - `v1.0.0` — le commit **est** l'étiquette : c'est une version ;
+ * - `v1.0.0-3-gabc1234` — trois commits après elle : ce n'en est pas une ;
+ * - `v1.0.0-3-gabc1234-dirty` — et l'arbre de travail est modifié.
+ *
+ * `RELEASE_VERSION` a la priorité, pour deux raisons pratiques : la CI connaît
+ * l'étiquette (`GITHUB_REF_NAME`) sans avoir à rapatrier tout l'historique, et
+ * une construction hors dépôt Git reste possible.
+ *
+ * `providers.exec` et non `ProcessBuilder` : c'est ce qui rend l'appel
+ * compatible avec le cache de configuration, que ce dépôt utilise. Un appel
+ * direct l'invaliderait à chaque construction.
+ *
+ * L'échec n'est pas une erreur : `isIgnoreExitValue` puis contrôle du code de
+ * retour. `git describe` échoue légitimement dans un dépôt sans aucune
+ * étiquette, et faire échouer la construction pour cela empêcherait quiconque
+ * de compiler le projet depuis un clone frais.
+ */
+val describedVersion: String =
+    providers.environmentVariable("RELEASE_VERSION").orNull?.takeIf(String::isNotBlank)
+        ?: providers.exec {
+            commandLine("git", "describe", "--tags", "--always", "--dirty")
+            isIgnoreExitValue = true
+        }.let { execution ->
+            execution.standardOutput.asText.get().trim()
+                .takeIf { execution.result.get().exitValue == 0 && it.isNotEmpty() }
+        }
+        ?: fallbackVersionName
+
+/** Les trois nombres d'une version sémantique, où qu'ils commencent. */
+val semanticVersion = Regex("""^v?(\d+)\.(\d+)\.(\d+)""").find(describedVersion)
+
+/**
+ * Le `versionCode`, dérivé des **mêmes** nombres que le nom de version.
+ *
+ * Il ne se saisit pas à la main : deux sources de vérité pour une même version
+ * sont une divergence programmée, et c'est celle-là qu'on découvre le jour où
+ * l'on publie une 1.1 portant encore le code de la 1.0.
+ *
+ * `major × 1 000 000 + minor × 1 000 + patch` : strictement croissant avec la
+ * version tant que `minor` et `patch` restent sous 1 000, ce qui laisse de la
+ * marge, et borné bien en deçà du maximum d'un entier signé — Google Play
+ * refuse au-delà de 2 100 000 000.
+ *
+ * Le plancher à **1** n'est pas une précaution de style : Android refuse un
+ * `versionCode` nul, et le repli `0.0.0-inconnue` en produirait précisément un
+ * — l'expression régulière y trouve trois zéros.
+ *
+ * Une construction intermédiaire porte le code de l'étiquette dont elle
+ * descend : `v1.0.0-3-gabc1234` vaut donc autant que `v1.0.0`. C'est sans
+ * conséquence — son **nom** dit qu'elle n'est pas publiable, et rien ne la
+ * publie — mais l'installer par-dessus la version publiée est possible.
+ */
+val derivedVersionCode: Int =
+    semanticVersion
+        ?.destructured
+        ?.let { (major, minor, patch) -> major.toInt() * 1_000_000 + minor.toInt() * 1_000 + patch.toInt() }
+        ?.coerceAtLeast(1)
+        ?: 1
+
+/**
+ * Le nom affiché par l'application.
+ *
+ * Le `v` initial de l'étiquette est retiré — il appartient à la convention de
+ * nommage Git, pas au numéro de version — et tout ce que `git describe` ajoute
+ * est **conservé**. C'est précisément ce qui distingue, dans une capture d'écran
+ * de rapport de bogue, une version publiée d'une construction intermédiaire.
+ */
+val derivedVersionName: String = describedVersion.removePrefix("v")
+
 android {
     namespace = "fr.vbrosseau.tailscaleautorules"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -32,8 +116,8 @@ android {
         applicationId = "fr.vbrosseau.tailscaleautorules"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = derivedVersionCode
+        versionName = derivedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -66,17 +150,33 @@ android {
         }
     }
 
+    /**
+     * Signature de production, entièrement pilotée par l'environnement.
+     *
+     * Rien n'est écrit dans le dépôt : ni chemin, ni alias, ni mot de passe. Le
+     * keystore vit dans les secrets, jamais dans une copie de travail.
+     *
+     * **L'absence des variables ne fait pas échouer la construction** :
+     * `assembleRelease` produit alors un artefact non signé. C'est délibéré —
+     * quiconque construit le projet sans elles doit y parvenir, et un échec à
+     * cet endroit ressemblerait à une erreur de configuration de sa part.
+     *
+     * `providers.environmentVariable` plutôt que `System.getenv` : le second est
+     * une lecture non déclarée, que le cache de configuration ne sait pas
+     * invalider — une variable modifiée resterait sans effet.
+     */
+    val releaseKeystore =
+        providers.environmentVariable("RELEASE_KEYSTORE").orNull
+            ?.let(::File)
+            ?.takeIf(File::exists)
+
     signingConfigs {
-        // Renseignée par la CI seulement : le keystore de production vit dans
-        // les secrets du dépôt, jamais dans les copies de travail. En son
-        // absence, `assembleRelease` produit un APK non signé — suffisant pour
-        // vérifier que la construction de production passe.
-        create("release") {
-            System.getenv("RELEASE_KEYSTORE")?.let { keystorePath ->
-                storeFile = file(keystorePath)
-                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
-                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull
             }
         }
     }
@@ -89,7 +189,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

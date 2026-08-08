@@ -10,6 +10,13 @@ voir les réserves de [TASKS.md](./TASKS.md).
 
 ### Ajouté
 
+- **Version dérivée de l'étiquette Git.** `versionName` et `versionCode` ne se
+  saisissent plus : deux sources de vérité pour une même version sont une
+  divergence programmée. Publier se réduit à poser une étiquette.
+- **Chaîne de publication éprouvée.** Elle vérifie avant de signer, constate que
+  l'artefact est réellement signé plutôt que de le supposer, contrôle qu'il porte
+  bien la version de l'étiquette, efface la clé quoi qu'il arrive, et crée la
+  publication GitHub. Elle n'est jamais déclenchée par un `push`.
 - **Moteur de règles** extensible (pattern Strategy). Ajouter une règle consiste
   à écrire une classe et une ligne d'enregistrement ; le moteur n'est jamais
   modifié.
