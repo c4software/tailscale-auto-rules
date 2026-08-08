@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # `RELEASE_VERSION` porte la version pour toute la suite du job.
       #
@@ -50,13 +50,13 @@ jobs:
           fi
 
       - name: Configurer le JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Configurer Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
 
@@ -116,7 +116,7 @@ jobs:
         run: rm -f "$RUNNER_TEMP/release.jks"
 
       - name: Publier les artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tailscale-auto-rules-release
           path: |
@@ -136,7 +136,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tailscale-auto-rules-release
           path: artefacts
@@ -149,7 +149,7 @@ jobs:
       # Un déclenchement manuel reste un brouillon : il ne correspond à aucune
       # étiquette, donc à aucune version, et n'a rien à annoncer.
       - name: Publier
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: artefacts/**/*
           generate_release_notes: true
