@@ -64,6 +64,21 @@ voir les réserves de [TASKS.md](./TASKS.md).
 - **La notification laisse la bascule du tunnel se terminer** avant de relire
   son état : lu au moment même de l'événement, le réseau actif était encore en
   retard et la notification pouvait figer un état déjà faux.
+- **La raison affichée décrit le réseau courant**, et non plus la dernière
+  entrée du journal. Le journal ne consigne que les changements d'état
+  effectifs : une règle qui confirme un état déjà atteint — passer aux données
+  mobiles alors que le tunnel est déjà actif — n'y laisse rien, et la
+  notification restait sur la raison d'un changement révolu, jusqu'à afficher
+  « Tunnel activé » sous « Raison : Wi-Fi de confiance ». Le journal étant
+  persistant, ni le redémarrage du service ni celui de l'application n'y
+  changeaient quoi que ce soit.
+- **La notification est recalée à chaque démarrage du service.** Android exige
+  une notification immédiate, donc publiée sur un état indéterminé ; le
+  recalage n'avait lieu qu'au premier cycle. Quand l'observation tournait déjà,
+  « État du tunnel indéterminé » pouvait rester affiché des heures.
+- **Un battement de secours** relit le réseau toutes les quinze minutes. Un
+  rappel du système qui cesse de livrer figeait jusqu'ici l'automatisation sans
+  rien signaler ; la panne est désormais bornée à un quart d'heure.
 
 ### Notes de conception
 
@@ -71,6 +86,9 @@ voir les réserves de [TASKS.md](./TASKS.md).
   service de premier plan, lequel l'imposerait sur Android 8 et suivants.
 - L'accueil affiche l'état **constaté** du tunnel, jamais celui déduit de la
   dernière décision : une divergence reste ainsi visible.
+- La notification décrit le **présent** — état constaté, règle applicable au
+  réseau courant. Le journal, lui, atteste de ce qui a **eu lieu** ; les deux
+  divergent dès qu'une règle confirme un état déjà atteint.
 - Un client Tailscale absent produit un état *indéterminé*, jamais *désactivé*.
 
 ### Réserves connues
