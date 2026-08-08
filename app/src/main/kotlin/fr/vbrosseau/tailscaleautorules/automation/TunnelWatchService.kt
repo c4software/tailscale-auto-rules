@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -97,6 +98,7 @@ class TunnelWatchService : Service() {
         if (watchJob == null) {
             watchJob = scope.launch { watchNetwork() }
             scope.launch { watchTunnel() }
+            scope.launch { beat() }
             Timber.i("Observation continue démarrée")
         }
 
@@ -139,6 +141,29 @@ class TunnelWatchService : Service() {
             delay(TUNNEL_SETTLE_WINDOW)
             runCatching { coordinator.refreshNotificationIfEnabled() }
                 .onFailure { Timber.e(it, "Rafraîchissement de la notification en échec") }
+        }
+    }
+
+    /**
+     * Filet de secours : un cycle périodique, quoi qu'il arrive.
+     *
+     * Toute l'automatisation repose sur des rappels du système qu'on ne peut
+     * ni interroger ni relancer : un `NetworkCallback` qui cesse de livrer, ou
+     * des capacités mémorisées devenues fausses, figent l'application sans rien
+     * signaler — c'est précisément ce qui a été constaté sur appareil. Ce
+     * battement relit le réseau de son propre chef et borne la panne à
+     * [HEARTBEAT_INTERVAL] au lieu de l'éterniser.
+     *
+     * Il ne coûte rien quand tout va bien : un cycle qui trouve le tunnel déjà
+     * dans l'état visé ne commande rien et n'écrit pas au journal.
+     */
+    private suspend fun beat() {
+        while (true) {
+            delay(HEARTBEAT_INTERVAL)
+            Timber.i("Battement de secours")
+            runCatching { coordinator.synchronize() }
+                .onSuccess { Timber.i("Battement terminé : %s", it) }
+                .onFailure { Timber.e(it, "Battement en échec") }
         }
     }
 
@@ -191,6 +216,15 @@ class TunnelWatchService : Service() {
     companion object {
         /** Laisse la bascule du tunnel se terminer avant de relire son état. */
         private val TUNNEL_SETTLE_WINDOW = 2.seconds
+
+        /**
+         * Période du filet de secours.
+         *
+         * Assez long pour rester sans effet sur la batterie — le processus est
+         * de toute façon vivant — et assez court pour qu'une observation morte
+         * ne se remarque pas.
+         */
+        private val HEARTBEAT_INTERVAL = 15.minutes
 
         /** Démarre l'observation continue, sans effet si elle tourne déjà. */
         fun start(context: Context) {
