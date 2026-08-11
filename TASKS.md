@@ -558,14 +558,19 @@ paramètres avait précédé sa navigation (étape 12).
 
 ---
 
-## 20. Exceptions dynamiques — domaine : capture du geste `[ ]`
+## 20. Exceptions dynamiques — domaine : capture du geste `[x]`
 
-- [ ] `RecordManualOverrideUseCase` — gardes : apprentissage activé, service
+- [x] `RecordManualOverrideUseCase` — gardes : apprentissage activé, service
       activé, clé dérivable, pas de mode avion ; **upsert** systématique de
       l'état observé ; entrée de journal sous `network-exception`, sans quoi
       le geste suivant serait indétectable (le détecteur compare au journal)
-- [ ] `AppSettings.isLearningEnabled` (défaut : activé) + Fake mis à jour
-- [ ] Tests JVM : chaque garde, création, remplacement, journalisation
+- [x] `AppSettings.isLearningEnabled` (défaut : activé) — le Fake, qui stocke
+      l'objet entier, n'avait rien à changer
+- [x] Tests JVM : chaque garde, création, remplacement, journalisation
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès. La préférence retombe sur sa valeur par défaut tant que la clé
+DataStore n'existe pas (étape 21).
 
 ---
 

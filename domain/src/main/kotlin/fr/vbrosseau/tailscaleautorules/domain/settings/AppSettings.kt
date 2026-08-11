@@ -14,6 +14,7 @@ package fr.vbrosseau.tailscaleautorules.domain.settings
  */
 data class AppSettings(
     val isServiceEnabled: Boolean = true,
+    val isLearningEnabled: Boolean = true,
     val startOnBoot: Boolean = true,
     val verboseLogging: Boolean = false,
 ) {
