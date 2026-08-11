@@ -90,6 +90,16 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun replayingTheOnboardingReopensTheJourney() = runTest {
+        repository.updateAppSettings { it.copy(isOnboardingDone = true) }
+        val model = viewModel()
+
+        model.replayOnboarding()
+
+        assertTrue(!repository.currentAppSettings().isOnboardingDone)
+    }
+
+    @Test
     fun aChangeMadeElsewhereIsReflected() = runTest {
         val model = viewModel()
 

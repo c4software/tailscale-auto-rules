@@ -85,6 +85,7 @@ fun AppNavHost(
                 onVerboseLoggingChange = viewModel::setVerboseLogging,
                 onRequestNotificationPermission = onRequestNotificationPermission,
                 onOpenBatterySettings = { context.openBatterySettings() },
+                onReplayOnboarding = viewModel::replayOnboarding,
             )
         }
     }

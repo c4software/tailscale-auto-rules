@@ -10,6 +10,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ fun SettingsScreen(
     onVerboseLoggingChange: (Boolean) -> Unit,
     onRequestNotificationPermission: () -> Unit,
     onOpenBatterySettings: () -> Unit,
+    onReplayOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (uiState.isLoading) {
@@ -85,6 +87,17 @@ fun SettingsScreen(
                 onAction = onOpenBatterySettings,
                 testTag = SettingsTestTags.BATTERY,
             )
+        }
+
+        // Un bouton discret plutôt qu'une carte : revoir la présentation est
+        // un recours ponctuel, pas un réglage du quotidien.
+        OutlinedButton(
+            onClick = onReplayOnboarding,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(SettingsTestTags.REPLAY_ONBOARDING),
+        ) {
+            Text(stringResource(R.string.settings_replay_onboarding))
         }
 
         AboutCard(versionName = uiState.versionName)
@@ -260,6 +273,7 @@ private fun SettingsScreenPreview() {
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
             onOpenBatterySettings = {},
+            onReplayOnboarding = {},
         )
     }
 }

@@ -320,6 +320,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
             onOpenBatterySettings = {},
+            onReplayOnboarding = {},
         )
     }
 
@@ -343,6 +344,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
             onOpenBatterySettings = {},
+            onReplayOnboarding = {},
         )
     }
 }

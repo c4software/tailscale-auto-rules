@@ -284,6 +284,7 @@ Affiche, en lecture seule :
 | Notification persistante | interrupteur | désactivé |
 | Journalisation détaillée | interrupteur | désactivé |
 | Exemption d'optimisation de batterie | action | — |
+| Revoir le premier lancement (§6.5) | action | — |
 | Version de l'application | information | — |
 | Licence | information | MIT |
 
@@ -317,7 +318,8 @@ rattrapent un refus au moment où la fonctionnalité en a réellement besoin.
 
 Le parcours ne se montre qu'une fois : la réponse de la dernière page vaut
 choix d'apprentissage (§6.3) et clôture le premier lancement, quelle qu'elle
-soit.
+soit. Il peut être revu à tout moment depuis les paramètres (§6.3) — sa
+clôture obéit alors aux mêmes règles.
 
 ---
 

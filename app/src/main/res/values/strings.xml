@@ -108,6 +108,7 @@
     <string name="settings_battery_summary">Sans exemption, Android peut retarder les réveils de l\'application.</string>
     <string name="settings_battery_action">Ouvrir les réglages</string>
     <string name="settings_battery_exempted">L\'application est déjà exemptée.</string>
+    <string name="settings_replay_onboarding">Revoir le premier lancement</string>
     <string name="settings_about_title">À propos</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_license">Licence MIT</string>

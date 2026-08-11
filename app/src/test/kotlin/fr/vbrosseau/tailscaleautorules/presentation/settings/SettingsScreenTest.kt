@@ -27,6 +27,7 @@ class SettingsScreenTest {
     private val toggles = mutableListOf<Pair<String, Boolean>>()
     private var permissionRequests = 0
     private var batteryClicks = 0
+    private var replayClicks = 0
 
     private fun show(uiState: SettingsUiState) {
         composeRule.setContent {
@@ -39,6 +40,7 @@ class SettingsScreenTest {
                     onVerboseLoggingChange = { toggles += "logging" to it },
                     onRequestNotificationPermission = { permissionRequests++ },
                     onOpenBatterySettings = { batteryClicks++ },
+                    onReplayOnboarding = { replayClicks++ },
                 )
             }
         }
@@ -167,6 +169,17 @@ class SettingsScreenTest {
         show(SettingsUiState(isIgnoringBatteryOptimizations = true))
 
         composeRule.onNodeWithTag(SettingsTestTags.BATTERY).assertDoesNotExist()
+    }
+
+    @Test
+    fun replayingTheOnboardingGoesThroughItsButton() {
+        show(SettingsUiState())
+
+        composeRule.onNodeWithTag(SettingsTestTags.REPLAY_ONBOARDING)
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(1, replayClicks)
     }
 
     @Test

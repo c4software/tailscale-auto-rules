@@ -113,6 +113,15 @@ class SettingsViewModel @Inject constructor(
 
     fun setVerboseLogging(enabled: Boolean) = update { it.copy(verboseLogging = enabled) }
 
+    /**
+     * Rouvre le parcours de premier lancement (SPECS.md §6.5).
+     *
+     * Rouvrir la question suffit : le portail de la racine observe cette
+     * préférence et remplace l'ossature sur-le-champ ; la clôture du parcours
+     * la reposera.
+     */
+    fun replayOnboarding() = update { it.copy(isOnboardingDone = false) }
+
     private fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch { repository.updateAppSettings(transform) }
     }

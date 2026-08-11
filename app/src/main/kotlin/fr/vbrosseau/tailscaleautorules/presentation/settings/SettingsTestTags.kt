@@ -10,5 +10,6 @@ object SettingsTestTags {
     const val DISABLED_NOTICE = "settings:disabled-notice"
     const val NOTIFICATION_PERMISSION = "settings:notification-permission"
     const val BATTERY = "settings:battery"
+    const val REPLAY_ONBOARDING = "settings:replay-onboarding"
     const val VERSION = "settings:version"
 }
