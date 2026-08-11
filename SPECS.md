@@ -51,7 +51,7 @@ Une règle expose :
 | `id` | identifiant stable | Clé de persistance et d'affichage. Ne change jamais. |
 | `enabled` | booléen | Une règle désactivée n'est pas évaluée. |
 | `priority` | entier | Ordre d'évaluation. Plus la valeur est **basse**, plus la règle passe **tôt**. |
-| paramètres | propres à la règle | Ex. la liste de SSID pour la règle blacklist. |
+| paramètres | propres à la règle | Ex. les préférences par réseau pour la règle du même nom. |
 
 Elle expose une unique opération : à partir d'un **contexte réseau**, produire
 une **décision**.
@@ -113,22 +113,22 @@ les deux se voit donc, au lieu d'être masquée.
 L'utilisateur peut changer l'état du tunnel sans passer par l'application —
 typiquement l'activer depuis le client officiel alors qu'il est sur un réseau
 de confiance. Ce geste est **mémorisé** : l'application enregistre une
-**exception dynamique** pour le réseau courant (§4.5), qui rejoue ce choix à
-chaque passage sur ce réseau — changement de réseau, redémarrage et battement
-de secours compris. Un nouveau geste sur le même réseau **remplace**
-l'exception ; revenir au comportement automatique se fait en supprimant
-l'exception sur l'écran des réseaux de confiance (§6.2). L'enregistrement est
-consigné au journal sous la règle « Exception dynamique ».
+**préférence de réseau** (§4.2), qui rejoue ce choix à chaque passage sur ce
+réseau — changement de réseau, redémarrage et battement de secours compris.
+Un nouveau geste sur le même réseau **remplace** la préférence — déclarée ou
+apprise ; revenir au comportement automatique se fait en la supprimant sur
+l'écran des réseaux (§6.2). L'enregistrement est consigné au journal sous la
+règle « Préférence de réseau ».
 
 La mémorisation se coupe par le réglage « Apprendre mes gestes » (§6.3).
 Coupée, le geste redevient éphémère : aucun cycle ne le combat tant que le
 réseau ne change pas, et les règles reprennent la main au changement de réseau
-suivant. Les exceptions **déjà apprises** continuent en revanche de se rejouer
+suivant. Les préférences **déjà enregistrées** continuent en revanche de s'appliquer
 tant qu'elles ne sont pas supprimées : le réglage gouverne l'apprentissage,
 pas le rejeu.
 
-Un geste n'est mémorisé que si le réseau courant est identifiable (§4.5) : en
-Wi-Fi le SSID doit être lisible ; en cellulaire l'exception vaut pour toutes
+Un geste n'est mémorisé que si le réseau courant est identifiable (§4.2) : en
+Wi-Fi le SSID doit être lisible ; en cellulaire la préférence vaut pour toutes
 les données mobiles ; en mode avion ou sans identifiant, rien n'est appris.
 La mémorisation est retentée avant chaque cycle — battement de secours
 compris — tant que le geste reste constaté : un instantané réseau perturbé au
@@ -154,9 +154,8 @@ Priorités : plus la valeur est basse, plus la règle est prioritaire.
 | Prio. | Règle | Condition | Décision |
 |---:|---|---|---|
 | 100 | **Mode avion** | Mode avion actif | `DISABLE` |
-| 150 | **Exception dynamique** | Un geste manuel a été mémorisé pour le réseau courant | l'état mémorisé |
-| 200 | **Wi-Fi blacklisté** | Connecté en Wi-Fi, SSID présent dans la blacklist | `DISABLE` |
-| 300 | **Wi-Fi non blacklisté** | Connecté en Wi-Fi, SSID absent de la blacklist | `ENABLE` |
+| 150 | **Préférence de réseau** | Une préférence existe pour le réseau courant — déclarée ou apprise d'un geste | l'état choisi |
+| 300 | **Wi-Fi** | Connecté en Wi-Fi, sans préférence | `ENABLE` |
 | 400 | **Réseau mobile** | Connecté en cellulaire (LTE / 4G / 5G / NR) | `ENABLE` |
 | — | *(aucune règle)* | Aucun réseau, ou réseau non couvert | `NO_DECISION` |
 
@@ -169,14 +168,34 @@ Dans tous les autres cas, chaque règle retourne `NO_DECISION`.
   inactif → `NO_DECISION` (et non `ENABLE`), afin de laisser les règles
   suivantes décider.
 
-### 4.2 Détail — Wi-Fi blacklisté
+### 4.2 Détail — Préférence de réseau
 
-- L'utilisateur gère une liste de SSID (voir §6.2).
-- La comparaison est **insensible à la casse** et ignore les espaces de bordure.
-- Un SSID indisponible (permission absente, SSID masqué) est traité comme
-  **non blacklisté** : la règle retourne `NO_DECISION` et laisse la règle
-  « Wi-Fi non blacklisté » activer le tunnel. Le choix est délibéré : en cas de
-  doute, on protège la connexion.
+Une seule notion couvre les réseaux de confiance d'hier et les gestes
+appris : une **préférence par réseau**, à deux états fermes — tunnel
+**toujours coupé** (le réseau est de confiance) ou **toujours actif** — et
+dont l'**absence** vaut « automatique ».
+
+- Deux sources, un même magasin : la **déclaration** sur l'écran des réseaux
+  (§6.2), et l'**apprentissage** d'un geste manuel (§3.3). Un geste remplace
+  la préférence du réseau, déclarée ou apprise — la dernière volonté gagne.
+- Le réseau est identifié par une clé canonique :
+
+| Réseau courant | Clé | Portée |
+|---|---|---|
+| Wi-Fi avec SSID lisible | `wifi:<ssid canonique>` | ce seul réseau |
+| Cellulaire | `cellular` | toutes les données mobiles |
+| Wi-Fi sans SSID, Ethernet, aucun réseau | — | pas de préférence |
+
+- La comparaison du SSID est **insensible à la casse** et ignore les espaces
+  de bordure ; elle ne dépend pas de la validation Internet — la confiance
+  accordée à un réseau ne dépend pas de son accès Internet, et le VPN qui
+  monte fait fugacement perdre sa validation au réseau porteur.
+- Un SSID indisponible (permission absente, SSID masqué) ne correspond à
+  aucune clé : la règle s'abstient et laisse la règle « Wi-Fi » activer le
+  tunnel. En cas de doute, on protège la connexion.
+- Priorité 150 : sous le mode avion — jamais d'application en avion — mais
+  au-dessus des règles par défaut.
+- Supprimer la préférence (glissement, §6.2) rend le réseau à l'automatisme.
 
 ### 4.3 Détail — Réseau mobile
 
@@ -188,29 +207,6 @@ Dans tous les autres cas, chaque règle retourne `NO_DECISION`.
 
 - Absence de réseau, ou réseau sans validation Internet : aucune règle ne se
   prononce. L'état du tunnel est conservé tel quel.
-
-### 4.5 Détail — Exception dynamique
-
-- Rejoue le dernier geste manuel mémorisé pour le réseau courant (§3.3).
-- Le réseau est identifié par une clé canonique :
-
-| Réseau courant | Clé | Portée de l'exception |
-|---|---|---|
-| Wi-Fi avec SSID lisible | `wifi:<ssid canonique>` | ce seul réseau |
-| Cellulaire | `cellular` | toutes les données mobiles |
-| Wi-Fi sans SSID, Ethernet, aucun réseau | — | pas d'exception |
-
-- La forme canonique du SSID est celle de la blacklist (§4.2) : insensible à
-  la casse, espaces de bordure ignorés.
-- Le cellulaire n'expose aucun identifiant : l'exception y est globale, au
-  singulier — « vos données mobiles ».
-- Priorité 150 : sous le mode avion — jamais de rejeu en avion — mais
-  au-dessus des règles Wi-Fi et mobile. Le choix explicite de l'utilisateur
-  prime sur le comportement par défaut, y compris sur un réseau blacklisté.
-- La clé est une pure **identité** : comme la comparaison de la blacklist
-  (§4.2), elle ne dépend pas de la validation Internet. L'exiger ferait
-  précisément rater la capture — l'activation du VPN fait fugacement perdre
-  sa validation au réseau qui le porte.
 
 ---
 
@@ -251,28 +247,33 @@ Affiche, en lecture seule :
   contredite et dit que le choix est mémorisé pour le réseau courant — ou
   simplement respecté jusqu'au prochain changement de réseau, si
   l'apprentissage est coupé ou le réseau non identifiable. Une fois le geste
-  mémorisé, l'exception devient la décision courante et la carte se retire ;
+  mémorisé, la préférence devient la décision courante et la carte se retire ;
 - un bouton **Synchroniser** forçant un cycle immédiat ;
 - un bouton **Désactiver l'automatisation** — remplacé, lorsqu'elle est déjà
   inactive, par une mention explicite renvoyant aux paramètres.
 
-### 6.2 Blacklist Wi-Fi
+### 6.2 Réseaux
+
+Un seul écran, une seule liste : les **préférences de réseau** (§4.2),
+qu'elles aient été déclarées à la main ou apprises d'un geste. Les réseaux
+absents de la liste suivent l'automatisme.
 
 - Un interrupteur **Réseau mobile** active ou désactive la règle du même nom
   (§4.3). Il vit sur cet écran plutôt qu'aux paramètres : c'est là que
   l'utilisateur décide sur quels réseaux le tunnel monte. Sa bascule déclenche
   une synchronisation immédiate (§5) ; la désactivation laisse l'état du tunnel
   inchangé, aucune règle ne se prononçant plus (§3.2).
-- Liste des SSID enregistrés.
-- Ajout manuel, modification, suppression (CRUD complet).
+- Chaque entrée montre le réseau — SSID, ou « Données mobiles » — et son
+  comportement : **tunnel coupé** ou **tunnel actif**, modifiable sur place ;
+  le changement déclenche une synchronisation immédiate (§5).
+- Ajout manuel d'un réseau avec choix du comportement — « coupé » par défaut :
+  c'est le geste de confiance d'hier. Renommage d'un SSID. Un SSID en doublon
+  est refusé au renommage, avec un message explicite ; l'ajout d'un réseau
+  déjà connu remplace simplement son comportement.
 - Action d'ajout rapide du **SSID courant**, désactivée si le SSID est
   indisponible.
-- Un SSID en doublon est refusé, avec un message explicite.
-- Une section **Exceptions apprises** liste les seuls réseaux où un geste
-  manuel a été mémorisé (§3.3) : nom du réseau — SSID, ou « Données mobiles »
-  — et comportement rejoué (tunnel actif ou coupé). Un glissement latéral
-  supprime l'exception ; le réseau revient au comportement automatique au
-  cycle suivant. La section est absente quand il n'y a rien à montrer.
+- Un **glissement latéral** supprime la préférence : le réseau revient à
+  l'automatisme, par une synchronisation immédiate.
 
 ### 6.3 Paramètres
 
@@ -309,7 +310,7 @@ quatre pages, qui avancent d'un bouton ou d'un glissement :
 | 1. Bienvenue | Ce que fait l'application — et ce qu'elle ne fait pas : elle pilote le client officiel, elle ne remplace aucune pile VPN | Continuer |
 | 2. Notification | Pourquoi une notification permanente est imposée (§7) | Autoriser · Continuer |
 | 3. Localisation | Pourquoi lire un SSID exige la localisation, et ce qui n'est **pas** lu (§8) | Autoriser · Continuer |
-| 4. Apprentissage | Les exceptions dynamiques (§3.3) | Activer · Ne pas activer |
+| 4. Apprentissage | La mémorisation des gestes (§3.3) | Activer · Ne pas activer |
 
 Chaque demande de permission est ainsi précédée de son explication — ce sont
 ces pages qui tiennent le rôle d'écran préalable exigé par §8 — et chacune
@@ -329,11 +330,11 @@ Persistante lorsqu'elle est visible, elle affiche :
 
 - **Tunnel :** Activé / Désactivé
 - **Raison :** libellé court de la règle ayant décidé (« Réseau mobile »,
-  « Wi-Fi de confiance », « Mode avion », « Exception dynamique »…) — ou la
+  « Mode avion », « Préférence de réseau »…) — ou la
   mention d'une intervention manuelle lorsque l'état constaté contredit une
   décision déjà appliquée (§3.3) : attribuer à une règle un état qu'elle n'a
   pas produit serait un mensonge. Un geste mémorisé s'affiche sous
-  « Exception dynamique » : c'est désormais cette règle qui maintient l'état
+  « Préférence de réseau » : c'est désormais cette règle qui maintient l'état
   voulu par l'utilisateur.
 
 Elle se rafraîchit à chaque cycle **et** à chaque mouvement du tunnel constaté
@@ -396,8 +397,7 @@ d'explication de l'application redemandent au moment du besoin réel.
 
 | Donnée | Support | Motif |
 |---|---|---|
-| Blacklist de SSID | Room | Collection interrogeable, CRUD, contrainte d'unicité |
-| Exceptions dynamiques (§4.5) | Room | Collection, une entrée par clé réseau, contrainte d'unicité |
+| Préférences de réseau (§4.2) | Room | Collection, une entrée par clé réseau, contrainte d'unicité |
 | Journal (500 entrées) | Room | Collection ordonnée avec purge |
 | Préférences (§6.3) | DataStore Preferences | Valeurs scalaires isolées |
 | Configuration des règles (`enabled`, `priority`) | DataStore Preferences | Valeurs scalaires par règle |
@@ -463,9 +463,9 @@ modifier le moteur**. Ils ne sont pas planifiés à ce stade.
 
 Android ne dit pas quelle application porte le tunnel actif (§10.1). Un autre
 VPN qui monte ou descend peut donc être pris pour un geste sur Tailscale, et
-créer une exception erronée. Trois garde-fous : le délai de grâce de dix
-secondes (§3.3), la visibilité des exceptions sur l'écran des réseaux de
-confiance — supprimables en un geste —, et le réglage « Apprendre mes
+créer une préférence erronée. Trois garde-fous : le délai de grâce de dix
+secondes (§3.3), la visibilité des préférences sur l'écran des réseaux —
+supprimables en un geste —, et le réglage « Apprendre mes
 gestes ». Le cas nominal — un seul VPN sur le terminal — n'est pas affecté.
 
 ---

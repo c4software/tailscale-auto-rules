@@ -725,3 +725,55 @@ des quatre écrans ont été réenregistrées avec leur vrai contraste.
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès ; `:app:verifyRoborazziDebug` → succès, 34 références.
+
+---
+
+## 25. Préférences de réseau — spécifier la fusion `[x]`
+
+La blacklist et les exceptions dynamiques disent la même chose en deux
+endroits : une décision ferme par réseau. Elles fusionnent en une seule
+notion, la **préférence de réseau** ([SPECS.md](./SPECS.md) §4.2) — « toujours
+coupé » (le réseau de confiance d'hier) ou « toujours actif », l'absence
+valant automatisme — alimentée par la déclaration **et** par les gestes.
+
+- [x] §4 : tableau ramené à quatre règles (100, 150, 300, 400) ; §4.2 absorbe
+      la blacklist et l'ancien §4.5
+- [x] §3.3, §6.1, §6.2 (écran unifié), §7, §9 (une seule table) réécrits
+- [x] Étapes 26 à 28 consignées ici
+
+---
+
+## 26. Préférences de réseau — domaine `[ ]`
+
+- [ ] Renommage `NetworkException*` → `NetworkPreference*` (modèle, clé,
+      contrat, fake, cas d'usage) ; `RuleId("network-preference")`
+- [ ] `NetworkPreferenceRule` (150) remplace `BlacklistedWifiRule` **et**
+      `NetworkExceptionRule` ; `RuleContext` perd `blacklistedSsids`
+- [ ] `BlacklistRepository` supprimé ; le contrat des préférences gagne le
+      renommage (`update`, conflit de doublon)
+- [ ] Tests : chaque branche de la règle unifiée, `ShippedRulesTest` rejoue le
+      tableau §4 fusionné, cas d'usage réalignés
+
+---
+
+## 27. Préférences de réseau — data : Room v3 `[ ]`
+
+- [ ] Table `network_preference` ; migration 2→3 **fusionnante** : les
+      exceptions copiées, la blacklist versée en « toujours coupé » là où
+      aucun geste n'a déjà tranché (le geste, plus récent, gagne), les deux
+      anciennes tables supprimées
+- [ ] `RoomNetworkPreferenceRepository` (+ renommage avec unicité portée par
+      l'index) ; `RoomBlacklistRepository` supprimé ; DI réalignée
+- [ ] Tests de migration : fusion, conflit geste/déclaration, chaîne 1→2→3
+
+---
+
+## 28. Préférences de réseau — interface `[ ]`
+
+- [ ] Écran « Réseaux » unifié : une liste de préférences, comportement
+      modifiable sur place (coupé / actif) avec cycle immédiat, ajout avec
+      choix du comportement (« coupé » par défaut), renommage, glissement pour
+      revenir à l'automatisme
+- [ ] Libellés `network-preference` ; les libellés des règles retirées
+      restent pour l'historique du journal
+- [ ] Tests écran + ViewModel ; références Roborazzi réenregistrées et relues
