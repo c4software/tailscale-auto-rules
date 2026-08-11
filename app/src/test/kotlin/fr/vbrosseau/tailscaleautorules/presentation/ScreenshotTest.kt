@@ -1,9 +1,8 @@
 package fr.vbrosseau.tailscaleautorules.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -58,13 +57,14 @@ abstract class ScreenshotTest {
 
                 setContent {
                     AppTheme(darkTheme = dark, dynamicColor = false) {
-                        // Le fond du thème est peint explicitement : sans lui,
-                        // la capture serait transparente et les deux thèmes
-                        // paraîtraient identiques.
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background),
+                        // Une `Surface`, pas un simple fond peint : dans
+                        // l'application, les écrans vivent sous le `Scaffold`,
+                        // qui fournit la couleur de contenu. Un fond seul
+                        // laissait le texte hors carte noir dans les captures
+                        // sombres — un rendu que l'application n'a jamais eu.
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.background,
                         ) {
                             content()
                         }

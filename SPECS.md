@@ -252,8 +252,6 @@ Affiche, en lecture seule :
   simplement respecté jusqu'au prochain changement de réseau, si
   l'apprentissage est coupé ou le réseau non identifiable. Une fois le geste
   mémorisé, l'exception devient la décision courante et la carte se retire ;
-- une invitation unique, au premier lancement, à activer ou non
-  l'apprentissage des gestes (§6.3) ;
 - un bouton **Synchroniser** forçant un cycle immédiat ;
 - un bouton **Désactiver l'automatisation** — remplacé, lorsqu'elle est déjà
   inactive, par une mention explicite renvoyant aux paramètres.
@@ -289,9 +287,9 @@ Affiche, en lecture seule :
 | Version de l'application | information | — |
 | Licence | information | MIT |
 
-L'apprentissage est proposé une seule fois au premier lancement, sur l'accueil
-(§6.1) : le choix — l'activer ou non — s'enregistre dans ce réglage, que
-l'écran des paramètres permet de reprendre à tout moment.
+L'apprentissage est proposé une seule fois, à la dernière page du premier
+lancement (§6.5) : le choix — l'activer ou non — s'enregistre dans ce réglage,
+que l'écran des paramètres permet de reprendre à tout moment.
 
 ### 6.4 Journal
 
@@ -299,6 +297,27 @@ l'écran des paramètres permet de reprendre à tout moment.
 - Chaque entrée : date/heure, ancien état, nouvel état, règle déclenchante,
   raison lisible.
 - Au-delà de 500, les entrées les plus anciennes sont purgées.
+
+### 6.5 Premier lancement
+
+Au premier démarrage, un parcours d'accueil remplace l'application le temps de
+quatre pages, qui avancent d'un bouton ou d'un glissement :
+
+| Page | Contenu | Action |
+|---|---|---|
+| 1. Bienvenue | Ce que fait l'application — et ce qu'elle ne fait pas : elle pilote le client officiel, elle ne remplace aucune pile VPN | Continuer |
+| 2. Notification | Pourquoi une notification permanente est imposée (§7) | Autoriser · Continuer |
+| 3. Localisation | Pourquoi lire un SSID exige la localisation, et ce qui n'est **pas** lu (§8) | Autoriser · Continuer |
+| 4. Apprentissage | Les exceptions dynamiques (§3.3) | Activer · Ne pas activer |
+
+Chaque demande de permission est ainsi précédée de son explication — ce sont
+ces pages qui tiennent le rôle d'écran préalable exigé par §8 — et chacune
+peut être refusée : les cartes d'explication de l'application (§6.2, §6.3)
+rattrapent un refus au moment où la fonctionnalité en a réellement besoin.
+
+Le parcours ne se montre qu'une fois : la réponse de la dernière page vaut
+choix d'apprentissage (§6.3) et clôture le premier lancement, quelle qu'elle
+soit.
 
 ---
 
@@ -364,7 +383,10 @@ et un interrupteur coché puis désactivé se lit presque comme un interrupteur
 Règle transverse : **aucune permission n'est demandée tant que la fonctionnalité
 qui la justifie n'est pas activée par l'utilisateur.** Chaque demande est
 précédée d'un écran expliquant l'usage, conformément aux exigences du Play
-Store.
+Store. Au premier lancement, les pages du parcours d'accueil (§6.5) tiennent
+ce rôle — les fonctionnalités concernées, automatisation et règles Wi-Fi,
+étant actives par défaut — et un refus y reste sans conséquence : les cartes
+d'explication de l'application redemandent au moment du besoin réel.
 
 ---
 

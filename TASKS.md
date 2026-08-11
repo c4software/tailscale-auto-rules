@@ -694,3 +694,34 @@ ceux du variant ; la release n'embarque rien.
 → succès, 375 tests, 0 échec ; `:app:verifyRoborazziDebug` → succès,
 32 références dont 4 nouvelles (invitation d'apprentissage, exceptions
 apprises, en clair et sombre).
+
+---
+
+## 24. Parcours de premier lancement `[x]`
+
+Quatre pages qui avancent d'un bouton ou d'un glissement
+([SPECS.md](./SPECS.md) §6.5) : bienvenue, notification, localisation,
+apprentissage. Les pages tiennent le rôle d'écran d'explication préalable aux
+permissions (§8) ; l'invitation d'apprentissage de l'accueil, supplantée, est
+retirée.
+
+- [x] `AppSettings.isOnboardingDone` (défaut : faux) + clé DataStore
+- [x] `presentation/onboarding/` : écran à pages (pager), points d'étape,
+      boutons Autoriser / Continuer, dernière page Activer / Ne pas activer ;
+      ViewModel qui clôt le parcours (apprentissage choisi + question posée)
+- [x] `MainActivity`/`AppRoot` : le parcours remplace l'ossature tant que le
+      premier lancement n'est pas clos ; les lanceurs de permission existants
+      sont réutilisés
+- [x] Accueil : retrait de l'invitation d'apprentissage (carte, état,
+      action, chaînes, tests, références)
+- [x] Tests écran + ViewModel ; références Roborazzi (pages en clair et
+      sombre), captures relues
+
+**Défaut de harnais corrigé au passage.** Les captures peignaient le fond du
+thème sans poser de `Surface` : le texte hors carte restait noir dans toutes
+les références sombres — un rendu que l'application, sous son `Scaffold`, n'a
+jamais eu. Le harnais pose désormais une `Surface`, et les références sombres
+des quatre écrans ont été réenregistrées avec leur vrai contraste.
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès ; `:app:verifyRoborazziDebug` → succès, 34 références.

@@ -38,10 +38,20 @@
     <string name="home_manual_override_disabled">Tunnel désactivé manuellement. La règle « %1$s » aurait voulu l\'activer : votre choix est respecté, et les règles reprendront la main au prochain changement de réseau.</string>
     <string name="home_manual_override_enabled_memorized">Tunnel activé manuellement. La règle « %1$s » aurait voulu le couper : votre choix est mémorisé et sera rejoué sur ce réseau. L\'exception se gère depuis l\'écran des réseaux.</string>
     <string name="home_manual_override_disabled_memorized">Tunnel désactivé manuellement. La règle « %1$s » aurait voulu l\'activer : votre choix est mémorisé et sera rejoué sur ce réseau. L\'exception se gère depuis l\'écran des réseaux.</string>
-    <string name="home_learning_prompt_title">Apprendre vos gestes ?</string>
-    <string name="home_learning_prompt_body">Quand vous activez ou coupez Tailscale à la main sur un réseau, l\'application peut mémoriser ce choix et le rejouer à chaque retour sur ce réseau. Ce réglage se change à tout moment dans les paramètres.</string>
-    <string name="home_learning_prompt_accept">Activer</string>
-    <string name="home_learning_prompt_decline">Ne pas activer</string>
+    <!-- Premier lancement -->
+    <string name="onboarding_continue">Continuer</string>
+    <string name="onboarding_welcome_title">Bienvenue</string>
+    <string name="onboarding_welcome_body">Tailscale Auto Rules active ou coupe votre tunnel Tailscale selon le réseau : coupé sur vos Wi-Fi de confiance, actif partout ailleurs — données mobiles comprises. Une fois configurée, l\'application ne demande plus rien.\n\nElle pilote l\'application Tailscale officielle, qui doit être installée : elle ne remplace ni le client, ni le VPN.</string>
+    <string name="onboarding_notification_title">Une notification permanente</string>
+    <string name="onboarding_notification_body">Suivre le réseau en continu exige un service visible : Android lui impose une notification permanente. Elle n\'est pas un réglage — elle affiche en direct l\'état du tunnel et la règle qui l\'a décidé, et permet de couper l\'automatisation sans ouvrir l\'application.</string>
+    <string name="onboarding_notification_grant">Autoriser les notifications</string>
+    <string name="onboarding_location_title">Reconnaître vos réseaux Wi-Fi</string>
+    <string name="onboarding_location_body">Android réserve la lecture du nom des réseaux Wi-Fi (SSID) aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus.\n\nSeul le nom du réseau est lu : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
+    <string name="onboarding_location_grant">Autoriser la localisation</string>
+    <string name="onboarding_learning_title">Apprendre vos gestes ?</string>
+    <string name="onboarding_learning_body">Quand vous activez ou coupez Tailscale à la main sur un réseau, l\'application peut mémoriser ce choix et le rejouer à chaque retour sur ce réseau. Les exceptions apprises se gèrent depuis l\'écran des réseaux, et ce réglage se change à tout moment dans les paramètres.</string>
+    <string name="onboarding_learning_accept">Activer</string>
+    <string name="onboarding_learning_decline">Ne pas activer</string>
     <string name="home_disable_automation">Désactiver l\'automatisation</string>
     <string name="home_automation_disabled">Automatisation désactivée : le tunnel ne bougera plus tout seul. Elle se réactive depuis les paramètres.</string>
     <string name="home_tailscale_missing_title">Client Tailscale introuvable</string>

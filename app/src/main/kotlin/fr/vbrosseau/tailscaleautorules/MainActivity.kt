@@ -17,15 +17,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import fr.vbrosseau.tailscaleautorules.automation.AutomationCoordinator
+import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppDestination
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppNavHost
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.AppNavigationBar
 import fr.vbrosseau.tailscaleautorules.presentation.navigation.navigateToTopLevel
+import fr.vbrosseau.tailscaleautorules.presentation.onboarding.OnboardingScreen
+import fr.vbrosseau.tailscaleautorules.presentation.onboarding.OnboardingViewModel
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -52,22 +57,18 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Ossature commune : barre de titre, barre de navigation, graphe.
+ * Racine de l'interface : lanceurs de permission, portail de premier
+ * lancement, puis ossature.
  *
- * `TopAppBar` est encore expérimental dans Material 3 ; l'opt-in est local
- * plutôt que déclaré pour tout le module, afin que la dette reste visible.
+ * Les lanceurs vivent ici, au-dessus du portail : le parcours de premier
+ * lancement et les écrans de l'application demandent les mêmes permissions,
+ * par les mêmes chemins.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppRoot(
     onLocationPermissionGranted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val navController = rememberNavController()
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-    val currentDestination = AppDestination.forRoute(currentRoute)
-
     // La demande de permission a besoin de l'Activity : elle est lancée ici et
     // transmise à l'écran qui en a l'usage, plutôt qu'obtenue par un Context
     // reconstitué au fond de l'arbre.
@@ -85,6 +86,59 @@ private fun AppRoot(
             onLocationPermissionGranted()
         }
     }
+
+    val requestNotificationPermission = {
+        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+    val requestLocationPermission = {
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ),
+        )
+    }
+
+    // Le parcours de premier lancement remplace l'ossature entière tant qu'il
+    // n'est pas clos (SPECS.md §6.5) : barres et navigation n'ont pas de sens
+    // avant que l'application ait été présentée.
+    val onboardingViewModel: OnboardingViewModel = hiltViewModel()
+    val onboarding by onboardingViewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        onboarding.isLoading -> LoadingIndicator(modifier = modifier)
+        !onboarding.isDone -> OnboardingScreen(
+            onRequestNotificationPermission = requestNotificationPermission,
+            onRequestLocationPermission = requestLocationPermission,
+            onFinish = onboardingViewModel::finish,
+            modifier = modifier,
+        )
+
+        else -> MainScaffold(
+            onRequestNotificationPermission = requestNotificationPermission,
+            onRequestLocationPermission = requestLocationPermission,
+            modifier = modifier,
+        )
+    }
+}
+
+/**
+ * Ossature de l'application : barre de titre, barre de navigation, graphe.
+ *
+ * `TopAppBar` est encore expérimental dans Material 3 ; l'opt-in est local
+ * plutôt que déclaré pour tout le module, afin que la dette reste visible.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MainScaffold(
+    onRequestNotificationPermission: () -> Unit,
+    onRequestLocationPermission: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val currentDestination = AppDestination.forRoute(currentRoute)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -105,17 +159,8 @@ private fun AppRoot(
         AppNavHost(
             modifier = Modifier.padding(innerPadding),
             navController = navController,
-            onRequestNotificationPermission = {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            },
-            onRequestLocationPermission = {
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                    ),
-                )
-            },
+            onRequestNotificationPermission = onRequestNotificationPermission,
+            onRequestLocationPermission = onRequestLocationPermission,
         )
     }
 }

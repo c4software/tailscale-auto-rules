@@ -54,7 +54,6 @@ fun AppNavHost(
                 uiState = uiState,
                 onSynchronize = viewModel::synchronize,
                 onDisableAutomation = viewModel::disableAutomation,
-                onChooseLearning = viewModel::chooseLearning,
             )
         }
 

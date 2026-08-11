@@ -16,6 +16,7 @@ import fr.vbrosseau.tailscaleautorules.presentation.home.HomeScreen
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeUiState
 import fr.vbrosseau.tailscaleautorules.presentation.journal.JournalScreen
 import fr.vbrosseau.tailscaleautorules.presentation.journal.JournalUiState
+import fr.vbrosseau.tailscaleautorules.presentation.onboarding.OnboardingScreen
 import fr.vbrosseau.tailscaleautorules.presentation.settings.SettingsScreen
 import fr.vbrosseau.tailscaleautorules.presentation.settings.SettingsUiState
 import org.junit.Test
@@ -54,7 +55,6 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
         )
     }
 
@@ -66,7 +66,6 @@ class ScreensScreenshotTest : ScreenshotTest() {
             uiState = HomeUiState(isTailscaleInstalled = false),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
         )
     }
 
@@ -80,7 +79,6 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
         )
     }
 
@@ -97,7 +95,6 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
         )
     }
 
@@ -127,24 +124,30 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
+        )
+    }
+
+
+    // --- Premier lancement ---
+
+    @Test
+    fun onboardingBienvenue() = capture("onboarding-bienvenue") {
+        OnboardingScreen(
+            onRequestNotificationPermission = {},
+            onRequestLocationPermission = {},
+            onFinish = {},
         )
     }
 
     @Test
-    fun accueilInvitationApprentissage() = capture("accueil-invitation-apprentissage") {
-        // L'invitation du premier lancement : deux boutons dans une carte, le
-        // point le plus sensible aux régressions de contraste en sombre.
-        HomeScreen(
-            uiState = HomeUiState(
-                tunnelState = TunnelState.ENABLED,
-                transport = NetworkTransport.WIFI,
-                ssid = "Aéroport CDG",
-                isLearningPromptVisible = true,
-            ),
-            onSynchronize = {},
-            onDisableAutomation = {},
-            onChooseLearning = {},
+    fun onboardingApprentissage() = capture("onboarding-apprentissage") {
+        // La dernière page porte les deux issues du parcours : c'est elle qui
+        // doit rester lisible, boutons compris, en thème sombre.
+        OnboardingScreen(
+            onRequestNotificationPermission = {},
+            onRequestLocationPermission = {},
+            onFinish = {},
+            initialPage = 3,
         )
     }
 

@@ -35,6 +35,7 @@ class DataStoreSettingsRepository @Inject constructor(
             preferences[SettingsKeys.ServiceEnabled] = updated.isServiceEnabled
             preferences[SettingsKeys.LearningEnabled] = updated.isLearningEnabled
             preferences[SettingsKeys.LearningPrompted] = updated.isLearningPrompted
+            preferences[SettingsKeys.OnboardingDone] = updated.isOnboardingDone
             preferences[SettingsKeys.StartOnBoot] = updated.startOnBoot
             preferences[SettingsKeys.VerboseLogging] = updated.verboseLogging
         }
@@ -66,6 +67,7 @@ class DataStoreSettingsRepository @Inject constructor(
             isServiceEnabled = this[SettingsKeys.ServiceEnabled] ?: defaults.isServiceEnabled,
             isLearningEnabled = this[SettingsKeys.LearningEnabled] ?: defaults.isLearningEnabled,
             isLearningPrompted = this[SettingsKeys.LearningPrompted] ?: defaults.isLearningPrompted,
+            isOnboardingDone = this[SettingsKeys.OnboardingDone] ?: defaults.isOnboardingDone,
             startOnBoot = this[SettingsKeys.StartOnBoot] ?: defaults.startOnBoot,
             verboseLogging = this[SettingsKeys.VerboseLogging] ?: defaults.verboseLogging,
         )

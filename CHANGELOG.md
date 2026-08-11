@@ -10,6 +10,12 @@ voir les réserves de [TASKS.md](./TASKS.md).
 
 ### Ajouté depuis la première version
 
+- **Parcours de premier lancement.** Quatre pages — bienvenue, notification,
+  localisation, apprentissage — qui avancent d'un bouton ou d'un glissement.
+  Chaque demande de permission y est précédée de son explication, et un refus
+  reste rattrapé par les cartes de l'application au moment du besoin réel. La
+  dernière page recueille le choix d'apprentissage et remplace l'invitation
+  qui vivait sur l'accueil.
 - **Exceptions dynamiques : l'application apprend vos gestes.** Activer ou
   couper Tailscale à la main sur un réseau mémorise ce choix — par SSID en
   Wi-Fi, globalement en données mobiles — et le rejoue à chaque retour sur ce

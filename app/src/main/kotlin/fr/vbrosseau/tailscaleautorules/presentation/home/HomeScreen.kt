@@ -2,7 +2,6 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,7 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -45,7 +43,6 @@ fun HomeScreen(
     uiState: HomeUiState,
     onSynchronize: () -> Unit,
     onDisableAutomation: () -> Unit,
-    onChooseLearning: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (uiState.isLoading) {
@@ -62,10 +59,6 @@ fun HomeScreen(
     ) {
         if (!uiState.isTailscaleInstalled) {
             MissingClientCard()
-        }
-
-        if (uiState.isLearningPromptVisible) {
-            LearningPromptCard(onChooseLearning = onChooseLearning)
         }
 
         InfoCard(
@@ -153,65 +146,6 @@ private fun ManualOverrideCard(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(Spacing.md),
         )
-    }
-}
-
-/**
- * Invitation unique du premier lancement (SPECS.md §6.1).
- *
- * Les deux réponses sont des boutons de même rang : « ne pas activer » est un
- * choix légitime, pas un renoncement, et l'invitation ne revient jamais quelle
- * que soit la réponse.
- */
-@Composable
-private fun LearningPromptCard(
-    onChooseLearning: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag(HomeTestTags.LEARNING_PROMPT),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            Text(
-                text = stringResource(R.string.home_learning_prompt_title),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = stringResource(R.string.home_learning_prompt_body),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Row(
-                modifier = Modifier.align(Alignment.End),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            ) {
-                OutlinedButton(
-                    onClick = { onChooseLearning(false) },
-                    modifier = Modifier.testTag(HomeTestTags.LEARNING_DECLINE),
-                ) {
-                    Text(stringResource(R.string.home_learning_prompt_decline))
-                }
-                // Un bouton plein, pas tonal : sur cette carte en
-                // `secondaryContainer`, un `FilledTonalButton` — du même
-                // conteneur — disparaissait en thème sombre.
-                Button(
-                    onClick = { onChooseLearning(true) },
-                    modifier = Modifier.testTag(HomeTestTags.LEARNING_ACCEPT),
-                ) {
-                    Text(stringResource(R.string.home_learning_prompt_accept))
-                }
-            }
-        }
     }
 }
 
@@ -368,7 +302,6 @@ private fun HomeScreenPreview() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
         )
     }
 }
@@ -381,7 +314,6 @@ private fun HomeScreenWithoutClientPreview() {
             uiState = HomeUiState(isTailscaleInstalled = false),
             onSynchronize = {},
             onDisableAutomation = {},
-            onChooseLearning = {},
         )
     }
 }

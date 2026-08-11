@@ -188,26 +188,6 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun theLearningPromptShowsUntilAnswered() = runTest {
-        observer.emit(cellular)
-
-        assertTrue(viewModel().uiState.value.isLearningPromptVisible)
-    }
-
-    @Test
-    fun answeringThePromptRecordsTheChoiceAndDismissesItForever() = runTest {
-        observer.emit(cellular)
-        val model = viewModel()
-
-        model.chooseLearning(false)
-
-        assertTrue(!model.uiState.value.isLearningPromptVisible)
-        val stored = settings.currentAppSettings()
-        assertTrue(!stored.isLearningEnabled)
-        assertTrue(stored.isLearningPrompted)
-    }
-
-    @Test
     fun theOverrideCardKnowsWhetherTheGestureWillBeMemorized() = runTest {
         // Réseau identifiable et apprentissage actif : la carte peut annoncer
         // la mémorisation. Apprentissage coupé, elle doit revenir au texte

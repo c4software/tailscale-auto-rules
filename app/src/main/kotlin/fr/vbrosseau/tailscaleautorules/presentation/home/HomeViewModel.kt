@@ -81,7 +81,6 @@ class HomeViewModel @Inject constructor(
             manualOverride = detectManualOverride(network, tunnel.state, lastChange),
             willMemorizeManualGesture = settings.isLearningEnabled &&
                 NetworkExceptionKey.from(network) != null,
-            isLearningPromptVisible = !settings.isLearningPrompted,
         )
     }.stateIn(viewModelScope, UiStateSharing, HomeUiState(isLoading = true))
 
@@ -117,21 +116,6 @@ class HomeViewModel @Inject constructor(
     fun disableAutomation() {
         viewModelScope.launch {
             settingsRepository.updateAppSettings { it.copy(isServiceEnabled = false) }
-        }
-    }
-
-    /**
-     * Répond à l'invitation du premier lancement (SPECS.md §6.1).
-     *
-     * Le choix est enregistré **et** la question marquée comme posée : quelle
-     * que soit la réponse, l'invitation ne revient jamais — le réglage reste
-     * modifiable aux paramètres.
-     */
-    fun chooseLearning(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateAppSettings {
-                it.copy(isLearningEnabled = enabled, isLearningPrompted = true)
-            }
         }
     }
 

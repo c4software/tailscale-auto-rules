@@ -37,7 +37,6 @@ class HomeScreenTest {
         uiState: HomeUiState,
         onSynchronize: () -> Unit = {},
         onDisableAutomation: () -> Unit = {},
-        onChooseLearning: (Boolean) -> Unit = {},
     ) {
         composeRule.setContent {
             AppTheme(dynamicColor = false) {
@@ -45,7 +44,6 @@ class HomeScreenTest {
                     uiState = uiState,
                     onSynchronize = onSynchronize,
                     onDisableAutomation = onDisableAutomation,
-                    onChooseLearning = onChooseLearning,
                 )
             }
         }
@@ -193,25 +191,6 @@ class HomeScreenTest {
 
         composeRule.onNodeWithTag(HomeTestTags.AUTOMATION_DISABLED).assertIsDisplayed()
         composeRule.onNodeWithTag(HomeTestTags.DISABLE_AUTOMATION).assertDoesNotExist()
-    }
-
-    @Test
-    fun theLearningPromptOffersBothAnswers() {
-        val answers = mutableListOf<Boolean>()
-        show(HomeUiState(isLearningPromptVisible = true), onChooseLearning = { answers += it })
-
-        composeRule.onNodeWithTag(HomeTestTags.LEARNING_PROMPT).assertIsDisplayed()
-        composeRule.onNodeWithTag(HomeTestTags.LEARNING_DECLINE).performClick()
-        composeRule.onNodeWithTag(HomeTestTags.LEARNING_ACCEPT).performClick()
-
-        assertEquals(listOf(false, true), answers)
-    }
-
-    @Test
-    fun noPromptOnceTheQuestionWasAnswered() {
-        show(HomeUiState(isLearningPromptVisible = false))
-
-        composeRule.onNodeWithTag(HomeTestTags.LEARNING_PROMPT).assertDoesNotExist()
     }
 
     @Test

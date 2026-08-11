@@ -16,6 +16,7 @@ internal object SettingsKeys {
     val ServiceEnabled = booleanPreferencesKey("service_enabled")
     val LearningEnabled = booleanPreferencesKey("learning_enabled")
     val LearningPrompted = booleanPreferencesKey("learning_prompted")
+    val OnboardingDone = booleanPreferencesKey("onboarding_done")
     val StartOnBoot = booleanPreferencesKey("start_on_boot")
     val VerboseLogging = booleanPreferencesKey("verbose_logging")
 

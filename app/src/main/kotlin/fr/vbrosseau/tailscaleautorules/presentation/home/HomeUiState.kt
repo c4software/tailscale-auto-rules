@@ -32,7 +32,5 @@ data class HomeUiState(
      * lieu serait un mensonge.
      */
     val willMemorizeManualGesture: Boolean = false,
-    /** L'invitation unique du premier lancement (SPECS.md §6.1). */
-    val isLearningPromptVisible: Boolean = false,
     val isLoading: Boolean = false,
 )
