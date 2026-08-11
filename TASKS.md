@@ -613,11 +613,28 @@ ceux du variant ; la release n'embarque rien.
 - [x] Tests : cycle complet en JVM pur (geste → mémorisé → état auto-expliqué
       → nouveau geste → remplacé) + Robolectric côté coordinateur (geste
       mémorisé puis respecté par les cycles ; écho d'une commande ignoré)
-- [ ] **Validation sur terminal réel, relevés à consigner ici** — aucun
-      appareil branché au moment de l'implémentation. Scénario : couper le
-      tunnel à la main sur réseau mobile, attendre plus de dix secondes,
-      vérifier l'exception au journal, changer de réseau et revenir : le
-      tunnel doit rester coupé, battement de secours compris.
+- [~] **Validation sur appareil.** Faite sur émulateur (API 36, sans client
+      Tailscale ni session Play) pour tout ce qui n'exige pas un vrai VPN :
+
+      ```
+      20:29:48  TunnelWatchService démarré, premier plan, notification posée
+      20:29:50  Contexte observé : WIFI validé → Cycle terminé : TailscaleUnavailable
+      ```
+
+      - invitation du premier lancement affichée, « Activer » persisté
+        (l'invitation ne revient pas après un arrêt forcé), interrupteur des
+        paramètres coché en conséquence ;
+      - deux exceptions injectées en base (build debug) : section « Exceptions
+        apprises » rendue, plus récente d'abord, « Données mobiles » pour la
+        sentinelle cellulaire ;
+      - suppression par glissement constatée à l'écran **et** en base (la
+        ligne disparaît de `network_exception`) ;
+      - aucun crash au logcat.
+
+      **Reste à valider sur le Pixel, avec le client Tailscale** : le cycle
+      complet geste réel → mémorisation → rejeu au retour sur le réseau,
+      battement de secours compris — l'émulateur ne porte aucun VPN, la
+      détection ne peut pas s'y déclencher.
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès.
