@@ -1,7 +1,9 @@
 package fr.vbrosseau.tailscaleautorules.domain.rule
 
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 
 /**
  * Stratégie de décision autonome.
@@ -44,11 +46,13 @@ interface Rule {
  *
  * @param network instantané de l'état réseau.
  * @param blacklistedSsids SSID que l'utilisateur a marqués comme de confiance.
+ * @param networkExceptions gestes manuels mémorisés, par clé de réseau.
  * @param settings réglages surchargés par l'utilisateur, par identifiant de règle.
  */
 data class RuleContext(
     val network: NetworkContext,
     val blacklistedSsids: Set<String> = emptySet(),
+    val networkExceptions: Map<NetworkExceptionKey, TunnelState> = emptyMap(),
     val settings: Map<RuleId, RuleSettings> = emptyMap(),
 ) {
     /** Réglages effectifs d'une règle : ceux de l'utilisateur, à défaut ceux de la règle. */

@@ -1,11 +1,14 @@
 package fr.vbrosseau.tailscaleautorules.domain.engine
 
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.Contexts
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.Rule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
@@ -23,6 +26,7 @@ class ShippedRulesTest {
     private val rules: Set<Rule> =
         setOf(
             AirplaneModeRule(),
+            NetworkExceptionRule(),
             BlacklistedWifiRule(),
             OtherWifiRule(),
             MobileNetworkRule(),
@@ -81,6 +85,52 @@ class ShippedRulesTest {
 
         assertEquals(RuleDecision.ENABLE, evaluation.decision)
         assertEquals(RuleId("mobile-network"), evaluation.ruleId)
+    }
+
+    @Test
+    fun aMemorizedGestureOverridesTheTrustedWifiRule() {
+        // SPECS.md §4.5 : le choix explicite de l'utilisateur prime sur le
+        // comportement par défaut, y compris sur un réseau blacklisté.
+        val evaluation =
+            engine.evaluate(
+                Contexts.wifi(
+                    ssid = "Maison",
+                    blacklist = setOf("Maison"),
+                    exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                ),
+            )
+
+        assertEquals(RuleDecision.ENABLE, evaluation.decision)
+        assertEquals(RuleId("network-exception"), evaluation.ruleId)
+    }
+
+    @Test
+    fun aMemorizedGestureOverridesTheMobileRule() {
+        val evaluation =
+            engine.evaluate(
+                Contexts.cellular(
+                    exceptions = mapOf(NetworkExceptionKey.Cellular to TunnelState.DISABLED),
+                ),
+            )
+
+        assertEquals(RuleDecision.DISABLE, evaluation.decision)
+        assertEquals(RuleId("network-exception"), evaluation.ruleId)
+    }
+
+    @Test
+    fun airplaneModeStillOverridesAMemorizedGesture() {
+        // Jamais de rejeu en mode avion : la priorité 100 reste au-dessus.
+        val evaluation =
+            engine.evaluate(
+                Contexts.wifi(
+                    ssid = "Maison",
+                    airplaneMode = true,
+                    exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                ),
+            )
+
+        assertEquals(RuleDecision.DISABLE, evaluation.decision)
+        assertEquals(RuleId("airplane-mode"), evaluation.ruleId)
     }
 
     @Test

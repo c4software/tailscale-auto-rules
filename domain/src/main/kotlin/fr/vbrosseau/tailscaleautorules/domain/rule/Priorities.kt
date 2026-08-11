@@ -9,6 +9,9 @@ package fr.vbrosseau.tailscaleautorules.domain.rule
  */
 object Priorities {
     const val AIRPLANE_MODE = 100
+
+    /** Intercalée sous le mode avion : un geste mémorisé ne rejoue jamais en avion. */
+    const val NETWORK_EXCEPTION = 150
     const val BLACKLISTED_WIFI = 200
     const val OTHER_WIFI = 300
     const val MOBILE_NETWORK = 400

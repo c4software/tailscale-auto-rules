@@ -1,7 +1,9 @@
 package fr.vbrosseau.tailscaleautorules.domain.rule
 
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 
 /**
  * Fabriques de contextes pour les tests.
@@ -26,6 +28,7 @@ object Contexts {
         validated: Boolean = true,
         airplaneMode: Boolean = false,
         blacklist: Set<String> = emptySet(),
+        exceptions: Map<NetworkExceptionKey, TunnelState> = emptyMap(),
     ) = RuleContext(
         network =
             NetworkContext(
@@ -35,12 +38,14 @@ object Contexts {
                 ssid = ssid,
             ),
         blacklistedSsids = blacklist,
+        networkExceptions = exceptions,
     )
 
     /** Réseau mobile. */
     fun cellular(
         validated: Boolean = true,
         airplaneMode: Boolean = false,
+        exceptions: Map<NetworkExceptionKey, TunnelState> = emptyMap(),
     ) = RuleContext(
         network =
             NetworkContext(
@@ -48,6 +53,7 @@ object Contexts {
                 isAirplaneModeOn = airplaneMode,
                 isInternetValidated = validated,
             ),
+        networkExceptions = exceptions,
     )
 
     /** Transport non couvert par les règles de la version 1. */

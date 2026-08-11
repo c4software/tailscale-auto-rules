@@ -538,19 +538,23 @@ code : elle est la référence de toutes les étapes qui suivent.
 
 ---
 
-## 19. Exceptions dynamiques — domaine : modèle et règle `[ ]`
+## 19. Exceptions dynamiques — domaine : modèle et règle `[x]`
 
-- [ ] `NetworkException` + `NetworkExceptionKey` (fabrique
+- [x] `NetworkException` + `NetworkExceptionKey` (fabrique
       `from(NetworkContext)`, clés de [SPECS.md](./SPECS.md) §4.5,
       canonicalisation partagée avec la blacklist)
-- [ ] Contrat `NetworkExceptionRepository` (`observeAll`, `current`, `upsert`,
+- [x] Contrat `NetworkExceptionRepository` (`observeAll`, `current`, `upsert`,
       `remove`) + `FakeNetworkExceptionRepository` dans `testFixtures`
-- [ ] `RuleContext.networkExceptions` — extension prévue par le type, les
+- [x] `RuleContext.networkExceptions` — extension prévue par le type, les
       règles existantes ne changent pas
-- [ ] `NetworkExceptionRule`, priorité 150 (`Priorities`), chaque branche
+- [x] `NetworkExceptionRule`, priorité 150 (`Priorities`), chaque branche
       testée, `NO_DECISION` compris
-- [ ] `EvaluateRulesUseCase` alimente le contexte depuis le repository
-- [ ] `ShippedRulesTest` rejoue le tableau §4 complété
+- [x] `ShippedRulesTest` rejoue le tableau §4 complété
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès. La règle n'est pas encore enregistrée dans `RuleModule` : le rejeu
+n'arrive qu'avec sa source de données, à l'étape 21 — comme l'écran des
+paramètres avait précédé sa navigation (étape 12).
 
 ---
 
@@ -573,6 +577,8 @@ code : elle est la référence de toutes les étapes qui suivent.
 - [ ] **Première migration Room du projet** : version 2, schéma exporté,
       `room-testing`, test de migration préservant blacklist et journal
 - [ ] DataStore : `learning.enabled`, `learning.prompted`
+- [ ] `EvaluateRulesUseCase` alimente le contexte depuis le repository — câblé
+      ici plutôt qu'à l'étape 19 : la liaison Hilt exige l'implémentation
 - [ ] DI : DAO, repository, `NetworkExceptionRule` dans `RuleModule` (seul
       enregistrement requis), cas d'usage dans `UseCaseModule`
 
