@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,32 +54,11 @@ fun AppNavHost(
                 uiState = uiState,
                 onSynchronize = viewModel::synchronize,
                 onDisableAutomation = viewModel::disableAutomation,
+                onChooseLearning = viewModel::chooseLearning,
             )
         }
 
-        composable(AppRoutes.BLACKLIST) {
-            val viewModel: BlacklistViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-            // Une permission s'accorde dans une boîte de dialogue système :
-            // l'application est mise en pause puis reprise. Sans ce reconstat,
-            // l'explication resterait affichée alors qu'elle n'a plus lieu d'être.
-            LifecycleResumeEffect(viewModel) {
-                viewModel.refreshSystemStatus()
-                onPauseOrDispose { }
-            }
-
-            BlacklistScreen(
-                uiState = uiState,
-                onAdd = viewModel::add,
-                onRename = viewModel::rename,
-                onRemove = viewModel::remove,
-                onAddCurrentSsid = viewModel::addCurrentSsid,
-                onDismissError = viewModel::dismissError,
-                onMobileRuleChange = viewModel::setMobileRuleEnabled,
-                onRequestLocationPermission = onRequestLocationPermission,
-            )
-        }
+        blacklistDestination(onRequestLocationPermission)
 
         composable(AppRoutes.JOURNAL) {
             val viewModel: JournalViewModel = hiltViewModel()
@@ -101,12 +81,41 @@ fun AppNavHost(
             SettingsScreen(
                 uiState = uiState,
                 onServiceEnabledChange = viewModel::setServiceEnabled,
+                onLearningEnabledChange = viewModel::setLearningEnabled,
                 onStartOnBootChange = viewModel::setStartOnBoot,
                 onVerboseLoggingChange = viewModel::setVerboseLogging,
                 onRequestNotificationPermission = onRequestNotificationPermission,
                 onOpenBatterySettings = { context.openBatterySettings() },
             )
         }
+    }
+}
+
+/** Sorti du graphe pour garder [AppNavHost] lisible d'un seul tenant. */
+private fun NavGraphBuilder.blacklistDestination(onRequestLocationPermission: () -> Unit) {
+    composable(AppRoutes.BLACKLIST) {
+        val viewModel: BlacklistViewModel = hiltViewModel()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+        // Une permission s'accorde dans une boîte de dialogue système :
+        // l'application est mise en pause puis reprise. Sans ce reconstat,
+        // l'explication resterait affichée alors qu'elle n'a plus lieu d'être.
+        LifecycleResumeEffect(viewModel) {
+            viewModel.refreshSystemStatus()
+            onPauseOrDispose { }
+        }
+
+        BlacklistScreen(
+            uiState = uiState,
+            onAdd = viewModel::add,
+            onRename = viewModel::rename,
+            onRemove = viewModel::remove,
+            onRemoveException = viewModel::removeException,
+            onAddCurrentSsid = viewModel::addCurrentSsid,
+            onDismissError = viewModel::dismissError,
+            onMobileRuleChange = viewModel::setMobileRuleEnabled,
+            onRequestLocationPermission = onRequestLocationPermission,
+        )
     }
 }
 

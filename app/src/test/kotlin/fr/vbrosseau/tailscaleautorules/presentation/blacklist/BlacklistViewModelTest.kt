@@ -2,7 +2,9 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
@@ -12,6 +14,7 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleSettings
@@ -44,17 +47,25 @@ class BlacklistViewModelTest {
     private val settings = FakeSettingsRepository()
     private val controller = FakeTailscaleController()
     private val journal = FakeJournalRepository(FakeClock())
+    private val exceptions = FakeNetworkExceptionRepository()
     private val engine = RuleEngine(
-        setOf(AirplaneModeRule(), BlacklistedWifiRule(), OtherWifiRule(), MobileNetworkRule()),
+        setOf(
+            NetworkExceptionRule(),
+            AirplaneModeRule(),
+            BlacklistedWifiRule(),
+            OtherWifiRule(),
+            MobileNetworkRule(),
+        ),
     )
 
     private fun TestScope.viewModel(networkObserver: NetworkObserver = observer) = BlacklistViewModel(
         repository = repository,
+        exceptionRepository = exceptions,
         settingsRepository = settings,
         synchronizeTunnel = SynchronizeTunnelUseCase(
             networkObserver = networkObserver,
             settingsRepository = settings,
-            evaluateRules = EvaluateRulesUseCase(repository, FakeNetworkExceptionRepository(), settings, engine),
+            evaluateRules = EvaluateRulesUseCase(repository, exceptions, settings, engine),
             controller = controller,
             journalRepository = journal,
         ),
@@ -293,5 +304,30 @@ class BlacklistViewModelTest {
         model.remove(id)
 
         assertTrue(model.uiState.value.entries.isEmpty())
+    }
+
+    @Test
+    fun learnedExceptionsAreExposedMostRecentFirst() = runTest {
+        exceptions.upsert(NetworkExceptionKey("wifi:maison"), "Maison", TunnelState.ENABLED)
+
+        val model = viewModel()
+
+        assertEquals(listOf("Maison"), model.uiState.value.exceptions.map { it.ssid })
+    }
+
+    @Test
+    fun removingAnExceptionRestoresTheAutomaticBehaviourImmediately() = runTest {
+        // Le geste avait coupé le tunnel en données mobiles ; supprimer
+        // l'exception doit laisser la règle mobile le remonter dans la foulée,
+        // pas au prochain changement de réseau (SPECS.md §6.2).
+        exceptions.upsert(NetworkExceptionKey.Cellular, null, TunnelState.DISABLED)
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        val model = viewModel()
+        val id = model.uiState.value.exceptions.single().id
+
+        model.removeException(id)
+
+        assertTrue(model.uiState.value.exceptions.isEmpty())
+        assertTrue(controller.isRunning())
     }
 }

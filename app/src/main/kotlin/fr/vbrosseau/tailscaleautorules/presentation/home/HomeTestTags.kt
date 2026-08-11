@@ -11,4 +11,7 @@ object HomeTestTags {
     const val DISABLE_AUTOMATION = "home:disable-automation"
     const val AUTOMATION_DISABLED = "home:automation-disabled"
     const val MANUAL_OVERRIDE = "home:manual-override"
+    const val LEARNING_PROMPT = "home:learning-prompt"
+    const val LEARNING_ACCEPT = "home:learning-accept"
+    const val LEARNING_DECLINE = "home:learning-decline"
 }

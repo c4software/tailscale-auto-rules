@@ -17,6 +17,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 @StringRes
 fun RuleId.labelRes(): Int = when (value) {
     "airplane-mode" -> R.string.rule_airplane_mode
+    "network-exception" -> R.string.rule_network_exception
     "blacklisted-wifi" -> R.string.rule_blacklisted_wifi
     "other-wifi" -> R.string.rule_other_wifi
     "mobile-network" -> R.string.rule_mobile_network

@@ -4,6 +4,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -34,6 +37,7 @@ class HomeScreenTest {
         uiState: HomeUiState,
         onSynchronize: () -> Unit = {},
         onDisableAutomation: () -> Unit = {},
+        onChooseLearning: (Boolean) -> Unit = {},
     ) {
         composeRule.setContent {
             AppTheme(dynamicColor = false) {
@@ -41,6 +45,7 @@ class HomeScreenTest {
                     uiState = uiState,
                     onSynchronize = onSynchronize,
                     onDisableAutomation = onDisableAutomation,
+                    onChooseLearning = onChooseLearning,
                 )
             }
         }
@@ -188,6 +193,42 @@ class HomeScreenTest {
 
         composeRule.onNodeWithTag(HomeTestTags.AUTOMATION_DISABLED).assertIsDisplayed()
         composeRule.onNodeWithTag(HomeTestTags.DISABLE_AUTOMATION).assertDoesNotExist()
+    }
+
+    @Test
+    fun theLearningPromptOffersBothAnswers() {
+        val answers = mutableListOf<Boolean>()
+        show(HomeUiState(isLearningPromptVisible = true), onChooseLearning = { answers += it })
+
+        composeRule.onNodeWithTag(HomeTestTags.LEARNING_PROMPT).assertIsDisplayed()
+        composeRule.onNodeWithTag(HomeTestTags.LEARNING_DECLINE).performClick()
+        composeRule.onNodeWithTag(HomeTestTags.LEARNING_ACCEPT).performClick()
+
+        assertEquals(listOf(false, true), answers)
+    }
+
+    @Test
+    fun noPromptOnceTheQuestionWasAnswered() {
+        show(HomeUiState(isLearningPromptVisible = false))
+
+        composeRule.onNodeWithTag(HomeTestTags.LEARNING_PROMPT).assertDoesNotExist()
+    }
+
+    @Test
+    fun theOverrideCardAnnouncesTheMemorization() {
+        // Le texte suit le sort réel du geste : mémorisé, il l'annonce au lieu
+        // de promettre que les règles reprendront la main.
+        show(
+            HomeUiState(
+                manualOverride = ManualOverride(TunnelState.ENABLED, RuleId("blacklisted-wifi")),
+                willMemorizeManualGesture = true,
+            ),
+        )
+
+        composeRule.onNode(
+            hasAnyAncestor(hasTestTag(HomeTestTags.MANUAL_OVERRIDE)) and
+                hasText("mémorisé", substring = true),
+        ).assertExists()
     }
 
     @Test

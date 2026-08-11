@@ -2,6 +2,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -43,6 +45,7 @@ fun HomeScreen(
     uiState: HomeUiState,
     onSynchronize: () -> Unit,
     onDisableAutomation: () -> Unit,
+    onChooseLearning: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (uiState.isLoading) {
@@ -61,6 +64,10 @@ fun HomeScreen(
             MissingClientCard()
         }
 
+        if (uiState.isLearningPromptVisible) {
+            LearningPromptCard(onChooseLearning = onChooseLearning)
+        }
+
         InfoCard(
             title = stringResource(R.string.home_tunnel_title),
             value = stringResource(uiState.tunnelState.labelRes()),
@@ -68,7 +75,10 @@ fun HomeScreen(
         )
 
         if (uiState.manualOverride != null) {
-            ManualOverrideCard(uiState.manualOverride)
+            ManualOverrideCard(
+                manualOverride = uiState.manualOverride,
+                willMemorize = uiState.willMemorizeManualGesture,
+            )
         }
 
         InfoCard(
@@ -111,12 +121,14 @@ fun HomeScreen(
  *
  * Sans cette carte, l'écran juxtaposerait un état constaté et une règle qui
  * dit le contraire, en laissant l'utilisateur arbitrer. La carte assume le
- * constat : c'est son geste, il est respecté, et les règles reprendront la
- * main au prochain changement de réseau.
+ * constat, et son texte suit le sort réel du geste : mémorisé comme exception
+ * (SPECS.md §3.3), ou simplement respecté jusqu'au prochain changement de
+ * réseau quand l'apprentissage est coupé ou le réseau non identifiable.
  */
 @Composable
 private fun ManualOverrideCard(
     manualOverride: ManualOverride,
+    willMemorize: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -128,10 +140,12 @@ private fun ManualOverrideCard(
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         ),
     ) {
-        val bodyRes = if (manualOverride.observedState == TunnelState.ENABLED) {
-            R.string.home_manual_override_enabled
-        } else {
-            R.string.home_manual_override_disabled
+        val isEnabled = manualOverride.observedState == TunnelState.ENABLED
+        val bodyRes = when {
+            willMemorize && isEnabled -> R.string.home_manual_override_enabled_memorized
+            willMemorize -> R.string.home_manual_override_disabled_memorized
+            isEnabled -> R.string.home_manual_override_enabled
+            else -> R.string.home_manual_override_disabled
         }
 
         Text(
@@ -139,6 +153,65 @@ private fun ManualOverrideCard(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(Spacing.md),
         )
+    }
+}
+
+/**
+ * Invitation unique du premier lancement (SPECS.md §6.1).
+ *
+ * Les deux réponses sont des boutons de même rang : « ne pas activer » est un
+ * choix légitime, pas un renoncement, et l'invitation ne revient jamais quelle
+ * que soit la réponse.
+ */
+@Composable
+private fun LearningPromptCard(
+    onChooseLearning: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(HomeTestTags.LEARNING_PROMPT),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                text = stringResource(R.string.home_learning_prompt_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(R.string.home_learning_prompt_body),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(
+                modifier = Modifier.align(Alignment.End),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                OutlinedButton(
+                    onClick = { onChooseLearning(false) },
+                    modifier = Modifier.testTag(HomeTestTags.LEARNING_DECLINE),
+                ) {
+                    Text(stringResource(R.string.home_learning_prompt_decline))
+                }
+                // Un bouton plein, pas tonal : sur cette carte en
+                // `secondaryContainer`, un `FilledTonalButton` — du même
+                // conteneur — disparaissait en thème sombre.
+                Button(
+                    onClick = { onChooseLearning(true) },
+                    modifier = Modifier.testTag(HomeTestTags.LEARNING_ACCEPT),
+                ) {
+                    Text(stringResource(R.string.home_learning_prompt_accept))
+                }
+            }
+        }
     }
 }
 
@@ -295,6 +368,7 @@ private fun HomeScreenPreview() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 }
@@ -307,6 +381,7 @@ private fun HomeScreenWithoutClientPreview() {
             uiState = HomeUiState(isTailscaleInstalled = false),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 }

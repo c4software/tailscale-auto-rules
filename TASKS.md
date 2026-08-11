@@ -624,15 +624,27 @@ ceux du variant ; la release n'embarque rien.
 
 ---
 
-## 23. Exceptions dynamiques — interface `[ ]`
+## 23. Exceptions dynamiques — interface `[x]`
 
-- [ ] Paramètres : interrupteur « Apprendre mes gestes »
-- [ ] Accueil : invitation unique au premier lancement (activer / ne pas
-      activer), carte d'intervention manuelle reformulée
-- [ ] Réseaux de confiance : section « Exceptions apprises » — réseaux
+- [x] Paramètres : interrupteur « Apprendre mes gestes » — sa bascule marque
+      aussi l'invitation comme posée, pour qu'elle ne revienne pas
+- [x] Accueil : invitation unique au premier lancement (activer / ne pas
+      activer), carte d'intervention manuelle reformulée — son texte suit le
+      sort réel du geste : mémorisé, ou respecté si l'apprentissage est coupé
+- [x] Réseaux de confiance : section « Exceptions apprises » — réseaux
       dérogés uniquement, comportement rejoué, **suppression par glissement**
-      (`SwipeToDismissBox`, premier usage du geste dans l'application),
-      section absente si vide
-- [ ] Libellés de `network-exception` (journal, notification, accueil)
-- [ ] Tests ViewModels + écrans ; références Roborazzi réenregistrées et
-      relues image par image
+      (`SwipeToDismissBox`, premier usage du geste dans l'application ; la
+      suppression se déclenche à l'aboutissement du glissement, pas dans
+      `confirmValueChange`, consulté plusieurs fois par un même geste),
+      section absente si vide ; la suppression relance un cycle immédiat
+- [x] Libellés de `network-exception` (journal, notification, accueil)
+- [x] Tests ViewModels + écrans ;
+      références Roborazzi réenregistrées et relues image par image —
+      **et la relecture a servi** : sur la carte d'invitation en
+      `secondaryContainer`, le bouton « Activer » en `FilledTonalButton` — du
+      même conteneur — disparaissait en thème sombre ; passé en bouton plein
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 375 tests, 0 échec ; `:app:verifyRoborazziDebug` → succès,
+32 références dont 4 nouvelles (invitation d'apprentissage, exceptions
+apprises, en clair et sombre).

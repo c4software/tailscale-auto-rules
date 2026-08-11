@@ -36,6 +36,12 @@
     <string name="home_synchronizing">Synchronisation…</string>
     <string name="home_manual_override_enabled">Tunnel activé manuellement. La règle « %1$s » aurait voulu le couper : votre choix est respecté, et les règles reprendront la main au prochain changement de réseau.</string>
     <string name="home_manual_override_disabled">Tunnel désactivé manuellement. La règle « %1$s » aurait voulu l\'activer : votre choix est respecté, et les règles reprendront la main au prochain changement de réseau.</string>
+    <string name="home_manual_override_enabled_memorized">Tunnel activé manuellement. La règle « %1$s » aurait voulu le couper : votre choix est mémorisé et sera rejoué sur ce réseau. L\'exception se gère depuis l\'écran des réseaux.</string>
+    <string name="home_manual_override_disabled_memorized">Tunnel désactivé manuellement. La règle « %1$s » aurait voulu l\'activer : votre choix est mémorisé et sera rejoué sur ce réseau. L\'exception se gère depuis l\'écran des réseaux.</string>
+    <string name="home_learning_prompt_title">Apprendre vos gestes ?</string>
+    <string name="home_learning_prompt_body">Quand vous activez ou coupez Tailscale à la main sur un réseau, l\'application peut mémoriser ce choix et le rejouer à chaque retour sur ce réseau. Ce réglage se change à tout moment dans les paramètres.</string>
+    <string name="home_learning_prompt_accept">Activer</string>
+    <string name="home_learning_prompt_decline">Ne pas activer</string>
     <string name="home_disable_automation">Désactiver l\'automatisation</string>
     <string name="home_automation_disabled">Automatisation désactivée : le tunnel ne bougera plus tout seul. Elle se réactive depuis les paramètres.</string>
     <string name="home_tailscale_missing_title">Client Tailscale introuvable</string>
@@ -60,6 +66,11 @@
     <string name="blacklist_location_title">Autorisation de localisation requise</string>
     <string name="blacklist_location_body">Android réserve la lecture du nom des réseaux Wi-Fi aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus. Cette application ne consulte que le nom du réseau : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
     <string name="blacklist_location_grant">Autoriser</string>
+    <string name="blacklist_exceptions_title">Exceptions apprises</string>
+    <string name="blacklist_exceptions_hint">Vos gestes mémorisés, rejoués à chaque retour sur le réseau. Glissez une carte sur le côté pour revenir au comportement automatique.</string>
+    <string name="blacklist_exception_cellular">Données mobiles</string>
+    <string name="blacklist_exception_enabled">Tunnel maintenu activé sur ce réseau</string>
+    <string name="blacklist_exception_disabled">Tunnel maintenu coupé sur ce réseau</string>
 
     <!-- Journal -->
     <string name="journal_explanation">Les %1$d derniers changements d\'état du tunnel.</string>
@@ -74,6 +85,8 @@
     <!-- Paramètres -->
     <string name="settings_service_title">Automatisation active</string>
     <string name="settings_service_summary">Applique les règles à chaque changement de réseau.</string>
+    <string name="settings_learning_title">Apprendre mes gestes</string>
+    <string name="settings_learning_summary">Mémorise vos activations et coupures manuelles du tunnel, réseau par réseau, et les rejoue. Les exceptions déjà apprises restent appliquées tant qu\'elles ne sont pas supprimées.</string>
     <string name="settings_boot_title">Démarrage automatique</string>
     <string name="settings_boot_summary">Réarme l\'automatisation après un redémarrage du téléphone.</string>
     <string name="settings_notification_notice">Une notification permanente affiche l\'état du tunnel et la règle appliquée. Android l\'impose : observer le réseau en continu demande un service visible.</string>
@@ -106,5 +119,6 @@
     <string name="rule_blacklisted_wifi">Wi-Fi de confiance</string>
     <string name="rule_other_wifi">Wi-Fi non reconnu</string>
     <string name="rule_mobile_network">Réseau mobile</string>
+    <string name="rule_network_exception">Exception dynamique</string>
     <string name="rule_unknown">Règle inconnue</string>
 </resources>

@@ -3,6 +3,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
@@ -78,6 +79,9 @@ class HomeViewModel @Inject constructor(
             // réseau de confiance doit se dire comme tel, pas s'afficher comme
             // si une règle l'avait voulu.
             manualOverride = detectManualOverride(network, tunnel.state, lastChange),
+            willMemorizeManualGesture = settings.isLearningEnabled &&
+                NetworkExceptionKey.from(network) != null,
+            isLearningPromptVisible = !settings.isLearningPrompted,
         )
     }.stateIn(viewModelScope, UiStateSharing, HomeUiState(isLoading = true))
 
@@ -113,6 +117,21 @@ class HomeViewModel @Inject constructor(
     fun disableAutomation() {
         viewModelScope.launch {
             settingsRepository.updateAppSettings { it.copy(isServiceEnabled = false) }
+        }
+    }
+
+    /**
+     * Répond à l'invitation du premier lancement (SPECS.md §6.1).
+     *
+     * Le choix est enregistré **et** la question marquée comme posée : quelle
+     * que soit la réponse, l'invitation ne revient jamais — le réglage reste
+     * modifiable aux paramètres.
+     */
+    fun chooseLearning(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateAppSettings {
+                it.copy(isLearningEnabled = enabled, isLearningPrompted = true)
+            }
         }
     }
 

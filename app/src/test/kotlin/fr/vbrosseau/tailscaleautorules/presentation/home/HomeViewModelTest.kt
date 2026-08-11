@@ -186,4 +186,38 @@ class HomeViewModelTest {
         // Le second cycle constate que l'état visé est déjà atteint.
         assertEquals(1, controller.enableCount)
     }
+
+    @Test
+    fun theLearningPromptShowsUntilAnswered() = runTest {
+        observer.emit(cellular)
+
+        assertTrue(viewModel().uiState.value.isLearningPromptVisible)
+    }
+
+    @Test
+    fun answeringThePromptRecordsTheChoiceAndDismissesItForever() = runTest {
+        observer.emit(cellular)
+        val model = viewModel()
+
+        model.chooseLearning(false)
+
+        assertTrue(!model.uiState.value.isLearningPromptVisible)
+        val stored = settings.currentAppSettings()
+        assertTrue(!stored.isLearningEnabled)
+        assertTrue(stored.isLearningPrompted)
+    }
+
+    @Test
+    fun theOverrideCardKnowsWhetherTheGestureWillBeMemorized() = runTest {
+        // Réseau identifiable et apprentissage actif : la carte peut annoncer
+        // la mémorisation. Apprentissage coupé, elle doit revenir au texte
+        // « respecté jusqu'au prochain changement de réseau ».
+        observer.emit(cellular)
+        val model = viewModel()
+        assertTrue(model.uiState.value.willMemorizeManualGesture)
+
+        settings.updateAppSettings { it.copy(isLearningEnabled = false) }
+
+        assertTrue(!model.uiState.value.willMemorizeManualGesture)
+    }
 }

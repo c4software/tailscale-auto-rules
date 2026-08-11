@@ -1,9 +1,12 @@
 package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,20 +19,29 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.SwitchCard
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
@@ -48,6 +60,7 @@ fun BlacklistScreen(
     onAdd: (String) -> Unit,
     onRename: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
+    onRemoveException: (Long) -> Unit,
     onAddCurrentSsid: () -> Unit,
     onDismissError: () -> Unit,
     onMobileRuleChange: (Boolean) -> Unit,
@@ -90,6 +103,11 @@ fun BlacklistScreen(
             entries = uiState.entries,
             onStartRename = { entry -> editing = EditingState(entry.id, entry.value) },
             onRemove = onRemove,
+        )
+
+        exceptionItems(
+            exceptions = uiState.exceptions,
+            onRemoveException = onRemoveException,
         )
     }
 
@@ -167,6 +185,107 @@ private fun LazyListScope.entryItems(
                 onRename = { onStartRename(entry) },
                 onRemove = { onRemove(entry.id) },
             )
+        }
+    }
+}
+
+/**
+ * Les gestes mémorisés (SPECS.md §6.2) — la section entière disparaît quand il
+ * n'y a rien à montrer : un titre orphelin poserait une question sans réponse.
+ */
+private fun LazyListScope.exceptionItems(
+    exceptions: List<NetworkException>,
+    onRemoveException: (Long) -> Unit,
+) {
+    if (exceptions.isEmpty()) return
+
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text(
+                text = stringResource(R.string.blacklist_exceptions_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.testTag(BlacklistTestTags.EXCEPTIONS_TITLE),
+            )
+            Text(
+                text = stringResource(R.string.blacklist_exceptions_hint),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+
+    items(exceptions, key = { "exception-${it.id}" }) { exception ->
+        ExceptionRow(
+            exception = exception,
+            onRemove = { onRemoveException(exception.id) },
+        )
+    }
+}
+
+/**
+ * Un geste mémorisé, supprimable d'un glissement latéral.
+ *
+ * La suppression est déclenchée à l'**aboutissement** du glissement — pas dans
+ * `confirmValueChange`, que la mécanique de geste peut consulter plusieurs
+ * fois pour une même sortie. La carte disparaît par la liste observée, jamais
+ * par un état visuel local qui pourrait la masquer sans rien effacer.
+ */
+@Composable
+private fun ExceptionRow(
+    exception: NetworkException,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val currentOnRemove by rememberUpdatedState(onRemove)
+    val dismissState = rememberSwipeToDismissBoxState()
+
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) currentOnRemove()
+    }
+
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier.testTag(BlacklistTestTags.exception(exception.id)),
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CardDefaults.shape)
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = Spacing.md),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.blacklist_remove,
+                        exception.ssid ?: stringResource(R.string.blacklist_exception_cellular),
+                    ),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        },
+    ) {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
+                Text(
+                    text = exception.ssid
+                        ?: stringResource(R.string.blacklist_exception_cellular),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = stringResource(
+                        if (exception.desiredState == TunnelState.ENABLED) {
+                            R.string.blacklist_exception_enabled
+                        } else {
+                            R.string.blacklist_exception_disabled
+                        },
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }
@@ -370,11 +489,28 @@ private fun BlacklistScreenPreview() {
                     BlacklistedSsid(id = 1, value = "Maison"),
                     BlacklistedSsid(id = 2, value = "Bureau"),
                 ),
+                exceptions = listOf(
+                    NetworkException(
+                        id = 1,
+                        key = NetworkExceptionKey("wifi:maison"),
+                        ssid = "Maison",
+                        desiredState = TunnelState.ENABLED,
+                        epochMillis = 0,
+                    ),
+                    NetworkException(
+                        id = 2,
+                        key = NetworkExceptionKey.Cellular,
+                        ssid = null,
+                        desiredState = TunnelState.DISABLED,
+                        epochMillis = 0,
+                    ),
+                ),
                 currentSsid = "Aéroport CDG",
             ),
             onAdd = {},
             onRename = { _, _ -> },
             onRemove = {},
+            onRemoveException = {},
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -391,6 +527,7 @@ private fun BlacklistScreenEmptyPreview() {
             onAdd = {},
             onRename = { _, _ -> },
             onRemove = {},
+            onRemoveException = {},
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},

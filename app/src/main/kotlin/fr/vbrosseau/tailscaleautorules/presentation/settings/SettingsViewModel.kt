@@ -101,6 +101,14 @@ class SettingsViewModel @Inject constructor(
 
     fun setServiceEnabled(enabled: Boolean) = update { it.copy(isServiceEnabled = enabled) }
 
+    /**
+     * L'apprentissage des gestes (SPECS.md §3.3). Basculer marque aussi la
+     * question du premier lancement comme posée : un choix pris ici la rendrait
+     * redondante sur l'accueil.
+     */
+    fun setLearningEnabled(enabled: Boolean) =
+        update { it.copy(isLearningEnabled = enabled, isLearningPrompted = true) }
+
     fun setStartOnBoot(enabled: Boolean) = update { it.copy(startOnBoot = enabled) }
 
     fun setVerboseLogging(enabled: Boolean) = update { it.copy(verboseLogging = enabled) }

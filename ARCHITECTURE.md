@@ -62,13 +62,17 @@ réutilisables indépendamment.
 
 ```
 :domain  fr.vbrosseau.tailscaleautorules.domain
-├── model/          TunnelState, NetworkContext, NetworkTransport, RuleDecision…
+├── model/          TunnelState, NetworkContext, NetworkTransport, RuleDecision,
+│                    NetworkException + sa clé canonique…
 ├── rule/           Rule, RuleId, RuleEvaluation + une classe par règle
 ├── engine/         RuleEngine — tri, évaluation, sélection
-├── repository/     Interfaces : BlacklistRepository, JournalRepository, SettingsRepository
+├── repository/     Interfaces : BlacklistRepository, JournalRepository,
+│                    NetworkExceptionRepository, SettingsRepository
 ├── tailscale/      Interface TailscaleController
 └── usecase/        SynchronizeTunnelUseCase — orchestration d'un cycle complet
                     DetectManualOverrideUseCase — reconnaît un geste manuel sur le tunnel
+                    RecordManualOverrideUseCase — le mémorise en exception dynamique
+                    CaptureManualOverrideUseCase — détection + mémorisation sur l'état courant
 
 :app     fr.vbrosseau.tailscaleautorules
 ├── presentation/
@@ -348,7 +352,8 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 14 complètes. 295 tests, 0 échec.
+Étapes 1 à 23 complètes — la validation sur terminal réel de l'étape 22 reste
+ouverte dans [TASKS.md](./TASKS.md). 375 tests, 0 échec.
 
 ```
 .
@@ -359,7 +364,7 @@ est une mesure, pas un objectif.
 │       │   │                 RuleDecision, asSsidKey
 │       │   ├── network/     NetworkObserver, stabilized(window)
 │       │   ├── rule/        Rule, RuleContext, RuleId, RuleSettings, Priorities
-│       │   │                + les 4 règles de la version 1
+│       │   │                + les 5 règles livrées
 │       │   ├── engine/      RuleEngine, RuleEvaluation
 │       │   ├── repository/  Blacklist, Journal, Settings (contrats)
 │       │   ├── settings/    AppSettings
@@ -492,3 +497,6 @@ lui — là où un réveil par diffusion ne survivait pas d'un processus à l'au
 | 26 | Références visuelles versionnées | Une revue voit le changement dans le diff, pas seulement un test rouge |
 | 27 | Capture systématique en thème sombre | C'est là que les défauts de contraste s'installent sans être vus |
 | 28 | Couleur dynamique désactivée en capture | Elle dépend du fond d'écran : la référence serait instable |
+| 29 | La mémorisation d'un geste écrit aussi au journal | La détection compare l'état constaté à la dernière cible journalisée ; sans cette entrée, le geste suivant sur le même réseau serait invisible |
+| 30 | Un nouveau geste **remplace** l'exception, jamais de suppression implicite | La mémoire d'un réseau est son dernier geste ; le retour au comportement automatique est un acte explicite sur l'écran des réseaux |
+| 31 | Capture et cycles sérialisés par un mutex du coordinateur | Un battement concurrent ne doit pas basculer le tunnel entre le constat d'un geste et sa mémorisation |

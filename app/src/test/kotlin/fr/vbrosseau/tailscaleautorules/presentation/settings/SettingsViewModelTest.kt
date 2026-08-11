@@ -77,6 +77,19 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun togglingTheLearningAlsoMarksThePromptAsAnswered() = runTest {
+        // Un choix pris aux paramètres rendrait l'invitation de l'accueil
+        // redondante : elle ne doit plus jamais se montrer.
+        val model = viewModel()
+
+        model.setLearningEnabled(false)
+
+        val settings = model.uiState.value.settings
+        assertTrue(!settings.isLearningEnabled)
+        assertTrue(settings.isLearningPrompted)
+    }
+
+    @Test
     fun aChangeMadeElsewhereIsReflected() = runTest {
         val model = viewModel()
 

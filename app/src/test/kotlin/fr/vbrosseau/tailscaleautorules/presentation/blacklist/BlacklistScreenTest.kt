@@ -11,7 +11,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
@@ -29,6 +34,7 @@ class BlacklistScreenTest {
     private val recordedAdds = mutableListOf<String>()
     private val recordedRenames = mutableListOf<Pair<Long, String>>()
     private val recordedRemovals = mutableListOf<Long>()
+    private val recordedExceptionRemovals = mutableListOf<Long>()
     private var quickAddCount = 0
     private var locationRequests = 0
     private val recordedMobileRuleChanges = mutableListOf<Boolean>()
@@ -41,6 +47,7 @@ class BlacklistScreenTest {
                     onAdd = { recordedAdds += it },
                     onRename = { id, value -> recordedRenames += id to value },
                     onRemove = { recordedRemovals += it },
+                    onRemoveException = { recordedExceptionRemovals += it },
                     onAddCurrentSsid = { quickAddCount++ },
                     onDismissError = {},
                     onMobileRuleChange = { recordedMobileRuleChanges += it },
@@ -53,6 +60,23 @@ class BlacklistScreenTest {
     private val twoEntries = listOf(
         BlacklistedSsid(id = 1, value = "Maison"),
         BlacklistedSsid(id = 2, value = "Bureau"),
+    )
+
+    private val twoExceptions = listOf(
+        NetworkException(
+            id = 1,
+            key = NetworkExceptionKey("wifi:maison"),
+            ssid = "Maison",
+            desiredState = TunnelState.ENABLED,
+            epochMillis = 0,
+        ),
+        NetworkException(
+            id = 2,
+            key = NetworkExceptionKey.Cellular,
+            ssid = null,
+            desiredState = TunnelState.DISABLED,
+            epochMillis = 0,
+        ),
     )
 
     /**
@@ -216,6 +240,38 @@ class BlacklistScreenTest {
         show(BlacklistUiState(canReadSsid = true))
 
         composeRule.onNodeWithTag(BlacklistTestTags.LOCATION_RATIONALE).assertDoesNotExist()
+    }
+
+    @Test
+    fun learnedExceptionsAreListedWithTheirNetwork() {
+        show(BlacklistUiState(exceptions = twoExceptions))
+
+        scrollTo(BlacklistTestTags.EXCEPTIONS_TITLE)
+        composeRule.onNodeWithTag(BlacklistTestTags.EXCEPTIONS_TITLE).assertIsDisplayed()
+        scrollTo(BlacklistTestTags.exception(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.exception(1)).assertIsDisplayed()
+        scrollTo(BlacklistTestTags.exception(2))
+        composeRule.onNodeWithTag(BlacklistTestTags.exception(2)).assertIsDisplayed()
+    }
+
+    @Test
+    fun theExceptionSectionVanishesWhenThereIsNothingToShow() {
+        // Un titre orphelin poserait une question sans réponse.
+        show(BlacklistUiState(entries = twoEntries))
+
+        composeRule.onNodeWithTag(BlacklistTestTags.EXCEPTIONS_TITLE).assertDoesNotExist()
+    }
+
+    @Test
+    fun swipingAnExceptionAsksForItsRemoval() {
+        show(BlacklistUiState(exceptions = twoExceptions))
+
+        scrollTo(BlacklistTestTags.exception(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.exception(1))
+            .performTouchInput { swipeLeft() }
+        composeRule.waitForIdle()
+
+        assertEquals(listOf(1L), recordedExceptionRemovals)
     }
 
     @Test

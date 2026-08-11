@@ -25,5 +25,14 @@ data class HomeUiState(
     val lastChange: JournalEntry? = null,
     val isAutomationEnabled: Boolean = true,
     val manualOverride: ManualOverride? = null,
+    /**
+     * Un geste constaté sera mémorisé comme exception (SPECS.md §3.3) :
+     * apprentissage actif **et** réseau identifiable. La carte d'intervention
+     * manuelle en tire son texte — annoncer une mémorisation qui n'aura pas
+     * lieu serait un mensonge.
+     */
+    val willMemorizeManualGesture: Boolean = false,
+    /** L'invitation unique du premier lancement (SPECS.md §6.1). */
+    val isLearningPromptVisible: Boolean = false,
     val isLoading: Boolean = false,
 )

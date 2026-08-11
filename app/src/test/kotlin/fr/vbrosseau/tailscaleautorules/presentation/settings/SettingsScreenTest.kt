@@ -34,6 +34,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = uiState,
                     onServiceEnabledChange = { toggles += "service" to it },
+                    onLearningEnabledChange = { toggles += "learning" to it },
                     onStartOnBootChange = { toggles += "boot" to it },
                     onVerboseLoggingChange = { toggles += "logging" to it },
                     onRequestNotificationPermission = { permissionRequests++ },
@@ -87,6 +88,15 @@ class SettingsScreenTest {
         composeRule.onNodeWithTag(SettingsTestTags.LOGGING).performScrollTo().performClick()
 
         assertEquals(listOf("logging" to true), toggles)
+    }
+
+    @Test
+    fun togglingTheLearningSwitchReportsTheNewValue() {
+        show(SettingsUiState(settings = AppSettings(isLearningEnabled = true)))
+
+        composeRule.onNodeWithTag(SettingsTestTags.LEARNING).performScrollTo().assertIsOn().performClick()
+
+        assertEquals(listOf("learning" to false), toggles)
     }
 
     @Test

@@ -7,6 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.asSsidKey
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
+import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
@@ -31,6 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class BlacklistViewModel @Inject constructor(
     private val repository: BlacklistRepository,
+    private val exceptionRepository: NetworkExceptionRepository,
     private val settingsRepository: SettingsRepository,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
     private val systemStatus: SystemStatus,
@@ -64,14 +66,17 @@ class BlacklistViewModel @Inject constructor(
      * lorsqu'un écran regarde.
      */
     val uiState: StateFlow<BlacklistUiState> = combine(
-        repository.observeAll(),
+        // `combine` plafonne à cinq flux typés : les deux listes de Room, qui
+        // vont toujours ensemble à l'écran, sont appariées en amont.
+        combine(repository.observeAll(), exceptionRepository.observeAll(), ::Pair),
         currentSsid,
         canReadSsid,
         isMobileRuleEnabled,
         error,
-    ) { entries, ssid, canRead, mobileRuleEnabled, currentError ->
+    ) { (entries, exceptions), ssid, canRead, mobileRuleEnabled, currentError ->
         BlacklistUiState(
             entries = entries,
+            exceptions = exceptions,
             currentSsid = ssid,
             isCurrentSsidAlreadyListed = ssid != null &&
                 entries.any { it.value.asSsidKey() == ssid.asSsidKey() },
@@ -126,6 +131,20 @@ class BlacklistViewModel @Inject constructor(
 
     fun remove(id: Long) {
         viewModelScope.launch { repository.remove(id) }
+    }
+
+    /**
+     * Oublie un geste mémorisé (SPECS.md §6.2).
+     *
+     * Un cycle est lancé dans la foulée (§5) : si l'exception supprimée
+     * gouvernait le réseau courant, le comportement automatique doit reprendre
+     * immédiatement, pas au prochain changement de réseau.
+     */
+    fun removeException(id: Long) {
+        viewModelScope.launch {
+            exceptionRepository.remove(id)
+            synchronizeTunnel()
+        }
     }
 
     fun dismissError() {

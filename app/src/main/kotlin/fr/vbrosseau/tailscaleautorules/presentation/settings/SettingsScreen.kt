@@ -30,6 +30,7 @@ import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 fun SettingsScreen(
     uiState: SettingsUiState,
     onServiceEnabledChange: (Boolean) -> Unit,
+    onLearningEnabledChange: (Boolean) -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
     onRequestNotificationPermission: () -> Unit,
@@ -57,20 +58,11 @@ fun SettingsScreen(
             )
         }
 
-        SwitchCard(
-            title = stringResource(R.string.settings_service_title),
-            summary = stringResource(R.string.settings_service_summary),
-            checked = uiState.settings.isServiceEnabled,
-            onCheckedChange = onServiceEnabledChange,
-            testTag = SettingsTestTags.SERVICE,
-        )
-
-        SwitchCard(
-            title = stringResource(R.string.settings_boot_title),
-            summary = stringResource(R.string.settings_boot_summary),
-            checked = uiState.settings.startOnBoot,
-            onCheckedChange = onStartOnBootChange,
-            testTag = SettingsTestTags.START_ON_BOOT,
+        MainSwitches(
+            settings = uiState.settings,
+            onServiceEnabledChange = onServiceEnabledChange,
+            onLearningEnabledChange = onLearningEnabledChange,
+            onStartOnBootChange = onStartOnBootChange,
         )
 
         NotificationSection(
@@ -96,6 +88,45 @@ fun SettingsScreen(
         }
 
         AboutCard(versionName = uiState.versionName)
+    }
+}
+
+/** Les trois bascules de tête, sorties de l'écran pour le garder d'un seul tenant. */
+@Composable
+private fun MainSwitches(
+    settings: AppSettings,
+    onServiceEnabledChange: (Boolean) -> Unit,
+    onLearningEnabledChange: (Boolean) -> Unit,
+    onStartOnBootChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        SwitchCard(
+            title = stringResource(R.string.settings_service_title),
+            summary = stringResource(R.string.settings_service_summary),
+            checked = settings.isServiceEnabled,
+            onCheckedChange = onServiceEnabledChange,
+            testTag = SettingsTestTags.SERVICE,
+        )
+
+        SwitchCard(
+            title = stringResource(R.string.settings_learning_title),
+            summary = stringResource(R.string.settings_learning_summary),
+            checked = settings.isLearningEnabled,
+            onCheckedChange = onLearningEnabledChange,
+            testTag = SettingsTestTags.LEARNING,
+        )
+
+        SwitchCard(
+            title = stringResource(R.string.settings_boot_title),
+            summary = stringResource(R.string.settings_boot_summary),
+            checked = settings.startOnBoot,
+            onCheckedChange = onStartOnBootChange,
+            testTag = SettingsTestTags.START_ON_BOOT,
+        )
     }
 }
 
@@ -224,6 +255,7 @@ private fun SettingsScreenPreview() {
                 versionName = "0.1.0",
             ),
             onServiceEnabledChange = {},
+            onLearningEnabledChange = {},
             onStartOnBootChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},

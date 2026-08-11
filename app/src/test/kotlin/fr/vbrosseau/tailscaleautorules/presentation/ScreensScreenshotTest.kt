@@ -2,6 +2,8 @@ package fr.vbrosseau.tailscaleautorules.presentation
 
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
@@ -52,6 +54,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 
@@ -63,6 +66,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             uiState = HomeUiState(isTailscaleInstalled = false),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 
@@ -76,6 +80,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 
@@ -92,6 +97,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             ),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 
@@ -115,9 +121,30 @@ class ScreensScreenshotTest : ScreenshotTest() {
                     observedState = TunnelState.ENABLED,
                     ruleId = RuleId("blacklisted-wifi"),
                 ),
+                // Le cas nominal depuis les exceptions dynamiques : le geste
+                // est mémorisé, et la carte l'annonce.
+                willMemorizeManualGesture = true,
             ),
             onSynchronize = {},
             onDisableAutomation = {},
+            onChooseLearning = {},
+        )
+    }
+
+    @Test
+    fun accueilInvitationApprentissage() = capture("accueil-invitation-apprentissage") {
+        // L'invitation du premier lancement : deux boutons dans une carte, le
+        // point le plus sensible aux régressions de contraste en sombre.
+        HomeScreen(
+            uiState = HomeUiState(
+                tunnelState = TunnelState.ENABLED,
+                transport = NetworkTransport.WIFI,
+                ssid = "Aéroport CDG",
+                isLearningPromptVisible = true,
+            ),
+            onSynchronize = {},
+            onDisableAutomation = {},
+            onChooseLearning = {},
         )
     }
 
@@ -137,6 +164,41 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onAdd = {},
             onRename = { _, _ -> },
             onRemove = {},
+            onRemoveException = {},
+            onAddCurrentSsid = {},
+            onDismissError = {},
+            onMobileRuleChange = {},
+        )
+    }
+
+    @Test
+    fun blacklistAvecExceptions() = capture("blacklist-exceptions") {
+        // La section des gestes mémorisés, sous la liste : SSID et données
+        // mobiles, tunnel maintenu dans les deux sens.
+        BlacklistScreen(
+            uiState = BlacklistUiState(
+                entries = listOf(BlacklistedSsid(id = 1, value = "Maison")),
+                exceptions = listOf(
+                    NetworkException(
+                        id = 1,
+                        key = NetworkExceptionKey("wifi:maison"),
+                        ssid = "Maison",
+                        desiredState = TunnelState.ENABLED,
+                        epochMillis = 1_770_000_000_000,
+                    ),
+                    NetworkException(
+                        id = 2,
+                        key = NetworkExceptionKey.Cellular,
+                        ssid = null,
+                        desiredState = TunnelState.DISABLED,
+                        epochMillis = 1_770_000_000_000,
+                    ),
+                ),
+            ),
+            onAdd = {},
+            onRename = { _, _ -> },
+            onRemove = {},
+            onRemoveException = {},
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -150,6 +212,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onAdd = {},
             onRename = { _, _ -> },
             onRemove = {},
+            onRemoveException = {},
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -166,6 +229,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onAdd = {},
             onRename = { _, _ -> },
             onRemove = {},
+            onRemoveException = {},
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -181,6 +245,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onAdd = {},
             onRename = { _, _ -> },
             onRemove = {},
+            onRemoveException = {},
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -247,6 +312,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
         SettingsScreen(
             uiState = SettingsUiState(versionName = "0.1.0"),
             onServiceEnabledChange = {},
+            onLearningEnabledChange = {},
             onStartOnBootChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
@@ -269,6 +335,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
                 versionName = "0.1.0",
             ),
             onServiceEnabledChange = {},
+            onLearningEnabledChange = {},
             onStartOnBootChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},

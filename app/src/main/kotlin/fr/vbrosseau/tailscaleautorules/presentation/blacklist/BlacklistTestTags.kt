@@ -13,7 +13,11 @@ object BlacklistTestTags {
     const val DIALOG_FIELD = "blacklist:dialog-field"
     const val DIALOG_CONFIRM = "blacklist:dialog-confirm"
 
+    const val EXCEPTIONS_TITLE = "blacklist:exceptions-title"
+
     fun entry(id: Long) = "blacklist:entry:$id"
+
+    fun exception(id: Long) = "blacklist:exception:$id"
 
     fun remove(id: Long) = "blacklist:remove:$id"
 

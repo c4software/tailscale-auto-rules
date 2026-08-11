@@ -10,6 +10,20 @@ voir les réserves de [TASKS.md](./TASKS.md).
 
 ### Ajouté depuis la première version
 
+- **Exceptions dynamiques : l'application apprend vos gestes.** Activer ou
+  couper Tailscale à la main sur un réseau mémorise ce choix — par SSID en
+  Wi-Fi, globalement en données mobiles — et le rejoue à chaque retour sur ce
+  réseau, changements de réseau, redémarrages et battement de secours compris.
+  Un nouveau geste remplace la mémoire du réseau ; l'écran des réseaux liste
+  les exceptions apprises et les supprime d'un glissement, ce qui rend
+  immédiatement la main au comportement automatique. L'apprentissage est
+  proposé au premier lancement, actif par défaut, et débrayable dans les
+  paramètres — les exceptions déjà apprises continuent alors de se rejouer
+  tant qu'elles ne sont pas supprimées. Limite assumée : Android ne disant pas
+  quelle application porte le VPN, un autre VPN qui monte peut être pris pour
+  un geste (SPECS §10.3) ; le cellulaire n'ayant aucun identifiant,
+  l'exception y est globale. Première migration de base du projet (Room v2),
+  éprouvée par un test contre les schémas versionnés.
 - **Interrupteur « Réseau mobile »** sur l'écran des réseaux de confiance : la
   règle qui active le tunnel en données mobiles peut désormais être coupée sans
   toucher au reste de l'automatisation. La bascule déclenche une
