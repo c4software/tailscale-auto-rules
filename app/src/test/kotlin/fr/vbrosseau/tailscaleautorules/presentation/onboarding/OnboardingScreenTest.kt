@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -67,13 +68,19 @@ class OnboardingScreenTest {
     @Test
     fun eachPermissionRequestLeavesFromItsOwnPage() {
         // L'explication précède la demande : le bouton vit dans la page qui
-        // explique, jamais ailleurs (SPECS.md §8).
+        // explique, jamais ailleurs (SPECS.md §8). Le défilement préalable
+        // n'est pas une précaution : l'écran Robolectric par défaut est petit,
+        // et un clic sous le pli se perd en silence.
         show(initialPage = 1)
-        composeRule.onNodeWithTag(OnboardingTestTags.NOTIFICATION_GRANT).performClick()
+        composeRule.onNodeWithTag(OnboardingTestTags.NOTIFICATION_GRANT)
+            .performScrollTo()
+            .performClick()
         assertEquals(1, notificationRequests)
 
         composeRule.onNodeWithTag(OnboardingTestTags.CONTINUE).performClick()
-        composeRule.onNodeWithTag(OnboardingTestTags.LOCATION_GRANT).performClick()
+        composeRule.onNodeWithTag(OnboardingTestTags.LOCATION_GRANT)
+            .performScrollTo()
+            .performClick()
         assertEquals(1, locationRequests)
     }
 

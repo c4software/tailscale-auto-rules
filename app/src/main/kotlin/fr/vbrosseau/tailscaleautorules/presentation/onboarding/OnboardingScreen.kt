@@ -1,5 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.presentation.onboarding
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -16,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -25,8 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
@@ -38,6 +45,9 @@ private const val LOCATION_PAGE = 2
 private const val LEARNING_PAGE = 3
 private const val PAGE_COUNT = 4
 
+private val IconBadgeSize = 96.dp
+private val IconSize = 48.dp
+
 /**
  * Parcours du premier lancement (SPECS.md §6.5), sans état applicatif.
  *
@@ -46,6 +56,10 @@ private const val PAGE_COUNT = 4
  * SPECS.md §8 : la demande part de la page, jamais avant elle. Un refus est
  * sans conséquence ici — les cartes d'explication de l'application
  * redemandent au moment du besoin réel.
+ *
+ * L'écran vit **hors** de l'ossature — pas de `Scaffold`, donc pas de gestion
+ * d'insets héritée : il pose lui-même `safeDrawingPadding`, sans quoi le titre
+ * passait sous la barre d'état et les boutons sous la barre gestuelle.
  *
  * La dernière page clôt le parcours par le choix d'apprentissage : les deux
  * réponses sont des issues de même rang, pas un accord et un renoncement.
@@ -64,6 +78,7 @@ fun OnboardingScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .safeDrawingPadding()
             .padding(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
@@ -112,6 +127,7 @@ private fun PageContent(
     when (page) {
         WELCOME_PAGE -> OnboardingPage(
             index = page,
+            iconRes = R.drawable.ic_onboarding_shield,
             titleRes = R.string.onboarding_welcome_title,
             bodyRes = R.string.onboarding_welcome_body,
             modifier = modifier,
@@ -119,6 +135,7 @@ private fun PageContent(
 
         NOTIFICATION_PAGE -> OnboardingPage(
             index = page,
+            iconRes = R.drawable.ic_onboarding_notification,
             titleRes = R.string.onboarding_notification_title,
             bodyRes = R.string.onboarding_notification_body,
             modifier = modifier,
@@ -129,6 +146,7 @@ private fun PageContent(
 
         LOCATION_PAGE -> OnboardingPage(
             index = page,
+            iconRes = R.drawable.ic_onboarding_location,
             titleRes = R.string.onboarding_location_title,
             bodyRes = R.string.onboarding_location_body,
             modifier = modifier,
@@ -139,6 +157,7 @@ private fun PageContent(
 
         LEARNING_PAGE -> OnboardingPage(
             index = page,
+            iconRes = R.drawable.ic_onboarding_learning,
             titleRes = R.string.onboarding_learning_title,
             bodyRes = R.string.onboarding_learning_body,
             modifier = modifier,
@@ -147,7 +166,8 @@ private fun PageContent(
 }
 
 /**
- * Une page du parcours : titre, texte, et l'éventuelle demande de permission.
+ * Une page du parcours : pastille d'icône, titre et texte centrés, et
+ * l'éventuelle demande de permission.
  *
  * Le bouton d'autorisation vit **dans** la page, sous son explication : c'est
  * l'ordre qu'exige le Play Store, et celui qui donne une chance à la demande
@@ -156,10 +176,11 @@ private fun PageContent(
 @Composable
 private fun OnboardingPage(
     index: Int,
-    titleRes: Int,
-    bodyRes: Int,
+    @DrawableRes iconRes: Int,
+    @StringRes titleRes: Int,
+    @StringRes bodyRes: Int,
     modifier: Modifier = Modifier,
-    grantLabelRes: Int? = null,
+    @StringRes grantLabelRes: Int? = null,
     grantTestTag: String? = null,
     onGrant: () -> Unit = {},
 ) {
@@ -167,16 +188,37 @@ private fun OnboardingPage(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = Spacing.md)
             .testTag(OnboardingTestTags.page(index)),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        // Centré, pas collé en haut : une page d'accueil est une présentation,
+        // pas un écran de travail.
+        verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
     ) {
+        Box(
+            modifier = Modifier
+                .size(IconBadgeSize)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(IconSize),
+            )
+        }
         Text(
             text = stringResource(titleRes),
             style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = stringResource(bodyRes),
             style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (grantLabelRes != null && grantTestTag != null) {
             FilledTonalButton(
