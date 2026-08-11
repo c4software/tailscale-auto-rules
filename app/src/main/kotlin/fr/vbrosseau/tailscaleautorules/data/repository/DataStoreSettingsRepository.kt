@@ -17,7 +17,7 @@ import javax.inject.Singleton
 /**
  * Préférences scalaires, dans DataStore.
  *
- * Aucune collection ici : la blacklist et le journal vivent dans Room. Les deux
+ * Aucune collection ici : les préférences de réseau et le journal vivent dans Room. Les deux
  * supports ne se recouvrent jamais (SPECS.md §9).
  */
 @Singleton

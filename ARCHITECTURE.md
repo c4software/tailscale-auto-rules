@@ -63,22 +63,22 @@ réutilisables indépendamment.
 ```
 :domain  fr.vbrosseau.tailscaleautorules.domain
 ├── model/          TunnelState, NetworkContext, NetworkTransport, RuleDecision,
-│                    NetworkException + sa clé canonique…
+│                    NetworkPreference + sa clé canonique…
 ├── rule/           Rule, RuleId, RuleEvaluation + une classe par règle
 ├── engine/         RuleEngine — tri, évaluation, sélection
-├── repository/     Interfaces : BlacklistRepository, JournalRepository,
-│                    NetworkExceptionRepository, SettingsRepository
+├── repository/     Interfaces : JournalRepository, NetworkPreferenceRepository,
+│                    SettingsRepository
 ├── tailscale/      Interface TailscaleController
 └── usecase/        SynchronizeTunnelUseCase — orchestration d'un cycle complet
                     DetectManualOverrideUseCase — reconnaît un geste manuel sur le tunnel
-                    RecordManualOverrideUseCase — le mémorise en exception dynamique
+                    RecordManualOverrideUseCase — le mémorise en préférence de réseau
                     CaptureManualOverrideUseCase — détection + mémorisation sur l'état courant
 
 :app     fr.vbrosseau.tailscaleautorules
 ├── presentation/
 │   ├── theme/      AppTheme, palette, échelle d'espacement
 │   ├── home/       HomeScreen, HomeViewModel, HomeUiState
-│   ├── blacklist/  BlacklistScreen, BlacklistViewModel, BlacklistUiState
+│   ├── networks/   NetworksScreen, NetworksViewModel, NetworksUiState
 │   ├── settings/   SettingsScreen, SettingsViewModel, SettingsUiState
 │   ├── journal/    JournalScreen, JournalViewModel, JournalUiState
 │   └── navigation/ AppNavHost, destinations
@@ -116,7 +116,7 @@ interface Rule {
 
 data class RuleContext(
     val network: NetworkContext,
-    val blacklistedSsids: Set<String> = emptySet(),
+    val networkPreferences: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
     val settings: Map<RuleId, RuleSettings> = emptyMap(),
 )
 ```
@@ -352,8 +352,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 23 complètes — la validation sur terminal réel de l'étape 22 reste
-ouverte dans [TASKS.md](./TASKS.md). 375 tests, 0 échec.
+Étapes 1 à 28 complètes. 362 tests, 0 échec.
 
 ```
 .
@@ -364,9 +363,9 @@ ouverte dans [TASKS.md](./TASKS.md). 375 tests, 0 échec.
 │       │   │                 RuleDecision, asSsidKey
 │       │   ├── network/     NetworkObserver, stabilized(window)
 │       │   ├── rule/        Rule, RuleContext, RuleId, RuleSettings, Priorities
-│       │   │                + les 5 règles livrées
+│       │   │                + les 4 règles livrées
 │       │   ├── engine/      RuleEngine, RuleEvaluation
-│       │   ├── repository/  Blacklist, Journal, Settings (contrats)
+│       │   ├── repository/  Journal, NetworkPreference, Settings (contrats)
 │       │   ├── settings/    AppSettings
 │       │   ├── time/        Clock
 │       │   ├── usecase/     SynchronizeTunnelUseCase, SynchronizationOutcome,
@@ -498,5 +497,6 @@ lui — là où un réveil par diffusion ne survivait pas d'un processus à l'au
 | 27 | Capture systématique en thème sombre | C'est là que les défauts de contraste s'installent sans être vus |
 | 28 | Couleur dynamique désactivée en capture | Elle dépend du fond d'écran : la référence serait instable |
 | 29 | La mémorisation d'un geste écrit aussi au journal | La détection compare l'état constaté à la dernière cible journalisée ; sans cette entrée, le geste suivant sur le même réseau serait invisible |
+| 32 | Blacklist et gestes fusionnés en préférences de réseau | Deux notions disaient la même chose en deux endroits ; une seule table, une seule règle, la dernière volonté gagne quelle que soit son origine |
 | 30 | Un nouveau geste **remplace** l'exception, jamais de suppression implicite | La mémoire d'un réseau est son dernier geste ; le retour au comportement automatique est un acte explicite sur l'écran des réseaux |
 | 31 | Capture et cycles sérialisés par un mutex du coordinateur | Un battement concurrent ne doit pas basculer le tunnel entre le constat d'un geste et sa mémorisation |

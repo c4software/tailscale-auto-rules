@@ -28,9 +28,9 @@ enum class AppDestination(
         iconRes = R.drawable.ic_nav_home,
     ),
     BLACKLIST(
-        route = AppRoutes.BLACKLIST,
-        labelRes = R.string.destination_blacklist,
-        shortLabelRes = R.string.destination_short_blacklist,
+        route = AppRoutes.NETWORKS,
+        labelRes = R.string.destination_networks,
+        shortLabelRes = R.string.destination_short_networks,
         iconRes = R.drawable.ic_nav_wifi,
     ),
     JOURNAL(

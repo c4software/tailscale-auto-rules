@@ -1,4 +1,4 @@
-package fr.vbrosseau.tailscaleautorules.presentation.blacklist
+package fr.vbrosseau.tailscaleautorules.presentation.networks
 
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 
@@ -11,13 +11,13 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
  * [canAddCurrentSsid] exprime directement plutôt que de laisser l'interface
  * le recalculer.
  */
-data class BlacklistUiState(
+data class NetworksUiState(
     val preferences: List<NetworkPreference> = emptyList(),
     val currentSsid: String? = null,
     val isCurrentSsidAlreadyListed: Boolean = false,
     val canReadSsid: Boolean = true,
     val isMobileRuleEnabled: Boolean = true,
-    val error: BlacklistError? = null,
+    val error: NetworksError? = null,
     val isLoading: Boolean = false,
 ) {
     val canAddCurrentSsid: Boolean
@@ -33,7 +33,7 @@ data class BlacklistUiState(
 }
 
 /** Échecs qu'un écran doit savoir raconter à l'utilisateur. */
-enum class BlacklistError {
+enum class NetworksError {
     DUPLICATE,
     BLANK,
     UNKNOWN,

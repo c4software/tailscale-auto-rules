@@ -16,8 +16,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistScreen
-import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistViewModel
+import fr.vbrosseau.tailscaleautorules.presentation.networks.NetworksScreen
+import fr.vbrosseau.tailscaleautorules.presentation.networks.NetworksViewModel
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeScreen
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeViewModel
 import fr.vbrosseau.tailscaleautorules.presentation.journal.JournalScreen
@@ -57,7 +57,7 @@ fun AppNavHost(
             )
         }
 
-        blacklistDestination(onRequestLocationPermission)
+        networksDestination(onRequestLocationPermission)
 
         composable(AppRoutes.JOURNAL) {
             val viewModel: JournalViewModel = hiltViewModel()
@@ -92,9 +92,9 @@ fun AppNavHost(
 }
 
 /** Sorti du graphe pour garder [AppNavHost] lisible d'un seul tenant. */
-private fun NavGraphBuilder.blacklistDestination(onRequestLocationPermission: () -> Unit) {
-    composable(AppRoutes.BLACKLIST) {
-        val viewModel: BlacklistViewModel = hiltViewModel()
+private fun NavGraphBuilder.networksDestination(onRequestLocationPermission: () -> Unit) {
+    composable(AppRoutes.NETWORKS) {
+        val viewModel: NetworksViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         // Une permission s'accorde dans une boîte de dialogue système :
@@ -105,7 +105,7 @@ private fun NavGraphBuilder.blacklistDestination(onRequestLocationPermission: ()
             onPauseOrDispose { }
         }
 
-        BlacklistScreen(
+        NetworksScreen(
             uiState = uiState,
             onAdd = viewModel::add,
             onRename = viewModel::rename,

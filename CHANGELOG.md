@@ -10,6 +10,16 @@ voir les réserves de [TASKS.md](./TASKS.md).
 
 ### Ajouté depuis la première version
 
+- **Préférences de réseau : la blacklist et les gestes fusionnent.** Une seule
+  notion par réseau — tunnel toujours coupé (le réseau de confiance d'hier) ou
+  toujours actif, l'absence valant automatisme — alimentée par la déclaration
+  sur l'écran des réseaux comme par les gestes appris, la dernière volonté
+  gagnant quelle que soit son origine. L'écran des réseaux devient la liste
+  unique : volonté modifiable sur place, ajout avec choix du comportement,
+  renommage, glissement pour rendre le réseau à l'automatisme. Migration de
+  base fusionnante (Room v3) : les réseaux de confiance existants deviennent
+  des préférences « toujours coupé », sauf là où un geste plus récent a déjà
+  tranché.
 - **Parcours de premier lancement.** Quatre pages — bienvenue, notification,
   localisation, apprentissage — qui avancent d'un bouton ou d'un glissement.
   Chaque demande de permission y est précédée de son explication, et un refus

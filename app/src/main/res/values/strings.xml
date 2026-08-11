@@ -3,7 +3,7 @@
 
     <!-- Navigation -->
     <string name="destination_home">Accueil</string>
-    <string name="destination_blacklist">Réseaux</string>
+    <string name="destination_networks">Réseaux</string>
     <string name="destination_journal">Journal</string>
     <string name="destination_settings">Paramètres</string>
 
@@ -13,7 +13,7 @@
       Le titre d'écran, lui, garde le libellé complet.
     -->
     <string name="destination_short_home">Accueil</string>
-    <string name="destination_short_blacklist">Réseaux</string>
+    <string name="destination_short_networks">Réseaux</string>
     <string name="destination_short_journal">Journal</string>
     <string name="destination_short_settings">Paramètres</string>
 
@@ -58,28 +58,28 @@
     <string name="home_tailscale_missing_body">Installez l\'application Tailscale officielle : sans elle, aucune règle ne peut être appliquée.</string>
 
     <!-- Réseaux -->
-    <string name="blacklist_title">Réseaux</string>
-    <string name="blacklist_mobile_title">Réseau mobile</string>
-    <string name="blacklist_mobile_summary">Active automatiquement le tunnel en données mobiles (4G/5G).</string>
-    <string name="blacklist_explanation">Forcez le tunnel réseau par réseau — coupé sur vos réseaux de confiance, actif où vous l\'exigez. Les réseaux absents de la liste suivent l\'automatisme, et vos gestes dans Tailscale s\'y enregistrent aussi. Glissez une carte sur le côté pour rendre le réseau à l\'automatisme.</string>
-    <string name="blacklist_empty">Aucune préférence : l\'automatisme décide partout — tunnel coupé nulle part, actif sur tous les réseaux.</string>
-    <string name="blacklist_add">Ajouter un réseau</string>
-    <string name="blacklist_add_current">Ajouter « %1$s »</string>
-    <string name="blacklist_ssid_label">Nom du réseau (SSID)</string>
-    <string name="blacklist_rename">Renommer</string>
-    <string name="blacklist_remove">Supprimer « %1$s »</string>
-    <string name="blacklist_confirm">Valider</string>
-    <string name="blacklist_cancel">Annuler</string>
-    <string name="blacklist_error_duplicate">Ce réseau figure déjà dans la liste.</string>
-    <string name="blacklist_error_blank">Le nom du réseau ne peut pas être vide.</string>
-    <string name="blacklist_error_unknown">L\'enregistrement a échoué.</string>
-    <string name="blacklist_location_title">Autorisation de localisation requise</string>
-    <string name="blacklist_location_body">Android réserve la lecture du nom des réseaux Wi-Fi aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus. Cette application ne consulte que le nom du réseau : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
-    <string name="blacklist_location_grant">Autoriser</string>
-    <string name="blacklist_cellular">Données mobiles</string>
-    <string name="blacklist_state_enabled">Tunnel toujours actif sur ce réseau</string>
-    <string name="blacklist_state_disabled">Tunnel toujours coupé sur ce réseau</string>
-    <string name="blacklist_dialog_enabled">Tunnel actif sur ce réseau</string>
+    <string name="networks_title">Réseaux</string>
+    <string name="networks_mobile_title">Réseau mobile</string>
+    <string name="networks_mobile_summary">Active automatiquement le tunnel en données mobiles (4G/5G).</string>
+    <string name="networks_explanation">Forcez le tunnel réseau par réseau — coupé sur vos réseaux de confiance, actif où vous l\'exigez. Les réseaux absents de la liste suivent l\'automatisme, et vos gestes dans Tailscale s\'y enregistrent aussi. Glissez une carte sur le côté pour rendre le réseau à l\'automatisme.</string>
+    <string name="networks_empty">Aucune préférence : l\'automatisme décide partout — tunnel coupé nulle part, actif sur tous les réseaux.</string>
+    <string name="networks_add">Ajouter un réseau</string>
+    <string name="networks_add_current">Ajouter « %1$s »</string>
+    <string name="networks_ssid_label">Nom du réseau (SSID)</string>
+    <string name="networks_rename">Renommer</string>
+    <string name="networks_remove">Supprimer « %1$s »</string>
+    <string name="networks_confirm">Valider</string>
+    <string name="networks_cancel">Annuler</string>
+    <string name="networks_error_duplicate">Ce réseau figure déjà dans la liste.</string>
+    <string name="networks_error_blank">Le nom du réseau ne peut pas être vide.</string>
+    <string name="networks_error_unknown">L\'enregistrement a échoué.</string>
+    <string name="networks_location_title">Autorisation de localisation requise</string>
+    <string name="networks_location_body">Android réserve la lecture du nom des réseaux Wi-Fi aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus. Cette application ne consulte que le nom du réseau : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
+    <string name="networks_location_grant">Autoriser</string>
+    <string name="networks_cellular">Données mobiles</string>
+    <string name="networks_state_enabled">Tunnel toujours actif sur ce réseau</string>
+    <string name="networks_state_disabled">Tunnel toujours coupé sur ce réseau</string>
+    <string name="networks_dialog_enabled">Tunnel actif sur ce réseau</string>
 
     <!-- Journal -->
     <string name="journal_explanation">Les %1$d derniers changements d\'état du tunnel.</string>

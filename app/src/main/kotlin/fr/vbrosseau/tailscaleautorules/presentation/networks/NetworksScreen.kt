@@ -1,4 +1,4 @@
-package fr.vbrosseau.tailscaleautorules.presentation.blacklist
+package fr.vbrosseau.tailscaleautorules.presentation.networks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,8 +56,8 @@ import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
  * de dialogue de saisie : il n'a aucune raison de survivre à l'écran.
  */
 @Composable
-fun BlacklistScreen(
-    uiState: BlacklistUiState,
+fun NetworksScreen(
+    uiState: NetworksUiState,
     onAdd: (String, Boolean) -> Unit,
     onRename: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
@@ -81,7 +81,7 @@ fun BlacklistScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
-            .testTag(BlacklistTestTags.LIST),
+            .testTag(NetworksTestTags.LIST),
         contentPadding = PaddingValues(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
@@ -125,7 +125,7 @@ fun BlacklistScreen(
 
 /** Cartes de tête : règle du réseau mobile, explication, permission, erreur. */
 private fun LazyListScope.headerItems(
-    uiState: BlacklistUiState,
+    uiState: NetworksUiState,
     onMobileRuleChange: (Boolean) -> Unit,
     onRequestLocationPermission: () -> Unit,
     onDismissError: () -> Unit,
@@ -135,17 +135,17 @@ private fun LazyListScope.headerItems(
         // paramètres : c'est ici que l'utilisateur décide sur quels réseaux
         // le tunnel monte.
         SwitchCard(
-            title = stringResource(R.string.blacklist_mobile_title),
-            summary = stringResource(R.string.blacklist_mobile_summary),
+            title = stringResource(R.string.networks_mobile_title),
+            summary = stringResource(R.string.networks_mobile_summary),
             checked = uiState.isMobileRuleEnabled,
             onCheckedChange = onMobileRuleChange,
-            testTag = BlacklistTestTags.MOBILE_RULE,
+            testTag = NetworksTestTags.MOBILE_RULE,
         )
     }
 
     item {
         Text(
-            text = stringResource(R.string.blacklist_explanation),
+            text = stringResource(R.string.networks_explanation),
             style = MaterialTheme.typography.bodyMedium,
         )
     }
@@ -174,9 +174,9 @@ private fun LazyListScope.preferenceItems(
     if (preferences.isEmpty()) {
         item {
             Text(
-                text = stringResource(R.string.blacklist_empty),
+                text = stringResource(R.string.networks_empty),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag(BlacklistTestTags.EMPTY),
+                modifier = Modifier.testTag(NetworksTestTags.EMPTY),
             )
         }
     } else {
@@ -193,7 +193,7 @@ private fun LazyListScope.preferenceItems(
 
 @Composable
 private fun ActionRow(
-    uiState: BlacklistUiState,
+    uiState: NetworksUiState,
     onStartCreation: () -> Unit,
     onAddCurrentSsid: () -> Unit,
     modifier: Modifier = Modifier,
@@ -204,9 +204,9 @@ private fun ActionRow(
     ) {
         OutlinedButton(
             onClick = onStartCreation,
-            modifier = Modifier.testTag(BlacklistTestTags.ADD),
+            modifier = Modifier.testTag(NetworksTestTags.ADD),
         ) {
-            Text(stringResource(R.string.blacklist_add))
+            Text(stringResource(R.string.networks_add))
         }
 
         // Le bouton n'apparaît que s'il peut aboutir : proposer un ajout voué
@@ -214,11 +214,11 @@ private fun ActionRow(
         if (uiState.canAddCurrentSsid) {
             OutlinedButton(
                 onClick = onAddCurrentSsid,
-                modifier = Modifier.testTag(BlacklistTestTags.ADD_CURRENT),
+                modifier = Modifier.testTag(NetworksTestTags.ADD_CURRENT),
             ) {
                 Text(
                     stringResource(
-                        R.string.blacklist_add_current,
+                        R.string.networks_add_current,
                         uiState.currentSsid.orEmpty(),
                     ),
                 )
@@ -252,11 +252,11 @@ private fun PreferenceRow(
         if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) currentOnRemove()
     }
 
-    val name = preference.ssid ?: stringResource(R.string.blacklist_cellular)
+    val name = preference.ssid ?: stringResource(R.string.networks_cellular)
 
     SwipeToDismissBox(
         state = dismissState,
-        modifier = modifier.testTag(BlacklistTestTags.preference(preference.id)),
+        modifier = modifier.testTag(NetworksTestTags.preference(preference.id)),
         backgroundContent = {
             Box(
                 modifier = Modifier
@@ -267,7 +267,7 @@ private fun PreferenceRow(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(
-                    text = stringResource(R.string.blacklist_remove, name),
+                    text = stringResource(R.string.networks_remove, name),
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -300,7 +300,7 @@ private fun PreferenceCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .testTag(BlacklistTestTags.preferenceName(preference.id))
+                    .testTag(NetworksTestTags.preferenceName(preference.id))
                     .let { base ->
                         if (preference.ssid != null) base.clickable(onClick = onRename) else base
                     },
@@ -309,9 +309,9 @@ private fun PreferenceCard(
                 Text(
                     text = stringResource(
                         if (preference.desiredState == TunnelState.ENABLED) {
-                            R.string.blacklist_state_enabled
+                            R.string.networks_state_enabled
                         } else {
-                            R.string.blacklist_state_disabled
+                            R.string.networks_state_disabled
                         },
                     ),
                     style = MaterialTheme.typography.bodyMedium,
@@ -320,7 +320,7 @@ private fun PreferenceCard(
             Switch(
                 checked = preference.desiredState == TunnelState.ENABLED,
                 onCheckedChange = onSetEnabled,
-                modifier = Modifier.testTag(BlacklistTestTags.preferenceSwitch(preference.id)),
+                modifier = Modifier.testTag(NetworksTestTags.preferenceSwitch(preference.id)),
             )
         }
     }
@@ -334,7 +334,7 @@ private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modi
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag(BlacklistTestTags.LOCATION_RATIONALE),
+            .testTag(NetworksTestTags.LOCATION_RATIONALE),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -349,20 +349,20 @@ private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modi
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             Text(
-                text = stringResource(R.string.blacklist_location_title),
+                text = stringResource(R.string.networks_location_title),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = stringResource(R.string.blacklist_location_body),
+                text = stringResource(R.string.networks_location_body),
                 style = MaterialTheme.typography.bodyMedium,
             )
             FilledTonalButton(
                 onClick = onGrant,
                 modifier = Modifier
                     .align(Alignment.End)
-                    .testTag(BlacklistTestTags.LOCATION_GRANT),
+                    .testTag(NetworksTestTags.LOCATION_GRANT),
             ) {
-                Text(stringResource(R.string.blacklist_location_grant))
+                Text(stringResource(R.string.networks_location_grant))
             }
         }
     }
@@ -390,14 +390,14 @@ private fun PreferenceDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.blacklist_ssid_label)) },
+        title = { Text(stringResource(R.string.networks_ssid_label)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it },
                     singleLine = true,
-                    modifier = Modifier.testTag(BlacklistTestTags.DIALOG_FIELD),
+                    modifier = Modifier.testTag(NetworksTestTags.DIALOG_FIELD),
                 )
                 if (withBehaviourChoice) {
                     Row(
@@ -405,14 +405,14 @@ private fun PreferenceDialog(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     ) {
                         Text(
-                            text = stringResource(R.string.blacklist_dialog_enabled),
+                            text = stringResource(R.string.networks_dialog_enabled),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
                         Switch(
                             checked = tunnelEnabled,
                             onCheckedChange = { tunnelEnabled = it },
-                            modifier = Modifier.testTag(BlacklistTestTags.DIALOG_SWITCH),
+                            modifier = Modifier.testTag(NetworksTestTags.DIALOG_SWITCH),
                         )
                     }
                 }
@@ -421,14 +421,14 @@ private fun PreferenceDialog(
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(value, tunnelEnabled) },
-                modifier = Modifier.testTag(BlacklistTestTags.DIALOG_CONFIRM),
+                modifier = Modifier.testTag(NetworksTestTags.DIALOG_CONFIRM),
             ) {
-                Text(stringResource(R.string.blacklist_confirm))
+                Text(stringResource(R.string.networks_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.blacklist_cancel))
+                Text(stringResource(R.string.networks_cancel))
             }
         },
     )
@@ -439,7 +439,7 @@ private fun ErrorCard(message: String, onDismiss: () -> Unit, modifier: Modifier
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .testTag(BlacklistTestTags.ERROR),
+            .testTag(NetworksTestTags.ERROR),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer,
             contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -456,7 +456,7 @@ private fun ErrorCard(message: String, onDismiss: () -> Unit, modifier: Modifier
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.End),
             ) {
-                Text(stringResource(R.string.blacklist_cancel))
+                Text(stringResource(R.string.networks_cancel))
             }
         }
     }
@@ -464,10 +464,10 @@ private fun ErrorCard(message: String, onDismiss: () -> Unit, modifier: Modifier
 
 @Preview(showBackground = true)
 @Composable
-private fun BlacklistScreenPreview() {
+private fun NetworksScreenPreview() {
     AppTheme(dynamicColor = false) {
-        BlacklistScreen(
-            uiState = BlacklistUiState(
+        NetworksScreen(
+            uiState = NetworksUiState(
                 preferences = listOf(
                     NetworkPreference(
                         id = 1,
@@ -499,10 +499,10 @@ private fun BlacklistScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun BlacklistScreenEmptyPreview() {
+private fun NetworksScreenEmptyPreview() {
     AppTheme(dynamicColor = false) {
-        BlacklistScreen(
-            uiState = BlacklistUiState(error = BlacklistError.DUPLICATE),
+        NetworksScreen(
+            uiState = NetworksUiState(error = NetworksError.DUPLICATE),
             onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},

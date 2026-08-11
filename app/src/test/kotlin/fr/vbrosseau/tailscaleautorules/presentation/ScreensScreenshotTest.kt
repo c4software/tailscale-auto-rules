@@ -8,9 +8,9 @@ import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.usecase.ManualOverride
-import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistError
-import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistScreen
-import fr.vbrosseau.tailscaleautorules.presentation.blacklist.BlacklistUiState
+import fr.vbrosseau.tailscaleautorules.presentation.networks.NetworksError
+import fr.vbrosseau.tailscaleautorules.presentation.networks.NetworksScreen
+import fr.vbrosseau.tailscaleautorules.presentation.networks.NetworksUiState
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeScreen
 import fr.vbrosseau.tailscaleautorules.presentation.home.HomeUiState
 import fr.vbrosseau.tailscaleautorules.presentation.journal.JournalScreen
@@ -111,11 +111,11 @@ class ScreensScreenshotTest : ScreenshotTest() {
                     epochMillis = 1_770_000_000_000,
                     previousState = TunnelState.ENABLED,
                     newState = TunnelState.DISABLED,
-                    ruleId = RuleId("blacklisted-wifi"),
+                    ruleId = RuleId("network-preference"),
                 ),
                 manualOverride = ManualOverride(
                     observedState = TunnelState.ENABLED,
-                    ruleId = RuleId("blacklisted-wifi"),
+                    ruleId = RuleId("network-preference"),
                 ),
                 // Le cas nominal depuis les exceptions dynamiques : le geste
                 // est mémorisé, et la carte l'annonce.
@@ -153,10 +153,10 @@ class ScreensScreenshotTest : ScreenshotTest() {
     // --- Réseaux ---
 
     @Test
-    fun blacklistRemplie() = capture("blacklist-remplie") {
+    fun reseauxRemplis() = capture("networks-remplis") {
         // Trois volontés : coupé, actif, et les données mobiles.
-        BlacklistScreen(
-            uiState = BlacklistUiState(
+        NetworksScreen(
+            uiState = NetworksUiState(
                 preferences = listOf(
                     NetworkPreference(
                         id = 1,
@@ -194,9 +194,9 @@ class ScreensScreenshotTest : ScreenshotTest() {
 
 
     @Test
-    fun blacklistVide() = capture("blacklist-vide") {
-        BlacklistScreen(
-            uiState = BlacklistUiState(),
+    fun reseauxVides() = capture("networks-vides") {
+        NetworksScreen(
+            uiState = NetworksUiState(),
             onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
@@ -208,9 +208,9 @@ class ScreensScreenshotTest : ScreenshotTest() {
     }
 
     @Test
-    fun blacklistAvecErreur() = capture("blacklist-erreur") {
-        BlacklistScreen(
-            uiState = BlacklistUiState(
+    fun reseauxAvecErreur() = capture("networks-erreur") {
+        NetworksScreen(
+            uiState = NetworksUiState(
                 preferences = listOf(
                     NetworkPreference(
                         id = 1,
@@ -220,7 +220,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
                         epochMillis = 1_770_000_000_000,
                     ),
                 ),
-                error = BlacklistError.DUPLICATE,
+                error = NetworksError.DUPLICATE,
             ),
             onAdd = { _, _ -> },
             onRename = { _, _ -> },
@@ -233,11 +233,11 @@ class ScreensScreenshotTest : ScreenshotTest() {
     }
 
     @Test
-    fun blacklistSansPermissionDeLocalisation() = capture("blacklist-permission") {
+    fun reseauxSansPermissionDeLocalisation() = capture("networks-permission") {
         // Le texte d'explication est long : c'est le cas où un défaut de
         // contraste ou de débordement se verrait le plus.
-        BlacklistScreen(
-            uiState = BlacklistUiState(canReadSsid = false),
+        NetworksScreen(
+            uiState = NetworksUiState(canReadSsid = false),
             onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
@@ -267,7 +267,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
                         epochMillis = 1_770_003_600_000,
                         previousState = TunnelState.ENABLED,
                         newState = TunnelState.DISABLED,
-                        ruleId = RuleId("blacklisted-wifi"),
+                        ruleId = RuleId("network-preference"),
                     ),
                     lastChange,
                 ),

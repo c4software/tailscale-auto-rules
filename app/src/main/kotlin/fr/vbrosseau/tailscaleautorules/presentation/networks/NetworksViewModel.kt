@@ -1,4 +1,4 @@
-package fr.vbrosseau.tailscaleautorules.presentation.blacklist
+package fr.vbrosseau.tailscaleautorules.presentation.networks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,7 +34,7 @@ import javax.inject.Inject
  * changement de réseau.
  */
 @HiltViewModel
-class BlacklistViewModel @Inject constructor(
+class NetworksViewModel @Inject constructor(
     private val preferenceRepository: NetworkPreferenceRepository,
     private val settingsRepository: SettingsRepository,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
@@ -42,7 +42,7 @@ class BlacklistViewModel @Inject constructor(
     networkObserver: NetworkObserver,
 ) : ViewModel() {
 
-    private val error = MutableStateFlow<BlacklistError?>(null)
+    private val error = MutableStateFlow<NetworksError?>(null)
     private val canReadSsid = MutableStateFlow(systemStatus.canReadSsid())
 
     /**
@@ -68,14 +68,14 @@ class BlacklistViewModel @Inject constructor(
      * Publié en `WhileSubscribed` : l'observation du réseau ne vit que
      * lorsqu'un écran regarde.
      */
-    val uiState: StateFlow<BlacklistUiState> = combine(
+    val uiState: StateFlow<NetworksUiState> = combine(
         preferenceRepository.observeAll(),
         currentSsid,
         canReadSsid,
         isMobileRuleEnabled,
         error,
     ) { preferences, ssid, canRead, mobileRuleEnabled, currentError ->
-        BlacklistUiState(
+        NetworksUiState(
             preferences = preferences,
             currentSsid = ssid,
             isCurrentSsidAlreadyListed = ssid != null &&
@@ -84,7 +84,7 @@ class BlacklistViewModel @Inject constructor(
             isMobileRuleEnabled = mobileRuleEnabled,
             error = currentError,
         )
-    }.stateIn(viewModelScope, UiStateSharing, BlacklistUiState(isLoading = true))
+    }.stateIn(viewModelScope, UiStateSharing, NetworksUiState(isLoading = true))
 
     /**
      * Relit l'autorisation de lecture du SSID.
@@ -122,7 +122,7 @@ class BlacklistViewModel @Inject constructor(
     fun add(ssid: String, tunnelEnabled: Boolean) {
         val trimmed = ssid.trim()
         if (trimmed.isEmpty()) {
-            error.value = BlacklistError.BLANK
+            error.value = NetworksError.BLANK
             return
         }
         viewModelScope.launch {
@@ -157,7 +157,7 @@ class BlacklistViewModel @Inject constructor(
     fun rename(id: Long, ssid: String) {
         val trimmed = ssid.trim()
         if (trimmed.isEmpty()) {
-            error.value = BlacklistError.BLANK
+            error.value = NetworksError.BLANK
             return
         }
         viewModelScope.launch {
@@ -178,11 +178,11 @@ class BlacklistViewModel @Inject constructor(
         error.value = null
     }
 
-    private fun Result<Unit>.toError(): BlacklistError? = exceptionOrNull()?.let { cause ->
+    private fun Result<Unit>.toError(): NetworksError? = exceptionOrNull()?.let { cause ->
         when (cause) {
-            is DuplicateSsidException -> BlacklistError.DUPLICATE
-            is IllegalArgumentException -> BlacklistError.BLANK
-            else -> BlacklistError.UNKNOWN
+            is DuplicateSsidException -> NetworksError.DUPLICATE
+            is IllegalArgumentException -> NetworksError.BLANK
+            else -> NetworksError.UNKNOWN
         }
     }
 }

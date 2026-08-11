@@ -1,7 +1,7 @@
-package fr.vbrosseau.tailscaleautorules.presentation.blacklist
+package fr.vbrosseau.tailscaleautorules.presentation.networks
 
 /** Repères de test, indépendants des libellés traduisibles. */
-object BlacklistTestTags {
+object NetworksTestTags {
     const val EMPTY = "networks:empty"
     const val LIST = "networks:list"
     const val ADD = "networks:add"

@@ -1,4 +1,4 @@
-package fr.vbrosseau.tailscaleautorules.presentation.blacklist
+package fr.vbrosseau.tailscaleautorules.presentation.networks
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
@@ -34,7 +34,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class BlacklistViewModelTest {
+class NetworksViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -54,7 +54,7 @@ class BlacklistViewModelTest {
         ),
     )
 
-    private fun TestScope.viewModel(networkObserver: NetworkObserver = observer) = BlacklistViewModel(
+    private fun TestScope.viewModel(networkObserver: NetworkObserver = observer) = NetworksViewModel(
         preferenceRepository = preferences,
         settingsRepository = settings,
         synchronizeTunnel = SynchronizeTunnelUseCase(
@@ -172,7 +172,7 @@ class BlacklistViewModelTest {
 
         model.add("   ", tunnelEnabled = false)
 
-        assertEquals(BlacklistError.BLANK, model.uiState.value.error)
+        assertEquals(NetworksError.BLANK, model.uiState.value.error)
         assertTrue(model.uiState.value.preferences.isEmpty())
     }
 
@@ -214,7 +214,7 @@ class BlacklistViewModelTest {
 
         model.rename(bureauId, "maison")
 
-        assertEquals(BlacklistError.DUPLICATE, model.uiState.value.error)
+        assertEquals(NetworksError.DUPLICATE, model.uiState.value.error)
         assertTrue(model.uiState.value.preferences.any { it.ssid == "Bureau" })
     }
 
@@ -222,7 +222,7 @@ class BlacklistViewModelTest {
     fun aSuccessfulActionClearsThePreviousError() = runTest {
         val model = viewModel()
         model.add("  ", tunnelEnabled = false)
-        assertEquals(BlacklistError.BLANK, model.uiState.value.error)
+        assertEquals(NetworksError.BLANK, model.uiState.value.error)
 
         model.add("Maison", tunnelEnabled = false)
 

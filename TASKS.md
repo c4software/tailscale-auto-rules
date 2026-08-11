@@ -788,12 +788,18 @@ retirer la règle sans retirer son écran ne compilerait pas.
 
 ---
 
-## 28. Préférences de réseau — interface `[ ]`
+## 28. Préférences de réseau — renommage de présentation `[x]`
 
-- [ ] Écran « Réseaux » unifié : une liste de préférences, comportement
-      modifiable sur place (coupé / actif) avec cycle immédiat, ajout avec
-      choix du comportement (« coupé » par défaut), renommage, glissement pour
-      revenir à l'automatisme
-- [ ] Libellés `network-preference` ; les libellés des règles retirées
-      restent pour l'historique du journal
-- [ ] Tests écran + ViewModel ; références Roborazzi réenregistrées et relues
+L'écran unifié a été livré avec la fusion (étape 27) ; cette étape aligne les
+noms sur la notion.
+
+- [x] Paquet `presentation/blacklist` → `presentation/networks` ; classes,
+      étiquettes de test, clés de chaînes et route renommées
+- [x] Libellés : `network-preference` traduit ; « Wi-Fi de confiance » et
+      « Exception dynamique » restent traduisibles pour l'historique du
+      journal
+- [x] Références Roborazzi renommées (`networks-*`), réenregistrées et relues
+- [x] ARCHITECTURE.md (§2, §3.2, §9, décision n°32) et CHANGELOG à jour
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 362 tests, 0 échec ; `:app:verifyRoborazziDebug` → succès.

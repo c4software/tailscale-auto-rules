@@ -185,7 +185,7 @@ private fun JournalScreenPreview() {
                         epochMillis = 1_770_000_000_000,
                         previousState = TunnelState.ENABLED,
                         newState = TunnelState.DISABLED,
-                        ruleId = RuleId("blacklisted-wifi"),
+                        ruleId = RuleId("network-preference"),
                     ),
                     JournalEntry(
                         id = 1,
