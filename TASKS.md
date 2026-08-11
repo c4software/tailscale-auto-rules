@@ -599,17 +599,28 @@ ceux du variant ; la release n'embarque rien.
 
 ---
 
-## 22. Exceptions dynamiques — automation : brancher la capture `[ ]`
+## 22. Exceptions dynamiques — automation : brancher la capture `[~]`
 
-- [ ] `AutomationCoordinator.onTunnelStateSettled()` — détection puis
-      enregistrement sous un `Mutex` partagé avec la synchronisation, pour
-      qu'un battement concurrent ne bascule pas le tunnel entre les deux
-- [ ] `TunnelWatchService.watchTunnel()` appelle le coordinateur après la
+- [x] `CaptureManualOverrideUseCase` (domaine) — relit réseau, état et journal
+      une seule fois, enchaîne détection puis mémorisation ; le coordinateur
+      reste une charnière sans logique métier
+- [x] `AutomationCoordinator.onTunnelStateSettled()` — capture sous un `Mutex`
+      partagé avec la synchronisation, pour qu'un battement concurrent ne
+      bascule pas le tunnel entre le constat et la mémorisation
+- [x] `TunnelWatchService.watchTunnel()` appelle le coordinateur après la
       fenêtre de stabilisation, au lieu du seul rafraîchissement de
       notification
-- [ ] Tests Robolectric du scénario complet : cycle → geste → exception
-      créée → cycle idempotent → nouveau geste → exception remplacée
-- [ ] Validation sur terminal réel, relevés consignés ici
+- [x] Tests : cycle complet en JVM pur (geste → mémorisé → état auto-expliqué
+      → nouveau geste → remplacé) + Robolectric côté coordinateur (geste
+      mémorisé puis respecté par les cycles ; écho d'une commande ignoré)
+- [ ] **Validation sur terminal réel, relevés à consigner ici** — aucun
+      appareil branché au moment de l'implémentation. Scénario : couper le
+      tunnel à la main sur réseau mobile, attendre plus de dix secondes,
+      vérifier l'exception au journal, changer de réseau et revenir : le
+      tunnel doit rester coupé, battement de secours compris.
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès.
 
 ---
 

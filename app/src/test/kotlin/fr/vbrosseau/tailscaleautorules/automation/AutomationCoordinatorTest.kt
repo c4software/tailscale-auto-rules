@@ -10,6 +10,7 @@ import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
@@ -17,15 +18,19 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRep
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
+import fr.vbrosseau.tailscaleautorules.domain.usecase.CaptureManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.RecordManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -72,6 +77,7 @@ class AutomationCoordinatorTest {
     private val clock = FakeClock()
     private val journal = FakeJournalRepository(clock)
     private val observer = FakeNetworkObserver()
+    private val exceptions = FakeNetworkExceptionRepository(clock)
     private lateinit var coordinator: AutomationCoordinator
 
     @Before
@@ -80,9 +86,9 @@ class AutomationCoordinatorTest {
         Shadows.shadowOf(context as Application)
             .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-        val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
+        val engine = RuleEngine(setOf(NetworkExceptionRule(), MobileNetworkRule(), BlacklistedWifiRule()))
         val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
-        val evaluateRules = EvaluateRulesUseCase(blacklist, FakeNetworkExceptionRepository(), settings, engine)
+        val evaluateRules = EvaluateRulesUseCase(blacklist, exceptions, settings, engine)
         val detectManualOverride = DetectManualOverrideUseCase(
             networkObserver = observer,
             evaluateRules = evaluateRules,
@@ -98,6 +104,13 @@ class AutomationCoordinatorTest {
                 evaluateRules = evaluateRules,
                 controller = controller,
                 journalRepository = journal,
+            ),
+            captureManualOverride = CaptureManualOverrideUseCase(
+                networkObserver = observer,
+                controller = controller,
+                journalRepository = journal,
+                detectManualOverride = detectManualOverride,
+                recordManualOverride = RecordManualOverrideUseCase(settings, exceptions, journal),
             ),
             describeTunnelStatus = DescribeTunnelStatusUseCase(
                 networkObserver = observer,
@@ -240,6 +253,40 @@ class AutomationCoordinatorTest {
             context.getString(R.string.notification_reason, context.getString(R.string.rule_mobile_network)),
             notification.extras.getString(Notification.EXTRA_TEXT),
         )
+    }
+
+    @Test
+    fun aSettledManualGestureIsMemorizedAndThenRespectedByTheCycles() = runTest {
+        // Sur réseau mobile la règle a activé le tunnel, puis l'utilisateur l'a
+        // coupé depuis le client officiel. Une fois l'état posé, le geste est
+        // mémorisé — et le cycle suivant le respecte au lieu de le combattre.
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        coordinator.synchronize()
+        clock.advanceBy(60_000)
+        controller.disable()
+
+        coordinator.onTunnelStateSettled()
+
+        val exception = exceptions.observeAll().first().single()
+        assertEquals(TunnelState.DISABLED, exception.desiredState)
+
+        val outcome = coordinator.synchronize()
+        assertIs<SynchronizationOutcome.AlreadyInTargetState>(outcome)
+        assertTrue(!controller.isRunning(), "Le battement ne rallume pas un tunnel coupé à la main.")
+    }
+
+    @Test
+    fun anEchoOfAFreshCommandMemorizesNothingWhenTheTunnelSettles() = runTest {
+        // Juste après un cycle, la divergence encore visible est la latence du
+        // client : le passage du tunnel à l'état commandé ne doit pas créer
+        // d'exception.
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        coordinator.synchronize()
+        controller.disable()
+
+        coordinator.onTunnelStateSettled()
+
+        assertTrue(exceptions.observeAll().first().isEmpty())
     }
 
     @Test

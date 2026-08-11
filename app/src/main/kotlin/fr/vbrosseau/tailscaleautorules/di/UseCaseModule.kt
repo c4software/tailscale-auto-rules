@@ -12,9 +12,11 @@ import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionReposit
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
+import fr.vbrosseau.tailscaleautorules.domain.usecase.CaptureManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.RecordManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import javax.inject.Singleton
 
@@ -68,6 +70,34 @@ object UseCaseModule {
         networkObserver = networkObserver,
         evaluateRules = evaluateRules,
         clock = clock,
+    )
+
+    @Provides
+    @Singleton
+    fun provideRecordManualOverrideUseCase(
+        settingsRepository: SettingsRepository,
+        networkExceptionRepository: NetworkExceptionRepository,
+        journalRepository: JournalRepository,
+    ): RecordManualOverrideUseCase = RecordManualOverrideUseCase(
+        settingsRepository = settingsRepository,
+        exceptionRepository = networkExceptionRepository,
+        journalRepository = journalRepository,
+    )
+
+    @Provides
+    @Singleton
+    fun provideCaptureManualOverrideUseCase(
+        networkObserver: NetworkObserver,
+        controller: TailscaleController,
+        journalRepository: JournalRepository,
+        detectManualOverride: DetectManualOverrideUseCase,
+        recordManualOverride: RecordManualOverrideUseCase,
+    ): CaptureManualOverrideUseCase = CaptureManualOverrideUseCase(
+        networkObserver = networkObserver,
+        controller = controller,
+        journalRepository = journalRepository,
+        detectManualOverride = detectManualOverride,
+        recordManualOverride = recordManualOverride,
     )
 
     @Provides

@@ -2,11 +2,14 @@ package fr.vbrosseau.tailscaleautorules.automation
 
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
+import fr.vbrosseau.tailscaleautorules.domain.usecase.CaptureManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,9 +26,19 @@ class AutomationCoordinator @Inject constructor(
     private val trigger: AutomationTrigger,
     private val settingsRepository: SettingsRepository,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
+    private val captureManualOverride: CaptureManualOverrideUseCase,
     private val describeTunnelStatus: DescribeTunnelStatusUseCase,
     private val notifier: TunnelNotifier,
 ) : NotificationRefresher {
+
+    /**
+     * Sérialise cycles et capture de geste.
+     *
+     * Sans lui, un battement de secours pourrait basculer le tunnel entre le
+     * constat d'un geste et sa mémorisation — l'exception enregistrerait alors
+     * l'état posé par l'automatisation, pas celui choisi par l'utilisateur.
+     */
+    private val cycleMutex = Mutex()
 
     /**
      * Aligne la plateforme sur les préférences courantes.
@@ -88,7 +101,7 @@ class AutomationCoordinator @Inject constructor(
 
     /** Exécute un cycle et met à jour la notification si elle est visible. */
     suspend fun synchronize(): SynchronizationOutcome {
-        val outcome = synchronizeTunnel()
+        val outcome = cycleMutex.withLock { synchronizeTunnel() }
         refreshNotificationIfEnabled()
         return outcome
     }
@@ -101,9 +114,24 @@ class AutomationCoordinator @Inject constructor(
      * bénéfice du debounce et pourrait livrer un état différent.
      */
     suspend fun synchronize(networkContext: NetworkContext): SynchronizationOutcome {
-        val outcome = synchronizeTunnel(networkContext)
+        val outcome = cycleMutex.withLock { synchronizeTunnel(networkContext) }
         refreshNotificationIfEnabled()
         return outcome
+    }
+
+    /**
+     * Constate un mouvement du tunnel survenu hors cycle, une fois l'état posé.
+     *
+     * Un geste manuel avéré est mémorisé comme exception dynamique
+     * (SPECS.md §3.3), puis la notification est réalignée — qu'il y ait eu
+     * geste ou simple écho d'une commande.
+     */
+    suspend fun onTunnelStateSettled() {
+        val recorded = cycleMutex.withLock { captureManualOverride() }
+        if (recorded) {
+            Timber.i("Geste manuel mémorisé pour le réseau courant")
+        }
+        refreshNotificationIfEnabled()
     }
 
     private suspend fun refreshNotification() {

@@ -125,22 +125,23 @@ class TunnelWatchService : Service() {
     }
 
     /**
-     * Réaligne la notification quand le tunnel bouge **sans** cycle : coupé
-     * depuis le client officiel, ou activé à la main sur un réseau de
-     * confiance. Aucun changement de réseau physique n'accompagne ces gestes,
-     * et la notification resterait sinon figée sur un état périmé.
+     * Réagit quand le tunnel bouge **sans** cycle : coupé depuis le client
+     * officiel, ou activé à la main sur un réseau de confiance. Aucun
+     * changement de réseau physique n'accompagne ces gestes. Le coordinateur
+     * mémorise alors le geste comme exception dynamique (SPECS.md §3.3) et
+     * réaligne la notification, qui resterait sinon figée sur un état périmé.
      *
-     * Le rafraîchissement attend que l'état se pose : au moment même de
+     * Le traitement attend que l'état se pose : au moment même de
      * l'événement, le réseau actif est encore en retard sur la bascule, et
-     * l'état relu figerait dans la notification un constat déjà faux — un
-     * « tunnel activé » qui vient pourtant d'être coupé. `collectLatest`
-     * remet l'attente à zéro si le tunnel rebascule entre-temps.
+     * l'état relu figerait un constat déjà faux — un « tunnel activé » qui
+     * vient pourtant d'être coupé. `collectLatest` remet l'attente à zéro si
+     * le tunnel rebascule entre-temps.
      */
     private suspend fun watchTunnel() {
         controller.observeRunning().collectLatest {
             delay(TUNNEL_SETTLE_WINDOW)
-            runCatching { coordinator.refreshNotificationIfEnabled() }
-                .onFailure { Timber.e(it, "Rafraîchissement de la notification en échec") }
+            runCatching { coordinator.onTunnelStateSettled() }
+                .onFailure { Timber.e(it, "Constat du mouvement du tunnel en échec") }
         }
     }
 
