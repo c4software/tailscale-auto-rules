@@ -143,6 +143,24 @@ class CaptureManualOverrideUseCaseTest {
         }
 
     @Test
+    fun aQuickCounterGestureBecomesVisibleOnceTheGraceHasPassed() =
+        runTest {
+            // Couper puis rallumer dans la foulée : le contre-geste tombe dans
+            // la grâce de la mémorisation précédente et reste invisible — c'est
+            // pourquoi l'observation du tunnel repasse une fois la grâce
+            // écoulée, au lieu d'attendre le battement de secours.
+            aTunnelReenabledByHandOnTrustedWifi()
+            capture()
+
+            controller.disable()
+            assertFalse(capture(), "Dans la grâce, le contre-geste est invisible.")
+
+            clock.advanceBy(60_000)
+            assertTrue(capture())
+            assertEquals(TunnelState.DISABLED, exceptions.observeAll().first().single().desiredState)
+        }
+
+    @Test
     fun anEchoWithinTheGraceWindowIsNotMemorized() =
         runTest {
             // La commande vient d'être journalisée : la divergence est la

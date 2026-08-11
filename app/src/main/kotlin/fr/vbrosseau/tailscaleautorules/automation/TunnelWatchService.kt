@@ -15,6 +15,7 @@ import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
+import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -136,13 +137,26 @@ class TunnelWatchService : Service() {
      * l'état relu figerait un constat déjà faux — un « tunnel activé » qui
      * vient pourtant d'être coupé. `collectLatest` remet l'attente à zéro si
      * le tunnel rebascule entre-temps.
+     *
+     * Le constat est **repris une fois la grâce écoulée** : un geste qui suit
+     * de près la mémorisation du précédent tombe dans le délai de grâce de la
+     * détection — pour elle, la divergence est la latence d'une commande — et
+     * resterait sinon invisible jusqu'au battement de secours, un quart
+     * d'heure plus tard. Constaté sur appareil : couper puis rallumer dans la
+     * foulée laissait l'exception sur « coupé ».
      */
     private suspend fun watchTunnel() {
         controller.observeRunning().collectLatest {
             delay(TUNNEL_SETTLE_WINDOW)
-            runCatching { coordinator.onTunnelStateSettled() }
-                .onFailure { Timber.e(it, "Constat du mouvement du tunnel en échec") }
+            settleTunnelState()
+            delay(DetectManualOverrideUseCase.CommandSettleGrace)
+            settleTunnelState()
         }
+    }
+
+    private suspend fun settleTunnelState() {
+        runCatching { coordinator.onTunnelStateSettled() }
+            .onFailure { Timber.e(it, "Constat du mouvement du tunnel en échec") }
     }
 
     /**

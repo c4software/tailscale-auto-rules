@@ -654,6 +654,13 @@ ceux du variant ; la release n'embarque rien.
       journal : network-exception DISABLED→ENABLED, après blacklisted-wifi ENABLED→DISABLED
       ```
 
+      **Second défaut constaté sur Pixel, corrigé** : couper puis rallumer
+      dans la foulée laissait l'exception sur « coupé ». Le contre-geste
+      tombait dans le délai de grâce de la mémorisation précédente —
+      invisible pour la détection — et rien ne repassait avant le battement.
+      L'observation du tunnel reprend désormais le constat une seconde fois,
+      une fois la grâce écoulée : le contre-geste est mémorisé en ~12 s.
+
       Reste à observer sur la durée : le rejeu après un aller-retour de
       réseau, et un battement de secours qui constate `AlreadyInTargetState`
       au lieu de combattre le geste.
