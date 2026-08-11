@@ -33,10 +33,13 @@ value class NetworkPreferenceKey(val value: String) {
          */
         fun from(context: NetworkContext): NetworkPreferenceKey? =
             when (context.transport) {
-                NetworkTransport.WIFI -> context.ssid?.let { NetworkPreferenceKey("wifi:${it.asSsidKey()}") }
+                NetworkTransport.WIFI -> context.ssid?.let(::forWifi)
                 NetworkTransport.CELLULAR -> Cellular
                 else -> null
             }
+
+        /** La clé d'un réseau Wi-Fi nommé — même canonicalisation partout. */
+        fun forWifi(ssid: String): NetworkPreferenceKey = NetworkPreferenceKey("wifi:${ssid.asSsidKey()}")
     }
 }
 

@@ -10,11 +10,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Exceptions dynamiques en mémoire.
+ * Préférences de réseau en mémoire.
  *
- * Le remplacement par clé est appliqué réellement — l'identité de l'entrée
- * survit au nouveau geste — pour que les tests en aval rencontrent le même
- * comportement qu'en production.
+ * Le remplacement par clé et le refus de doublon au renommage sont appliqués
+ * réellement — l'identité de l'entrée survit au nouveau geste — pour que les
+ * tests en aval rencontrent le même comportement qu'en production.
  */
 class FakeNetworkPreferenceRepository(private val clock: Clock = FakeClock()) : NetworkPreferenceRepository {
     private var nextId = 1L
@@ -42,6 +42,42 @@ class FakeNetworkPreferenceRepository(private val clock: Clock = FakeClock()) : 
         entries.value =
             (listOf(entry) + entries.value.filterNot { it.key == key })
                 .sortedByDescending { it.epochMillis }
+    }
+
+    /**
+     * Pré-remplissage synchrone, pour les tests qui construisent leur décor
+     * dans un initialiseur — là où une fonction suspendue n'a pas sa place.
+     */
+    fun seed(
+        key: NetworkPreferenceKey,
+        ssid: String?,
+        desiredState: TunnelState,
+    ) {
+        val seeded =
+            NetworkPreference(
+                id = nextId++,
+                key = key,
+                ssid = ssid,
+                desiredState = desiredState,
+                epochMillis = clock.nowEpochMillis(),
+            )
+        entries.value = entries.value.filterNot { it.key == key } + seeded
+    }
+
+    override suspend fun update(
+        id: Long,
+        ssid: String,
+    ): Result<Unit> {
+        val trimmed = ssid.trim()
+        val newKey = NetworkPreferenceKey.forWifi(trimmed)
+        if (entries.value.any { it.id != id && it.key == newKey }) {
+            return Result.failure(DuplicateSsidException(trimmed))
+        }
+        entries.value =
+            entries.value.map { entry ->
+                if (entry.id == id) entry.copy(key = newKey, ssid = trimmed) else entry
+            }
+        return Result.success(Unit)
     }
 
     override suspend fun remove(id: Long) {

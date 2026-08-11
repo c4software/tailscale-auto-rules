@@ -9,14 +9,13 @@ import androidx.test.core.app.ApplicationProvider
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
@@ -86,9 +85,8 @@ class AutomationCoordinatorTest {
         Shadows.shadowOf(context as Application)
             .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-        val engine = RuleEngine(setOf(NetworkPreferenceRule(), MobileNetworkRule(), BlacklistedWifiRule()))
-        val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
-        val evaluateRules = EvaluateRulesUseCase(blacklist, exceptions, settings, engine)
+        val engine = RuleEngine(setOf(NetworkPreferenceRule(), MobileNetworkRule()))
+        val evaluateRules = EvaluateRulesUseCase(exceptions, settings, engine)
         val detectManualOverride = DetectManualOverrideUseCase(
             networkObserver = observer,
             evaluateRules = evaluateRules,
@@ -234,11 +232,12 @@ class AutomationCoordinatorTest {
 
     @Test
     fun theReasonFollowsTheCurrentNetwork() = runTest {
-        // Le cas signalé : le tunnel a été coupé sur un Wi-Fi de confiance —
+        // Le cas signalé : le tunnel a été coupé sur un réseau de confiance —
         // seule trace au journal — puis rallumé à la main, et l'utilisateur est
         // passé en données mobiles. La règle du réseau mobile confirme un
         // tunnel déjà actif, donc n'écrit rien : la raison lue au journal
-        // restait « Wi-Fi de confiance » sous un titre « Tunnel activé ».
+        // restait celle d'un changement révolu sous un titre « Tunnel activé ».
+        exceptions.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
         observer.emit(NetworkContext(NetworkTransport.WIFI, isInternetValidated = true, ssid = "Maison"))
         controller.enable()
         coordinator.synchronize()

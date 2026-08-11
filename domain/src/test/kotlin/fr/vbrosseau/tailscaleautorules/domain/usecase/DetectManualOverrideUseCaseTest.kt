@@ -3,14 +3,14 @@ package fr.vbrosseau.tailscaleautorules.domain.usecase
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import kotlinx.coroutines.test.runTest
@@ -26,15 +26,20 @@ class DetectManualOverrideUseCaseTest {
     // ce que chaque test veut constater.
     private val clock = FakeClock(60_000)
 
+    /** Le réseau de confiance d'hier : une préférence « toujours coupé ». */
+    private val trustedHome =
+        FakeNetworkPreferenceRepository().apply {
+            seed(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+        }
+
     private val detect =
         DetectManualOverrideUseCase(
             networkObserver = observer,
             evaluateRules =
                 EvaluateRulesUseCase(
-                    blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
-                    networkPreferenceRepository = FakeNetworkPreferenceRepository(),
+                    networkPreferenceRepository = trustedHome,
                     settingsRepository = FakeSettingsRepository(),
-                    engine = RuleEngine(setOf(BlacklistedWifiRule(), MobileNetworkRule())),
+                    engine = RuleEngine(setOf(NetworkPreferenceRule(), MobileNetworkRule())),
                 ),
             clock = clock,
         )
@@ -68,11 +73,11 @@ class DetectManualOverrideUseCaseTest {
                 detect(
                     trustedWifi,
                     TunnelState.ENABLED,
-                    applied(TunnelState.DISABLED, "blacklisted-wifi"),
+                    applied(TunnelState.DISABLED, "network-preference"),
                 )
 
             assertEquals(
-                ManualOverride(TunnelState.ENABLED, RuleId("blacklisted-wifi")),
+                ManualOverride(TunnelState.ENABLED, RuleId("network-preference")),
                 override,
             )
         }
@@ -100,7 +105,7 @@ class DetectManualOverrideUseCaseTest {
             // « activer » mais le journal montre encore la coupure précédente. La
             // divergence est un cycle en attente, pas un geste de l'utilisateur.
             assertNull(
-                detect(cellular, TunnelState.DISABLED, applied(TunnelState.DISABLED, "blacklisted-wifi")),
+                detect(cellular, TunnelState.DISABLED, applied(TunnelState.DISABLED, "network-preference")),
             )
         }
 
@@ -108,7 +113,7 @@ class DetectManualOverrideUseCaseTest {
     fun anAlignedTunnelIsNoOverride() =
         runTest {
             assertNull(
-                detect(trustedWifi, TunnelState.DISABLED, applied(TunnelState.DISABLED, "blacklisted-wifi")),
+                detect(trustedWifi, TunnelState.DISABLED, applied(TunnelState.DISABLED, "network-preference")),
             )
         }
 
@@ -116,7 +121,7 @@ class DetectManualOverrideUseCaseTest {
     fun anUnknownTunnelStateIsNeverAttributedToTheUser() =
         runTest {
             assertNull(
-                detect(trustedWifi, TunnelState.UNKNOWN, applied(TunnelState.DISABLED, "blacklisted-wifi")),
+                detect(trustedWifi, TunnelState.UNKNOWN, applied(TunnelState.DISABLED, "network-preference")),
             )
         }
 
@@ -137,8 +142,8 @@ class DetectManualOverrideUseCaseTest {
             observer.emit(trustedWifi)
 
             assertEquals(
-                ManualOverride(TunnelState.ENABLED, RuleId("blacklisted-wifi")),
-                detect(TunnelState.ENABLED, applied(TunnelState.DISABLED, "blacklisted-wifi")),
+                ManualOverride(TunnelState.ENABLED, RuleId("network-preference")),
+                detect(TunnelState.ENABLED, applied(TunnelState.DISABLED, "network-preference")),
             )
         }
 
@@ -154,7 +159,7 @@ class DetectManualOverrideUseCaseTest {
                 detect(
                     trustedWifi,
                     TunnelState.ENABLED,
-                    applied(TunnelState.DISABLED, "blacklisted-wifi"),
+                    applied(TunnelState.DISABLED, "network-preference"),
                 ),
             )
         }

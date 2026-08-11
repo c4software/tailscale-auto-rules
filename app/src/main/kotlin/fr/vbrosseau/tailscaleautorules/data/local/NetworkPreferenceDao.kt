@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 interface NetworkPreferenceDao {
 
     /** Du geste le plus récent au plus ancien, comme le journal. */
-    @Query("SELECT * FROM network_exception ORDER BY epoch_millis DESC, id DESC")
+    @Query("SELECT * FROM network_preference ORDER BY epoch_millis DESC, id DESC")
     fun observeAll(): Flow<List<NetworkPreferenceEntity>>
 
-    @Query("SELECT * FROM network_exception")
+    @Query("SELECT * FROM network_preference")
     suspend fun getAll(): List<NetworkPreferenceEntity>
 
-    @Query("SELECT * FROM network_exception WHERE network_key = :networkKey")
+    @Query("SELECT * FROM network_preference WHERE network_key = :networkKey")
     suspend fun findByKey(networkKey: String): NetworkPreferenceEntity?
 
     @Insert
@@ -39,6 +39,9 @@ interface NetworkPreferenceDao {
         if (existing == null) insert(entity) else update(entity.copy(id = existing.id))
     }
 
-    @Query("DELETE FROM network_exception WHERE id = :id")
+    @Query("SELECT * FROM network_preference WHERE id = :id")
+    suspend fun findById(id: Long): NetworkPreferenceEntity?
+
+    @Query("DELETE FROM network_preference WHERE id = :id")
     suspend fun deleteById(id: Long)
 }

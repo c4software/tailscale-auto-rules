@@ -7,12 +7,10 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
@@ -41,31 +39,28 @@ class BlacklistViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val repository = FakeBlacklistRepository()
     private val observer = FakeNetworkObserver()
     private val systemStatus = FakeSystemStatus()
     private val settings = FakeSettingsRepository()
     private val controller = FakeTailscaleController()
     private val journal = FakeJournalRepository(FakeClock())
-    private val exceptions = FakeNetworkPreferenceRepository()
+    private val preferences = FakeNetworkPreferenceRepository()
     private val engine = RuleEngine(
         setOf(
             NetworkPreferenceRule(),
             AirplaneModeRule(),
-            BlacklistedWifiRule(),
             OtherWifiRule(),
             MobileNetworkRule(),
         ),
     )
 
     private fun TestScope.viewModel(networkObserver: NetworkObserver = observer) = BlacklistViewModel(
-        repository = repository,
-        exceptionRepository = exceptions,
+        preferenceRepository = preferences,
         settingsRepository = settings,
         synchronizeTunnel = SynchronizeTunnelUseCase(
             networkObserver = networkObserver,
             settingsRepository = settings,
-            evaluateRules = EvaluateRulesUseCase(repository, exceptions, settings, engine),
+            evaluateRules = EvaluateRulesUseCase(preferences, settings, engine),
             controller = controller,
             journalRepository = journal,
         ),
@@ -79,8 +74,6 @@ class BlacklistViewModelTest {
 
     @Test
     fun theFirstEmissionEndsTheLoadingState() = runTest {
-        // Le dispatcher unconfined a déjà livré la première liste : un état
-        // encore « en chargement » signifierait que le drapeau ne retombe pas.
         assertTrue(!viewModel().uiState.value.isLoading)
     }
 
@@ -88,12 +81,12 @@ class BlacklistViewModelTest {
     fun theListDoesNotWaitForTheNetwork() = runTest {
         // Hors ligne, le flux réseau peut ne jamais émettre — aucun rappel
         // système n'arrive. La liste, elle, vient de Room : elle s'affiche.
-        repository.add("Maison")
+        preferences.seed(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
         val model = viewModel(SilentNetworkObserver())
 
         val state = model.uiState.value
         assertTrue(!state.isLoading)
-        assertEquals(listOf("Maison"), state.entries.map { it.value })
+        assertEquals(listOf("Maison"), state.preferences.map { it.ssid })
         assertNull(state.currentSsid)
         assertTrue(!state.canAddCurrentSsid)
     }
@@ -124,35 +117,6 @@ class BlacklistViewModelTest {
     }
 
     @Test
-    fun enablingTheMobileRuleOnCellularStartsTheTunnelImmediately() = runTest {
-        // Attendre le prochain changement de réseau serait trop tard : le
-        // terminal est déjà en données mobiles au moment de la bascule.
-        settings.setRuleSettings(
-            RuleId("mobile-network"),
-            RuleSettings(isEnabled = false, priority = 400),
-        )
-        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
-        val model = viewModel()
-
-        model.setMobileRuleEnabled(true)
-
-        assertTrue(controller.isRunning())
-    }
-
-    @Test
-    fun disablingTheMobileRuleLeavesTheTunnelUntouched() = runTest {
-        // Aucune règle ne se prononce plus : l'état est conservé (SPECS.md §3.2).
-        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
-        val model = viewModel()
-        model.setMobileRuleEnabled(true)
-        assertTrue(controller.isRunning())
-
-        model.setMobileRuleEnabled(false)
-
-        assertTrue(controller.isRunning())
-    }
-
-    @Test
     fun anOverriddenPrioritySurvivesTheToggle() = runTest {
         settings.setRuleSettings(
             RuleId("mobile-network"),
@@ -166,30 +130,109 @@ class BlacklistViewModelTest {
     }
 
     @Test
-    fun theListFollowsTheRepository() = runTest {
+    fun addingATrustedNetworkCutsTheTunnelImmediately() = runTest {
+        // Le geste de confiance d'hier : ajouter « coupé » en étant connecté
+        // au réseau doit produire son effet sur-le-champ (SPECS.md §5).
+        controller.enable()
+        onWifi("Maison")
         val model = viewModel()
 
-        model.add("Maison")
+        model.add("Maison", tunnelEnabled = false)
 
-        assertEquals(listOf("Maison"), model.uiState.value.entries.map { it.value })
+        assertEquals(TunnelState.DISABLED, model.uiState.value.preferences.single().desiredState)
+        assertTrue(!controller.isRunning())
     }
 
     @Test
-    fun aDuplicateIsTranslatedIntoADisplayableError() = runTest {
+    fun addingAnAlwaysOnNetworkIsPossibleToo() = runTest {
+        onWifi("Maison")
         val model = viewModel()
-        model.add("Maison")
 
-        model.add("  maison ")
+        model.add("Maison", tunnelEnabled = true)
+
+        assertEquals(TunnelState.ENABLED, model.uiState.value.preferences.single().desiredState)
+    }
+
+    @Test
+    fun addingAKnownNetworkReplacesItsWill() = runTest {
+        // Comme un geste : la dernière volonté gagne, sans erreur de doublon.
+        val model = viewModel()
+        model.add("Maison", tunnelEnabled = false)
+
+        model.add("  maison ", tunnelEnabled = true)
+
+        val preference = model.uiState.value.preferences.single()
+        assertEquals(TunnelState.ENABLED, preference.desiredState)
+        assertNull(model.uiState.value.error)
+    }
+
+    @Test
+    fun aBlankSsidIsRefused() = runTest {
+        val model = viewModel()
+
+        model.add("   ", tunnelEnabled = false)
+
+        assertEquals(BlacklistError.BLANK, model.uiState.value.error)
+        assertTrue(model.uiState.value.preferences.isEmpty())
+    }
+
+    @Test
+    fun togglingAPreferenceKeepsItsIdentityAndSynchronizes() = runTest {
+        onWifi("Maison")
+        val model = viewModel()
+        model.add("Maison", tunnelEnabled = false)
+        val before = model.uiState.value.preferences.single()
+        assertTrue(!controller.isRunning())
+
+        model.setPreferenceEnabled(before, tunnelEnabled = true)
+
+        val after = model.uiState.value.preferences.single()
+        assertEquals(before.id, after.id)
+        assertEquals(TunnelState.ENABLED, after.desiredState)
+        assertTrue(controller.isRunning(), "La bascule déclenche un cycle immédiat.")
+    }
+
+    @Test
+    fun renamingUpdatesTheNetworkIdentity() = runTest {
+        val model = viewModel()
+        model.add("Maison", tunnelEnabled = false)
+        val id = model.uiState.value.preferences.single().id
+
+        model.rename(id, "Maison Fibre")
+
+        val preference = model.uiState.value.preferences.single()
+        assertEquals("Maison Fibre", preference.ssid)
+        assertEquals(NetworkPreferenceKey.forWifi("Maison Fibre"), preference.key)
+    }
+
+    @Test
+    fun renamingOntoAnExistingNetworkReportsADuplicate() = runTest {
+        val model = viewModel()
+        model.add("Maison", tunnelEnabled = false)
+        model.add("Bureau", tunnelEnabled = false)
+        val bureauId = model.uiState.value.preferences.first { it.ssid == "Bureau" }.id
+
+        model.rename(bureauId, "maison")
 
         assertEquals(BlacklistError.DUPLICATE, model.uiState.value.error)
-        assertEquals(1, model.uiState.value.entries.size)
+        assertTrue(model.uiState.value.preferences.any { it.ssid == "Bureau" })
+    }
+
+    @Test
+    fun aSuccessfulActionClearsThePreviousError() = runTest {
+        val model = viewModel()
+        model.add("  ", tunnelEnabled = false)
+        assertEquals(BlacklistError.BLANK, model.uiState.value.error)
+
+        model.add("Maison", tunnelEnabled = false)
+
+        assertNull(model.uiState.value.error)
     }
 
     @Test
     fun anErrorCanBeDismissed() = runTest {
         val model = viewModel()
-        model.add("Maison")
-        model.add("Maison")
+        model.add("  ", tunnelEnabled = false)
 
         model.dismissError()
 
@@ -197,25 +240,31 @@ class BlacklistViewModelTest {
     }
 
     @Test
-    fun aSuccessfulActionClearsThePreviousError() = runTest {
+    fun removingAPreferenceRestoresTheAutomatismImmediately() = runTest {
+        // Le réseau redevient automatique : sur un Wi-Fi inconnu, le tunnel
+        // remonte dans la foulée, pas au prochain changement de réseau.
+        onWifi("Maison")
         val model = viewModel()
-        model.add("Maison")
-        model.add("Maison")
+        model.add("Maison", tunnelEnabled = false)
+        val id = model.uiState.value.preferences.single().id
+        assertTrue(!controller.isRunning())
 
-        model.add("Bureau")
+        model.remove(id)
 
-        assertNull(model.uiState.value.error)
+        assertTrue(model.uiState.value.preferences.isEmpty())
+        assertTrue(controller.isRunning())
     }
 
     @Test
-    fun theCurrentSsidCanBeAddedInOneGesture() = runTest {
+    fun theCurrentSsidCanBeAddedInOneGestureAsTrusted() = runTest {
         onWifi("Aéroport")
         val model = viewModel()
 
-        assertTrue(model.uiState.value.canAddCurrentSsid)
         model.addCurrentSsid()
 
-        assertEquals(listOf("Aéroport"), model.uiState.value.entries.map { it.value })
+        val preference = model.uiState.value.preferences.single()
+        assertEquals("Aéroport", preference.ssid)
+        assertEquals(TunnelState.DISABLED, preference.desiredState)
     }
 
     @Test
@@ -227,46 +276,20 @@ class BlacklistViewModelTest {
 
     @Test
     fun anAlreadyListedSsidDisablesTheQuickAdd() = runTest {
-        // Proposer un ajout voué à échouer serait une invitation à l'erreur.
-        onWifi("Maison")
-        val model = viewModel()
-        model.add("maison")
+        preferences.seed(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+        onWifi("  MAISON ")
 
-        assertTrue(model.uiState.value.isCurrentSsidAlreadyListed)
-        assertTrue(!model.uiState.value.canAddCurrentSsid)
+        assertTrue(!viewModel().uiState.value.canAddCurrentSsid)
     }
 
     @Test
     fun theQuickAddIsANoOpWhenNoSsidIsAvailable() = runTest {
+        onWifi(null)
         val model = viewModel()
 
         model.addCurrentSsid()
 
-        assertTrue(model.uiState.value.entries.isEmpty())
-        assertNull(model.uiState.value.error)
-    }
-
-    @Test
-    fun renamingUpdatesTheEntry() = runTest {
-        val model = viewModel()
-        model.add("Maison")
-        val id = model.uiState.value.entries.single().id
-
-        model.rename(id, "Maison Fibre")
-
-        assertEquals("Maison Fibre", model.uiState.value.entries.single().value)
-    }
-
-    @Test
-    fun renamingOntoAnExistingEntryReportsADuplicate() = runTest {
-        val model = viewModel()
-        model.add("Maison")
-        model.add("Bureau")
-        val bureauId = model.uiState.value.entries.first { it.value == "Bureau" }.id
-
-        model.rename(bureauId, "maison")
-
-        assertEquals(BlacklistError.DUPLICATE, model.uiState.value.error)
+        assertTrue(model.uiState.value.preferences.isEmpty())
     }
 
     @Test
@@ -277,14 +300,7 @@ class BlacklistViewModelTest {
     }
 
     @Test
-    fun nothingIsAskedOnceTheSsidCanBeRead() = runTest {
-        assertTrue(!viewModel().uiState.value.needsLocationPermission)
-    }
-
-    @Test
     fun aPermissionGrantedOutsideTheApplicationIsPickedUpOnRefresh() = runTest {
-        // Elle s'accorde dans les réglages système : sans reconstat au retour,
-        // l'explication resterait affichée à tort.
         systemStatus.ssidReadable = false
         val model = viewModel()
         assertTrue(model.uiState.value.needsLocationPermission)
@@ -293,41 +309,5 @@ class BlacklistViewModelTest {
         model.refreshSystemStatus()
 
         assertTrue(!model.uiState.value.needsLocationPermission)
-    }
-
-    @Test
-    fun removingAnEntryUpdatesTheList() = runTest {
-        val model = viewModel()
-        model.add("Maison")
-        val id = model.uiState.value.entries.single().id
-
-        model.remove(id)
-
-        assertTrue(model.uiState.value.entries.isEmpty())
-    }
-
-    @Test
-    fun learnedExceptionsAreExposedMostRecentFirst() = runTest {
-        exceptions.upsert(NetworkPreferenceKey("wifi:maison"), "Maison", TunnelState.ENABLED)
-
-        val model = viewModel()
-
-        assertEquals(listOf("Maison"), model.uiState.value.exceptions.map { it.ssid })
-    }
-
-    @Test
-    fun removingAnExceptionRestoresTheAutomaticBehaviourImmediately() = runTest {
-        // Le geste avait coupé le tunnel en données mobiles ; supprimer
-        // l'exception doit laisser la règle mobile le remonter dans la foulée,
-        // pas au prochain changement de réseau (SPECS.md §6.2).
-        exceptions.upsert(NetworkPreferenceKey.Cellular, null, TunnelState.DISABLED)
-        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
-        val model = viewModel()
-        val id = model.uiState.value.exceptions.single().id
-
-        model.removeException(id)
-
-        assertTrue(model.uiState.value.exceptions.isEmpty())
-        assertTrue(controller.isRunning())
     }
 }

@@ -5,7 +5,6 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.Contexts
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
@@ -27,7 +26,6 @@ class ShippedRulesTest {
         setOf(
             AirplaneModeRule(),
             NetworkPreferenceRule(),
-            BlacklistedWifiRule(),
             OtherWifiRule(),
             MobileNetworkRule(),
         )
@@ -46,20 +44,27 @@ class ShippedRulesTest {
 
     @Test
     fun aTrustedWifiDisablesTheTunnel() {
+        // Le réseau de confiance d'hier : une préférence « toujours coupé ».
         val evaluation =
             engine.evaluate(
-                Contexts.wifi(ssid = "Maison", blacklist = setOf("Maison")),
+                Contexts.wifi(
+                    ssid = "Maison",
+                    preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.DISABLED),
+                ),
             )
 
         assertEquals(RuleDecision.DISABLE, evaluation.decision)
-        assertEquals(RuleId("blacklisted-wifi"), evaluation.ruleId)
+        assertEquals(RuleId("network-preference"), evaluation.ruleId)
     }
 
     @Test
     fun anUnknownWifiEnablesTheTunnel() {
         val evaluation =
             engine.evaluate(
-                Contexts.wifi(ssid = "Aéroport", blacklist = setOf("Maison")),
+                Contexts.wifi(
+                    ssid = "Aéroport",
+                    preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.DISABLED),
+                ),
             )
 
         assertEquals(RuleDecision.ENABLE, evaluation.decision)
@@ -68,11 +73,14 @@ class ShippedRulesTest {
 
     @Test
     fun anUnreadableSsidFallsBackToProtectingTheConnection() {
-        // Enchaînement complet de SPECS.md §4.2 : la règle blacklist s'abstient,
-        // et c'est bien « autres Wi-Fi » qui tranche.
+        // Enchaînement complet de SPECS.md §4.2 : sans clé, la règle des
+        // préférences s'abstient, et c'est bien « Wi-Fi » qui tranche.
         val evaluation =
             engine.evaluate(
-                Contexts.wifi(ssid = null, blacklist = setOf("Maison")),
+                Contexts.wifi(
+                    ssid = null,
+                    preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.DISABLED),
+                ),
             )
 
         assertEquals(RuleDecision.ENABLE, evaluation.decision)
@@ -88,28 +96,11 @@ class ShippedRulesTest {
     }
 
     @Test
-    fun aMemorizedGestureOverridesTheTrustedWifiRule() {
-        // SPECS.md §4.5 : le choix explicite de l'utilisateur prime sur le
-        // comportement par défaut, y compris sur un réseau blacklisté.
-        val evaluation =
-            engine.evaluate(
-                Contexts.wifi(
-                    ssid = "Maison",
-                    blacklist = setOf("Maison"),
-                    exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
-                ),
-            )
-
-        assertEquals(RuleDecision.ENABLE, evaluation.decision)
-        assertEquals(RuleId("network-preference"), evaluation.ruleId)
-    }
-
-    @Test
     fun aMemorizedGestureOverridesTheMobileRule() {
         val evaluation =
             engine.evaluate(
                 Contexts.cellular(
-                    exceptions = mapOf(NetworkPreferenceKey.Cellular to TunnelState.DISABLED),
+                    preferences = mapOf(NetworkPreferenceKey.Cellular to TunnelState.DISABLED),
                 ),
             )
 
@@ -125,7 +116,7 @@ class ShippedRulesTest {
                 Contexts.wifi(
                     ssid = "Maison",
                     airplaneMode = true,
-                    exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
+                    preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
                 ),
             )
 

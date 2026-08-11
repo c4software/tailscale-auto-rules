@@ -3,7 +3,6 @@ package fr.vbrosseau.tailscaleautorules.domain.usecase
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEvaluation
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
@@ -17,12 +16,11 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
  * divergence entre ces trois lectures produirait une notification qui contredit
  * ce que l'automatisation vient de faire.
  *
- * La liste noire, les exceptions dynamiques et les réglages sont relus à
- * chaque appel : une modification produit son effet dès l'évaluation suivante,
- * sans invalidation de cache ni redémarrage.
+ * Les préférences de réseau et les réglages sont relus à chaque appel : une
+ * modification produit son effet dès l'évaluation suivante, sans invalidation
+ * de cache ni redémarrage.
  */
 class EvaluateRulesUseCase(
-    private val blacklistRepository: BlacklistRepository,
     private val networkPreferenceRepository: NetworkPreferenceRepository,
     private val settingsRepository: SettingsRepository,
     private val engine: RuleEngine,
@@ -31,7 +29,6 @@ class EvaluateRulesUseCase(
         engine.evaluate(
             RuleContext(
                 network = networkContext,
-                blacklistedSsids = blacklistRepository.currentSsids(),
                 networkPreferences = networkPreferenceRepository.current(),
                 settings = settingsRepository.currentRuleSettings(),
             ),

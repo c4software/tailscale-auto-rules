@@ -1,11 +1,13 @@
 package fr.vbrosseau.tailscaleautorules.data.repository
 
+import android.database.sqlite.SQLiteConstraintException
 import fr.vbrosseau.tailscaleautorules.data.local.NetworkPreferenceDao
 import fr.vbrosseau.tailscaleautorules.data.local.NetworkPreferenceEntity
 import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
+import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
 import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
@@ -45,6 +47,33 @@ class RoomNetworkPreferenceRepository @Inject constructor(
                 desiredState = desiredState.name,
                 epochMillis = clock.nowEpochMillis(),
             ),
+        )
+    }
+
+    override suspend fun update(
+        id: Long,
+        ssid: String,
+    ): Result<Unit> = withContext(ioDispatcher) {
+        val trimmed = ssid.trim()
+        val existing = dao.findById(id)
+            ?: return@withContext Result.failure(NoSuchElementException("Aucune entrée $id."))
+
+        // L'unicité est déléguée à l'index de la base plutôt que vérifiée
+        // avant écriture : un contrôle applicatif laisserait une fenêtre entre
+        // la lecture et l'écriture.
+        runCatching {
+            dao.update(
+                existing.copy(networkKey = NetworkPreferenceKey.forWifi(trimmed).value, ssid = trimmed),
+            )
+        }.fold(
+            onSuccess = { Result.success(Unit) },
+            onFailure = { cause ->
+                if (cause is SQLiteConstraintException) {
+                    Result.failure(DuplicateSsidException(trimmed))
+                } else {
+                    Result.failure(cause)
+                }
+            },
         )
     }
 

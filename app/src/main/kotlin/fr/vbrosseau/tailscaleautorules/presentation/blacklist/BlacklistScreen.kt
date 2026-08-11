@@ -1,6 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -38,7 +40,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
-import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
@@ -48,19 +49,19 @@ import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import fr.vbrosseau.tailscaleautorules.presentation.theme.Spacing
 
 /**
- * Écran des réseaux de confiance, sans état applicatif.
+ * Écran des réseaux, sans état applicatif.
  *
- * Le seul état local est celui de la boîte de dialogue de saisie : il n'a
- * aucune raison de survivre à l'écran, et le confier au ViewModel l'obligerait
- * à connaître une mécanique purement visuelle.
+ * Une seule liste : les préférences de réseau (SPECS.md §4.2 et §6.2),
+ * déclarées ou apprises d'un geste. Le seul état local est celui de la boîte
+ * de dialogue de saisie : il n'a aucune raison de survivre à l'écran.
  */
 @Composable
 fun BlacklistScreen(
     uiState: BlacklistUiState,
-    onAdd: (String) -> Unit,
+    onAdd: (String, Boolean) -> Unit,
     onRename: (Long, String) -> Unit,
     onRemove: (Long) -> Unit,
-    onRemoveException: (Long) -> Unit,
+    onSetPreferenceEnabled: (NetworkPreference, Boolean) -> Unit,
     onAddCurrentSsid: () -> Unit,
     onDismissError: () -> Unit,
     onMobileRuleChange: (Boolean) -> Unit,
@@ -99,24 +100,23 @@ fun BlacklistScreen(
             )
         }
 
-        entryItems(
-            entries = uiState.entries,
-            onStartRename = { entry -> editing = EditingState(entry.id, entry.value) },
+        preferenceItems(
+            preferences = uiState.preferences,
+            onStartRename = { preference ->
+                editing = EditingState(preference.id, preference.ssid.orEmpty())
+            },
             onRemove = onRemove,
-        )
-
-        exceptionItems(
-            exceptions = uiState.exceptions,
-            onRemoveException = onRemoveException,
+            onSetPreferenceEnabled = onSetPreferenceEnabled,
         )
     }
 
     editing?.let { state ->
-        SsidDialog(
+        PreferenceDialog(
             initialValue = state.value,
+            withBehaviourChoice = state.id == null,
             onDismiss = { editing = null },
-            onConfirm = { value ->
-                if (state.id == null) onAdd(value) else onRename(state.id, value)
+            onConfirm = { value, tunnelEnabled ->
+                if (state.id == null) onAdd(value, tunnelEnabled) else onRename(state.id, value)
                 editing = null
             },
         )
@@ -152,7 +152,7 @@ private fun LazyListScope.headerItems(
 
     // L'explication précède la demande, comme l'exige le Play Store, et
     // n'apparaît que sur cet écran : c'est ici que l'utilisateur découvre que
-    // ses réseaux de confiance ne pourront pas être reconnus.
+    // ses réseaux ne pourront pas être reconnus.
     if (uiState.needsLocationPermission) {
         item { LocationRationaleCard(onGrant = onRequestLocationPermission) }
     }
@@ -164,13 +164,14 @@ private fun LazyListScope.headerItems(
     }
 }
 
-/** Les réseaux enregistrés — ou l'explication de leur absence. */
-private fun LazyListScope.entryItems(
-    entries: List<BlacklistedSsid>,
-    onStartRename: (BlacklistedSsid) -> Unit,
+/** Les préférences enregistrées — ou l'explication de leur absence. */
+private fun LazyListScope.preferenceItems(
+    preferences: List<NetworkPreference>,
+    onStartRename: (NetworkPreference) -> Unit,
     onRemove: (Long) -> Unit,
+    onSetPreferenceEnabled: (NetworkPreference, Boolean) -> Unit,
 ) {
-    if (entries.isEmpty()) {
+    if (preferences.isEmpty()) {
         item {
             Text(
                 text = stringResource(R.string.blacklist_empty),
@@ -179,113 +180,13 @@ private fun LazyListScope.entryItems(
             )
         }
     } else {
-        items(entries, key = { it.id }) { entry ->
-            EntryRow(
-                entry = entry,
-                onRename = { onStartRename(entry) },
-                onRemove = { onRemove(entry.id) },
+        items(preferences, key = { it.id }) { preference ->
+            PreferenceRow(
+                preference = preference,
+                onRename = { onStartRename(preference) },
+                onRemove = { onRemove(preference.id) },
+                onSetEnabled = { enabled -> onSetPreferenceEnabled(preference, enabled) },
             )
-        }
-    }
-}
-
-/**
- * Les gestes mémorisés (SPECS.md §6.2) — la section entière disparaît quand il
- * n'y a rien à montrer : un titre orphelin poserait une question sans réponse.
- */
-private fun LazyListScope.exceptionItems(
-    exceptions: List<NetworkPreference>,
-    onRemoveException: (Long) -> Unit,
-) {
-    if (exceptions.isEmpty()) return
-
-    item {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(
-                text = stringResource(R.string.blacklist_exceptions_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.testTag(BlacklistTestTags.EXCEPTIONS_TITLE),
-            )
-            Text(
-                text = stringResource(R.string.blacklist_exceptions_hint),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-
-    items(exceptions, key = { "exception-${it.id}" }) { exception ->
-        ExceptionRow(
-            exception = exception,
-            onRemove = { onRemoveException(exception.id) },
-        )
-    }
-}
-
-/**
- * Un geste mémorisé, supprimable d'un glissement latéral.
- *
- * La suppression est déclenchée à l'**aboutissement** du glissement — pas dans
- * `confirmValueChange`, que la mécanique de geste peut consulter plusieurs
- * fois pour une même sortie. La carte disparaît par la liste observée, jamais
- * par un état visuel local qui pourrait la masquer sans rien effacer.
- */
-@Composable
-private fun ExceptionRow(
-    exception: NetworkPreference,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val currentOnRemove by rememberUpdatedState(onRemove)
-    val dismissState = rememberSwipeToDismissBoxState()
-
-    LaunchedEffect(dismissState.currentValue) {
-        if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) currentOnRemove()
-    }
-
-    SwipeToDismissBox(
-        state = dismissState,
-        modifier = modifier.testTag(BlacklistTestTags.exception(exception.id)),
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CardDefaults.shape)
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(horizontal = Spacing.md),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Text(
-                    text = stringResource(
-                        R.string.blacklist_remove,
-                        exception.ssid ?: stringResource(R.string.blacklist_exception_cellular),
-                    ),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        },
-    ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-            ) {
-                Text(
-                    text = exception.ssid
-                        ?: stringResource(R.string.blacklist_exception_cellular),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Text(
-                    text = stringResource(
-                        if (exception.desiredState == TunnelState.ENABLED) {
-                            R.string.blacklist_exception_enabled
-                        } else {
-                            R.string.blacklist_exception_disabled
-                        },
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
         }
     }
 }
@@ -327,12 +228,106 @@ private fun ActionRow(
 }
 
 /**
- * Explique pourquoi la localisation est demandée, **avant** de la demander.
+ * Une préférence : réseau, volonté, et les gestes pour en changer.
  *
- * Le texte dit aussi ce que l'application ne fait pas : Android impose cette
- * permission pour lire un SSID, ce que rien n'indique à l'utilisateur, et une
- * demande non expliquée serait à juste titre refusée — par lui comme par le
- * Play Store.
+ * L'interrupteur porte la volonté — tunnel actif ou coupé —, le nom se
+ * renomme d'un appui (Wi-Fi seulement : les données mobiles n'ont pas de
+ * nom), et un glissement latéral rend le réseau à l'automatisme. La
+ * suppression est déclenchée à l'**aboutissement** du glissement — pas dans
+ * `confirmValueChange`, que la mécanique de geste peut consulter plusieurs
+ * fois pour une même sortie.
+ */
+@Composable
+private fun PreferenceRow(
+    preference: NetworkPreference,
+    onRename: () -> Unit,
+    onRemove: () -> Unit,
+    onSetEnabled: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val currentOnRemove by rememberUpdatedState(onRemove)
+    val dismissState = rememberSwipeToDismissBoxState()
+
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) currentOnRemove()
+    }
+
+    val name = preference.ssid ?: stringResource(R.string.blacklist_cellular)
+
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier.testTag(BlacklistTestTags.preference(preference.id)),
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CardDefaults.shape)
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = Spacing.md),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    text = stringResource(R.string.blacklist_remove, name),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        },
+    ) {
+        PreferenceCard(
+            preference = preference,
+            name = name,
+            onRename = onRename,
+            onSetEnabled = onSetEnabled,
+        )
+    }
+}
+
+@Composable
+private fun PreferenceCard(
+    preference: NetworkPreference,
+    name: String,
+    onRename: () -> Unit,
+    onSetEnabled: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(BlacklistTestTags.preferenceName(preference.id))
+                    .let { base ->
+                        if (preference.ssid != null) base.clickable(onClick = onRename) else base
+                    },
+            ) {
+                Text(text = name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = stringResource(
+                        if (preference.desiredState == TunnelState.ENABLED) {
+                            R.string.blacklist_state_enabled
+                        } else {
+                            R.string.blacklist_state_disabled
+                        },
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Switch(
+                checked = preference.desiredState == TunnelState.ENABLED,
+                onCheckedChange = onSetEnabled,
+                modifier = Modifier.testTag(BlacklistTestTags.preferenceSwitch(preference.id)),
+            )
+        }
+    }
+}
+
+/**
+ * Explique pourquoi la localisation est demandée, **avant** de la demander.
  */
 @Composable
 private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modifier) {
@@ -361,8 +356,6 @@ private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modi
                 text = stringResource(R.string.blacklist_location_body),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            // Un bouton plein plutôt qu'un bouton texte : aligné à gauche et
-            // sans contour, l'action se lisait comme un paragraphe de plus.
             FilledTonalButton(
                 onClick = onGrant,
                 modifier = Modifier
@@ -378,64 +371,56 @@ private fun LocationRationaleCard(onGrant: () -> Unit, modifier: Modifier = Modi
 /** Édition en cours : [id] à `null` pour une création. */
 private data class EditingState(val id: Long?, val value: String)
 
+/**
+ * Saisie d'un réseau : le nom, et — à la création seulement — sa volonté.
+ *
+ * « Coupé » est le choix pré-rempli : déclarer un réseau, c'est d'abord le
+ * geste de confiance d'hier. Au renommage, la volonté ne se touche pas ici :
+ * elle a son interrupteur sur la carte.
+ */
 @Composable
-private fun EntryRow(
-    entry: BlacklistedSsid,
-    onRename: () -> Unit,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            Text(
-                text = entry.value,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(BlacklistTestTags.entry(entry.id)),
-            )
-            TextButton(
-                onClick = onRename,
-                modifier = Modifier.testTag(BlacklistTestTags.rename(entry.id)),
-            ) {
-                Text(stringResource(R.string.blacklist_rename))
-            }
-            TextButton(
-                onClick = onRemove,
-                modifier = Modifier.testTag(BlacklistTestTags.remove(entry.id)),
-            ) {
-                Text(stringResource(R.string.blacklist_remove, entry.value))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SsidDialog(
+private fun PreferenceDialog(
     initialValue: String,
+    withBehaviourChoice: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (String, Boolean) -> Unit,
 ) {
     var value by remember { mutableStateOf(initialValue) }
+    var tunnelEnabled by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.blacklist_ssid_label)) },
         text = {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { value = it },
-                singleLine = true,
-                modifier = Modifier.testTag(BlacklistTestTags.DIALOG_FIELD),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    singleLine = true,
+                    modifier = Modifier.testTag(BlacklistTestTags.DIALOG_FIELD),
+                )
+                if (withBehaviourChoice) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.blacklist_dialog_enabled),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = tunnelEnabled,
+                            onCheckedChange = { tunnelEnabled = it },
+                            modifier = Modifier.testTag(BlacklistTestTags.DIALOG_SWITCH),
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(value) },
+                onClick = { onConfirm(value, tunnelEnabled) },
                 modifier = Modifier.testTag(BlacklistTestTags.DIALOG_CONFIRM),
             ) {
                 Text(stringResource(R.string.blacklist_confirm))
@@ -461,8 +446,6 @@ private fun ErrorCard(message: String, onDismiss: () -> Unit, modifier: Modifier
         ),
     ) {
         Column(
-            // Sans `fillMaxWidth`, la colonne s'ajuste au texte et l'alignement
-            // à droite du bouton se fait dans ce cadre rétréci, pas dans la carte.
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(Spacing.md),
@@ -485,32 +468,28 @@ private fun BlacklistScreenPreview() {
     AppTheme(dynamicColor = false) {
         BlacklistScreen(
             uiState = BlacklistUiState(
-                entries = listOf(
-                    BlacklistedSsid(id = 1, value = "Maison"),
-                    BlacklistedSsid(id = 2, value = "Bureau"),
-                ),
-                exceptions = listOf(
+                preferences = listOf(
                     NetworkPreference(
                         id = 1,
                         key = NetworkPreferenceKey("wifi:maison"),
                         ssid = "Maison",
-                        desiredState = TunnelState.ENABLED,
+                        desiredState = TunnelState.DISABLED,
                         epochMillis = 0,
                     ),
                     NetworkPreference(
                         id = 2,
                         key = NetworkPreferenceKey.Cellular,
                         ssid = null,
-                        desiredState = TunnelState.DISABLED,
+                        desiredState = TunnelState.ENABLED,
                         epochMillis = 0,
                     ),
                 ),
                 currentSsid = "Aéroport CDG",
             ),
-            onAdd = {},
+            onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
-            onRemoveException = {},
+            onSetPreferenceEnabled = { _, _ -> },
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -524,10 +503,10 @@ private fun BlacklistScreenEmptyPreview() {
     AppTheme(dynamicColor = false) {
         BlacklistScreen(
             uiState = BlacklistUiState(error = BlacklistError.DUPLICATE),
-            onAdd = {},
+            onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
-            onRemoveException = {},
+            onSetPreferenceEnabled = { _, _ -> },
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},

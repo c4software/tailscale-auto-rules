@@ -2,15 +2,15 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
@@ -37,9 +37,11 @@ class HomeViewModelTest {
     private val clock = FakeClock(1_000)
     private val journal = FakeJournalRepository(clock)
     private val settings = FakeSettingsRepository()
-    private val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
-    private val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
-    private val evaluateRules = EvaluateRulesUseCase(blacklist, FakeNetworkPreferenceRepository(), settings, engine)
+    private val preferences = FakeNetworkPreferenceRepository().apply {
+        seed(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+    }
+    private val engine = RuleEngine(setOf(MobileNetworkRule(), NetworkPreferenceRule()))
+    private val evaluateRules = EvaluateRulesUseCase(preferences, settings, engine)
 
     private fun TestScope.viewModel() = HomeViewModel(
         networkObserver = observer,
@@ -149,7 +151,7 @@ class HomeViewModelTest {
         // La règle a coupé le tunnel sur ce réseau — le journal l'atteste —
         // puis l'utilisateur l'a rallumé depuis le client officiel. L'accueil
         // doit nommer ce geste au lieu d'attribuer l'état à une règle.
-        journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+        journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("network-preference"))
         // Le geste survient après le délai de grâce : la coupure journalisée a
         // eu tout le temps de s'exécuter, la divergence ne peut pas être elle.
         clock.advanceBy(60_000)
@@ -161,7 +163,7 @@ class HomeViewModelTest {
         val override = viewModel().uiState.value.manualOverride
 
         assertEquals(TunnelState.ENABLED, override?.observedState)
-        assertEquals(RuleId("blacklisted-wifi"), override?.ruleId)
+        assertEquals(RuleId("network-preference"), override?.ruleId)
     }
 
     @Test
@@ -169,7 +171,7 @@ class HomeViewModelTest {
         // Retour sur le réseau mobile : la décision vient de passer à
         // « activer » mais le cycle n'a pas encore couru. Cette divergence
         // transitoire ne doit pas s'afficher comme un geste de l'utilisateur.
-        journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+        journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("network-preference"))
         observer.emit(cellular)
 
         assertNull(viewModel().uiState.value.manualOverride)

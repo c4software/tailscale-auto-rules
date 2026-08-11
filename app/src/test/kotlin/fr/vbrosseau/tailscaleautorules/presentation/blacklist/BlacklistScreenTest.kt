@@ -3,7 +3,6 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,7 +12,6 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
-import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
@@ -31,10 +29,10 @@ class BlacklistScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val recordedAdds = mutableListOf<String>()
+    private val recordedAdds = mutableListOf<Pair<String, Boolean>>()
     private val recordedRenames = mutableListOf<Pair<Long, String>>()
     private val recordedRemovals = mutableListOf<Long>()
-    private val recordedExceptionRemovals = mutableListOf<Long>()
+    private val recordedToggles = mutableListOf<Pair<Long, Boolean>>()
     private var quickAddCount = 0
     private var locationRequests = 0
     private val recordedMobileRuleChanges = mutableListOf<Boolean>()
@@ -44,10 +42,12 @@ class BlacklistScreenTest {
             AppTheme(dynamicColor = false) {
                 BlacklistScreen(
                     uiState = uiState,
-                    onAdd = { recordedAdds += it },
+                    onAdd = { ssid, enabled -> recordedAdds += ssid to enabled },
                     onRename = { id, value -> recordedRenames += id to value },
                     onRemove = { recordedRemovals += it },
-                    onRemoveException = { recordedExceptionRemovals += it },
+                    onSetPreferenceEnabled = { preference, enabled ->
+                        recordedToggles += preference.id to enabled
+                    },
                     onAddCurrentSsid = { quickAddCount++ },
                     onDismissError = {},
                     onMobileRuleChange = { recordedMobileRuleChanges += it },
@@ -57,24 +57,19 @@ class BlacklistScreenTest {
         }
     }
 
-    private val twoEntries = listOf(
-        BlacklistedSsid(id = 1, value = "Maison"),
-        BlacklistedSsid(id = 2, value = "Bureau"),
-    )
-
-    private val twoExceptions = listOf(
+    private val twoPreferences = listOf(
         NetworkPreference(
             id = 1,
             key = NetworkPreferenceKey("wifi:maison"),
             ssid = "Maison",
-            desiredState = TunnelState.ENABLED,
+            desiredState = TunnelState.DISABLED,
             epochMillis = 0,
         ),
         NetworkPreference(
             id = 2,
             key = NetworkPreferenceKey.Cellular,
             ssid = null,
-            desiredState = TunnelState.DISABLED,
+            desiredState = TunnelState.ENABLED,
             epochMillis = 0,
         ),
     )
@@ -96,25 +91,61 @@ class BlacklistScreenTest {
     }
 
     @Test
-    fun eachEntryIsDisplayed() {
-        show(BlacklistUiState(entries = twoEntries))
+    fun eachPreferenceShowsItsWillOnItsSwitch() {
+        show(BlacklistUiState(preferences = twoPreferences))
 
-        scrollTo(BlacklistTestTags.entry(1))
-        composeRule.onNodeWithTag(BlacklistTestTags.entry(1)).assertTextEquals("Maison")
-        scrollTo(BlacklistTestTags.entry(2))
-        composeRule.onNodeWithTag(BlacklistTestTags.entry(2)).assertTextEquals("Bureau")
+        scrollTo(BlacklistTestTags.preference(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.preferenceSwitch(1)).assertIsOff()
+        scrollTo(BlacklistTestTags.preference(2))
+        composeRule.onNodeWithTag(BlacklistTestTags.preferenceSwitch(2)).assertIsOn()
         composeRule.onNodeWithTag(BlacklistTestTags.EMPTY).assertDoesNotExist()
     }
 
     @Test
-    fun addingASsidGoesThroughTheDialog() {
+    fun togglingAPreferenceReportsItsIdentityAndTheNewWill() {
+        show(BlacklistUiState(preferences = twoPreferences))
+
+        scrollTo(BlacklistTestTags.preferenceSwitch(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.preferenceSwitch(1)).performClick()
+
+        assertEquals(listOf(1L to true), recordedToggles)
+    }
+
+    @Test
+    fun swipingAPreferenceAsksForItsRemoval() {
+        show(BlacklistUiState(preferences = twoPreferences))
+
+        scrollTo(BlacklistTestTags.preference(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.preference(1))
+            .performTouchInput { swipeLeft() }
+        composeRule.waitForIdle()
+
+        assertEquals(listOf(1L), recordedRemovals)
+    }
+
+    @Test
+    fun addingANetworkGoesThroughTheDialogWithItsWill() {
         show(BlacklistUiState())
 
         composeRule.onNodeWithTag(BlacklistTestTags.ADD).performClick()
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextInput("Aéroport")
+        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_SWITCH).performClick()
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_CONFIRM).performClick()
 
-        assertEquals(listOf("Aéroport"), recordedAdds)
+        assertEquals(listOf("Aéroport" to true), recordedAdds)
+    }
+
+    @Test
+    fun theDialogDefaultsToATrustedNetwork() {
+        // Déclarer un réseau, c'est d'abord le geste de confiance d'hier.
+        show(BlacklistUiState())
+
+        composeRule.onNodeWithTag(BlacklistTestTags.ADD).performClick()
+        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_SWITCH).assertIsOff()
+        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextInput("Aéroport")
+        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_CONFIRM).performClick()
+
+        assertEquals(listOf("Aéroport" to false), recordedAdds)
     }
 
     @Test
@@ -128,36 +159,27 @@ class BlacklistScreenTest {
     }
 
     @Test
-    fun renamingPrefillsTheCurrentValue() {
-        show(BlacklistUiState(entries = twoEntries))
+    fun tappingAWifiNameOpensTheRenameDialogPrefilled() {
+        show(BlacklistUiState(preferences = twoPreferences))
 
-        scrollTo(BlacklistTestTags.rename(1))
-        composeRule.onNodeWithTag(BlacklistTestTags.rename(1)).performClick()
-
-        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).assertTextEquals("Maison")
-    }
-
-    @Test
-    fun renamingReportsTheEntryIdentity() {
-        show(BlacklistUiState(entries = twoEntries))
-
-        scrollTo(BlacklistTestTags.rename(2))
-        composeRule.onNodeWithTag(BlacklistTestTags.rename(2)).performClick()
+        scrollTo(BlacklistTestTags.preference(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.preferenceName(1)).performClick()
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextClearance()
-        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextInput("Bureau Fibre")
+        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_FIELD).performTextInput("Maison Fibre")
         composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_CONFIRM).performClick()
 
-        assertEquals(listOf(2L to "Bureau Fibre"), recordedRenames)
+        assertEquals(listOf(1L to "Maison Fibre"), recordedRenames)
     }
 
     @Test
-    fun removingReportsTheEntryIdentity() {
-        show(BlacklistUiState(entries = twoEntries))
+    fun renamingHidesTheWillChoice() {
+        // Au renommage, la volonté a déjà son interrupteur sur la carte.
+        show(BlacklistUiState(preferences = twoPreferences))
 
-        scrollTo(BlacklistTestTags.remove(2))
-        composeRule.onNodeWithTag(BlacklistTestTags.remove(2)).performClick()
+        scrollTo(BlacklistTestTags.preference(1))
+        composeRule.onNodeWithTag(BlacklistTestTags.preferenceName(1)).performClick()
 
-        assertEquals(listOf(2L), recordedRemovals)
+        composeRule.onNodeWithTag(BlacklistTestTags.DIALOG_SWITCH).assertDoesNotExist()
     }
 
     @Test
@@ -180,7 +202,7 @@ class BlacklistScreenTest {
     fun theQuickAddIsAbsentWhenTheNetworkIsAlreadyListed() {
         show(
             BlacklistUiState(
-                entries = twoEntries,
+                preferences = twoPreferences,
                 currentSsid = "Maison",
                 isCurrentSsidAlreadyListed = true,
             ),
@@ -208,9 +230,10 @@ class BlacklistScreenTest {
     }
 
     @Test
-    fun anErrorIsShownAndNamed() {
+    fun anErrorIsDisplayedInItsCard() {
         show(BlacklistUiState(error = BlacklistError.DUPLICATE))
 
+        scrollTo(BlacklistTestTags.ERROR)
         composeRule.onNodeWithTag(BlacklistTestTags.ERROR).assertIsDisplayed()
     }
 
@@ -243,41 +266,9 @@ class BlacklistScreenTest {
     }
 
     @Test
-    fun learnedExceptionsAreListedWithTheirNetwork() {
-        show(BlacklistUiState(exceptions = twoExceptions))
-
-        scrollTo(BlacklistTestTags.EXCEPTIONS_TITLE)
-        composeRule.onNodeWithTag(BlacklistTestTags.EXCEPTIONS_TITLE).assertIsDisplayed()
-        scrollTo(BlacklistTestTags.exception(1))
-        composeRule.onNodeWithTag(BlacklistTestTags.exception(1)).assertIsDisplayed()
-        scrollTo(BlacklistTestTags.exception(2))
-        composeRule.onNodeWithTag(BlacklistTestTags.exception(2)).assertIsDisplayed()
-    }
-
-    @Test
-    fun theExceptionSectionVanishesWhenThereIsNothingToShow() {
-        // Un titre orphelin poserait une question sans réponse.
-        show(BlacklistUiState(entries = twoEntries))
-
-        composeRule.onNodeWithTag(BlacklistTestTags.EXCEPTIONS_TITLE).assertDoesNotExist()
-    }
-
-    @Test
-    fun swipingAnExceptionAsksForItsRemoval() {
-        show(BlacklistUiState(exceptions = twoExceptions))
-
-        scrollTo(BlacklistTestTags.exception(1))
-        composeRule.onNodeWithTag(BlacklistTestTags.exception(1))
-            .performTouchInput { swipeLeft() }
-        composeRule.waitForIdle()
-
-        assertEquals(listOf(1L), recordedExceptionRemovals)
-    }
-
-    @Test
     fun whileLoadingOnlyTheIndicatorIsShown() {
-        // Sans ce garde-fou, la liste encore vide s'afficherait comme « aucun
-        // réseau de confiance » le temps de la première lecture de Room.
+        // Sans ce garde-fou, la liste encore vide s'afficherait comme « aucune
+        // préférence » le temps de la première lecture de Room.
         show(BlacklistUiState(isLoading = true))
 
         composeRule.onNodeWithTag(LoadingTestTags.INDICATOR).assertIsDisplayed()

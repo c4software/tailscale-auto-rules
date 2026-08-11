@@ -7,7 +7,6 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
@@ -36,11 +35,6 @@ object RuleModule {
     @Singleton
     @IntoSet
     fun provideNetworkPreferenceRule(): Rule = NetworkPreferenceRule()
-
-    @Provides
-    @Singleton
-    @IntoSet
-    fun provideBlacklistedWifiRule(): Rule = BlacklistedWifiRule()
 
     @Provides
     @Singleton

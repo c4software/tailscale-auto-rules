@@ -759,25 +759,32 @@ pas ici.
 
 ---
 
-## 27. Préférences de réseau — la fusion `[ ]`
+## 27. Préférences de réseau — la fusion `[x]`
 
 La suppression de la blacklist traverse les trois couches d'un seul tenant :
 retirer la règle sans retirer son écran ne compilerait pas.
 
-- [ ] Domaine : `NetworkPreferenceRule` absorbe `BlacklistedWifiRule`
+- [x] Domaine : `NetworkPreferenceRule` absorbe `BlacklistedWifiRule`
       (supprimée) ; `RuleContext` perd `blacklistedSsids` ;
       `BlacklistRepository` et son Fake supprimés ; le contrat des
-      préférences gagne le renommage (`update`, conflit de doublon) et
-      l'ajout déclaré
-- [ ] Data : table `network_preference` ; migration 2→3 **fusionnante** — les
+      préférences gagne le renommage (`update`, conflit de doublon porté par
+      l'index) et la fabrique de clé partagée `forWifi`
+- [x] Data : table `network_preference` ; migration 2→3 **fusionnante** — les
       préférences copiées, la blacklist versée en « toujours coupé » là où
       aucun geste n'a déjà tranché (le geste, plus récent, gagne), les deux
       anciennes tables supprimées ; `RoomBlacklistRepository` supprimé ; DI
       réalignée
-- [ ] Interface : l'écran des réseaux bascule sur le seul repository des
-      préférences — la mise en forme finale appartient à l'étape 28
-- [ ] Tests : chaque branche de la règle unifiée, `ShippedRulesTest` fusionné,
-      migration (fusion, conflit geste/déclaration, chaîne 1→2→3)
+- [x] Interface : l'écran des réseaux devient la liste unique des
+      préférences — volonté modifiable sur place (interrupteur, cycle
+      immédiat), ajout avec choix du comportement (« coupé » pré-rempli),
+      renommage d'un appui sur le nom, glissement pour rendre le réseau à
+      l'automatisme
+- [x] Tests : chaque branche de la règle unifiée, `ShippedRulesTest`
+      fusionné, migration (fusion, conflit geste/déclaration — le geste
+      gagne —, chaîne 1→2→3), ViewModel et écran réécrits
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès ; captures réenregistrées et relues.
 
 ---
 

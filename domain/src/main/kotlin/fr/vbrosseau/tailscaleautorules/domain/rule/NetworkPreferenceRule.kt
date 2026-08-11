@@ -5,11 +5,12 @@ import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 
 /**
- * Réseau dérogé → l'état que l'utilisateur y a choisi (SPECS.md §4.5).
+ * Réseau à préférence → l'état que l'utilisateur y a choisi (SPECS.md §4.2).
  *
- * Placée sous le mode avion — jamais de rejeu en avion — mais au-dessus des
- * règles Wi-Fi et mobile : le choix explicite de l'utilisateur prime sur le
- * comportement par défaut, y compris sur un réseau blacklisté.
+ * Une seule règle couvre les réseaux de confiance d'hier (« toujours coupé »)
+ * et les gestes appris : déclaration et apprentissage écrivent dans le même
+ * magasin, la dernière volonté gagne. Placée sous le mode avion — jamais
+ * d'application en avion — mais au-dessus des règles par défaut.
  *
  * La dérivation de la clé porte déjà les abstentions — SSID illisible,
  * transport non couvert : sans identité stable, l'exception pourrait viser un

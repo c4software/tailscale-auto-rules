@@ -6,7 +6,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 /**
  * Wi-Fi non reconnu → tunnel activé.
  *
- * Elle n'interroge pas la liste de confiance : [BlacklistedWifiRule], plus
+ * Elle n'interroge pas les préférences : [NetworkPreferenceRule], plus
  * prioritaire, a déjà tranché ce cas. Une règle qui vérifierait à nouveau
  * dupliquerait une connaissance, et les deux pourraient diverger.
  *

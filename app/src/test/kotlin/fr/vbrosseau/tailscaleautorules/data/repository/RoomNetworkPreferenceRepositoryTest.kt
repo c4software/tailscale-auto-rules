@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import fr.vbrosseau.tailscaleautorules.data.local.AppDatabase
 import fr.vbrosseau.tailscaleautorules.data.local.NetworkPreferenceEntity
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
+import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
@@ -100,6 +102,33 @@ class RoomNetworkPreferenceRepositoryTest {
         repository.remove(id)
 
         assertEquals(listOf(NetworkPreferenceKey.Cellular), repository.observeAll().first().map { it.key })
+    }
+
+    @Test
+    fun renamingKeepsIdentityAndMovesTheCanonicalKey() = runTest {
+        repository.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+        val id = repository.observeAll().first().single().id
+
+        assertTrue(repository.update(id, "  Maison Fibre ").isSuccess)
+
+        val preference = repository.observeAll().first().single()
+        assertEquals(id, preference.id)
+        assertEquals("Maison Fibre", preference.ssid)
+        assertEquals(NetworkPreferenceKey.forWifi("Maison Fibre"), preference.key)
+    }
+
+    @Test
+    fun renamingOntoAnotherNetworkIsRejectedByTheIndex() = runTest {
+        // L'unicité est portée par l'index de la base : seul un vrai moteur
+        // SQLite peut confirmer le refus.
+        repository.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+        repository.upsert(NetworkPreferenceKey.forWifi("Bureau"), "Bureau", TunnelState.ENABLED)
+        val bureauId = repository.observeAll().first().first { it.ssid == "Bureau" }.id
+
+        val result = repository.update(bureauId, "maison")
+
+        assertIs<DuplicateSsidException>(result.exceptionOrNull())
+        assertEquals(2, repository.observeAll().first().size)
     }
 
     @Test

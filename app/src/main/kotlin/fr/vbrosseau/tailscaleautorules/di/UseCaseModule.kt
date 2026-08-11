@@ -6,7 +6,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
@@ -33,12 +32,10 @@ object UseCaseModule {
     @Provides
     @Singleton
     fun provideEvaluateRulesUseCase(
-        blacklistRepository: BlacklistRepository,
         networkPreferenceRepository: NetworkPreferenceRepository,
         settingsRepository: SettingsRepository,
         engine: RuleEngine,
     ): EvaluateRulesUseCase = EvaluateRulesUseCase(
-        blacklistRepository = blacklistRepository,
         networkPreferenceRepository = networkPreferenceRepository,
         settingsRepository = settingsRepository,
         engine = engine,

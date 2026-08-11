@@ -6,15 +6,16 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * Exception dynamique en base.
+ * Préférence de réseau en base.
  *
- * [networkKey] est la clé canonique du réseau (SPECS.md §4.5), indexée en
- * unique : c'est la base qui garantit « une mémoire par réseau », et non une
+ * [networkKey] est la clé canonique du réseau (SPECS.md §4.2), indexée en
+ * unique : c'est la base qui garantit « une volonté par réseau », et non une
  * vérification applicative que deux écritures concurrentes pourraient
- * contourner. [ssid] conserve le SSID tel que diffusé, pour l'affichage.
+ * contourner. [ssid] conserve le SSID tel que saisi ou diffusé, pour
+ * l'affichage.
  */
 @Entity(
-    tableName = "network_exception",
+    tableName = "network_preference",
     indices = [Index(value = ["network_key"], unique = true)],
 )
 data class NetworkPreferenceEntity(

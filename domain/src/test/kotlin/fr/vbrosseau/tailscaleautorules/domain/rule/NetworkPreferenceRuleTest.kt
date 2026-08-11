@@ -14,7 +14,7 @@ class NetworkPreferenceRuleTest {
         val context =
             Contexts.wifi(
                 ssid = "Maison",
-                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
+                preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
@@ -25,7 +25,7 @@ class NetworkPreferenceRuleTest {
         val context =
             Contexts.wifi(
                 ssid = "Aéroport",
-                exceptions = mapOf(NetworkPreferenceKey("wifi:aéroport") to TunnelState.DISABLED),
+                preferences = mapOf(NetworkPreferenceKey("wifi:aéroport") to TunnelState.DISABLED),
             )
 
         assertEquals(RuleDecision.DISABLE, rule.evaluate(context))
@@ -38,7 +38,7 @@ class NetworkPreferenceRuleTest {
         val context =
             Contexts.wifi(
                 ssid = "  MAISON ",
-                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
+                preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
@@ -48,7 +48,7 @@ class NetworkPreferenceRuleTest {
     fun aCellularExceptionCoversAllMobileData() {
         val context =
             Contexts.cellular(
-                exceptions = mapOf(NetworkPreferenceKey.Cellular to TunnelState.DISABLED),
+                preferences = mapOf(NetworkPreferenceKey.Cellular to TunnelState.DISABLED),
             )
 
         assertEquals(RuleDecision.DISABLE, rule.evaluate(context))
@@ -59,7 +59,7 @@ class NetworkPreferenceRuleTest {
         val context =
             Contexts.wifi(
                 ssid = "Bureau",
-                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
+                preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))
@@ -78,7 +78,7 @@ class NetworkPreferenceRuleTest {
         val context =
             Contexts.wifi(
                 ssid = null,
-                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
+                preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))
@@ -93,7 +93,7 @@ class NetworkPreferenceRuleTest {
             Contexts.wifi(
                 ssid = "Maison",
                 validated = false,
-                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
+                preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
@@ -110,7 +110,7 @@ class NetworkPreferenceRuleTest {
         // porte un malgré tout, la règle doit s'abstenir plutôt que décider.
         val context =
             Contexts.cellular(
-                exceptions = mapOf(NetworkPreferenceKey.Cellular to TunnelState.UNKNOWN),
+                preferences = mapOf(NetworkPreferenceKey.Cellular to TunnelState.UNKNOWN),
             )
 
         assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))

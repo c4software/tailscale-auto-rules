@@ -5,10 +5,8 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import fr.vbrosseau.tailscaleautorules.data.repository.DataStoreSettingsRepository
-import fr.vbrosseau.tailscaleautorules.data.repository.RoomBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.data.repository.RoomJournalRepository
 import fr.vbrosseau.tailscaleautorules.data.repository.RoomNetworkPreferenceRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
@@ -18,12 +16,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindBlacklistRepository(
-        implementation: RoomBlacklistRepository,
-    ): BlacklistRepository
 
     @Binds
     @Singleton

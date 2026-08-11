@@ -1,19 +1,18 @@
 package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
-import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 
 /**
- * État de l'écran de gestion des réseaux de confiance.
+ * État de l'écran des réseaux.
  *
- * [currentSsid] est `null` lorsque le SSID courant est indisponible ; l'action
- * d'ajout rapide est alors sans objet, ce que [canAddCurrentSsid] exprime
- * directement plutôt que de laisser l'interface le recalculer.
+ * Une seule liste : les préférences de réseau (SPECS.md §4.2), déclarées ou
+ * apprises. [currentSsid] est `null` lorsque le SSID courant est
+ * indisponible ; l'action d'ajout rapide est alors sans objet, ce que
+ * [canAddCurrentSsid] exprime directement plutôt que de laisser l'interface
+ * le recalculer.
  */
 data class BlacklistUiState(
-    val entries: List<BlacklistedSsid> = emptyList(),
-    /** Gestes mémorisés (SPECS.md §6.2) — la section n'existe que s'il y en a. */
-    val exceptions: List<NetworkPreference> = emptyList(),
+    val preferences: List<NetworkPreference> = emptyList(),
     val currentSsid: String? = null,
     val isCurrentSsidAlreadyListed: Boolean = false,
     val canReadSsid: Boolean = true,
@@ -27,7 +26,7 @@ data class BlacklistUiState(
     /**
      * L'explication de permission n'a de sens que sur cet écran, et seulement
      * si la localisation manque : c'est ici que l'utilisateur découvre que ses
-     * réseaux de confiance ne pourront pas être reconnus.
+     * réseaux ne pourront pas être reconnus.
      */
     val needsLocationPermission: Boolean
         get() = !canReadSsid

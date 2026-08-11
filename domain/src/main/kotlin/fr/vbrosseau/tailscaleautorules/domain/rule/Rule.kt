@@ -45,13 +45,11 @@ interface Rule {
  * d'une donnée absente l'ajoute à ce type — sans toucher aux règles existantes.
  *
  * @param network instantané de l'état réseau.
- * @param blacklistedSsids SSID que l'utilisateur a marqués comme de confiance.
- * @param networkPreferences gestes manuels mémorisés, par clé de réseau.
+ * @param networkPreferences préférences par réseau, déclarées ou apprises.
  * @param settings réglages surchargés par l'utilisateur, par identifiant de règle.
  */
 data class RuleContext(
     val network: NetworkContext,
-    val blacklistedSsids: Set<String> = emptySet(),
     val networkPreferences: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
     val settings: Map<RuleId, RuleSettings> = emptyMap(),
 ) {

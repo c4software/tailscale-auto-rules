@@ -1,6 +1,5 @@
 package fr.vbrosseau.tailscaleautorules.presentation
 
-import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
@@ -151,71 +150,57 @@ class ScreensScreenshotTest : ScreenshotTest() {
         )
     }
 
-    // --- Réseaux de confiance ---
+    // --- Réseaux ---
 
     @Test
     fun blacklistRemplie() = capture("blacklist-remplie") {
+        // Trois volontés : coupé, actif, et les données mobiles.
         BlacklistScreen(
             uiState = BlacklistUiState(
-                entries = listOf(
-                    BlacklistedSsid(id = 1, value = "Maison"),
-                    BlacklistedSsid(id = 2, value = "Bureau"),
-                    BlacklistedSsid(id = 3, value = "Fibre Salon 5 GHz"),
-                ),
-                currentSsid = "Aéroport CDG",
-            ),
-            onAdd = {},
-            onRename = { _, _ -> },
-            onRemove = {},
-            onRemoveException = {},
-            onAddCurrentSsid = {},
-            onDismissError = {},
-            onMobileRuleChange = {},
-        )
-    }
-
-    @Test
-    fun blacklistAvecExceptions() = capture("blacklist-exceptions") {
-        // La section des gestes mémorisés, sous la liste : SSID et données
-        // mobiles, tunnel maintenu dans les deux sens.
-        BlacklistScreen(
-            uiState = BlacklistUiState(
-                entries = listOf(BlacklistedSsid(id = 1, value = "Maison")),
-                exceptions = listOf(
+                preferences = listOf(
                     NetworkPreference(
                         id = 1,
                         key = NetworkPreferenceKey("wifi:maison"),
                         ssid = "Maison",
-                        desiredState = TunnelState.ENABLED,
+                        desiredState = TunnelState.DISABLED,
                         epochMillis = 1_770_000_000_000,
                     ),
                     NetworkPreference(
                         id = 2,
+                        key = NetworkPreferenceKey("wifi:bureau"),
+                        ssid = "Bureau",
+                        desiredState = TunnelState.ENABLED,
+                        epochMillis = 1_770_000_000_000,
+                    ),
+                    NetworkPreference(
+                        id = 3,
                         key = NetworkPreferenceKey.Cellular,
                         ssid = null,
                         desiredState = TunnelState.DISABLED,
                         epochMillis = 1_770_000_000_000,
                     ),
                 ),
+                currentSsid = "Aéroport CDG",
             ),
-            onAdd = {},
+            onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
-            onRemoveException = {},
+            onSetPreferenceEnabled = { _, _ -> },
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
         )
     }
 
+
     @Test
     fun blacklistVide() = capture("blacklist-vide") {
         BlacklistScreen(
             uiState = BlacklistUiState(),
-            onAdd = {},
+            onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
-            onRemoveException = {},
+            onSetPreferenceEnabled = { _, _ -> },
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -226,13 +211,21 @@ class ScreensScreenshotTest : ScreenshotTest() {
     fun blacklistAvecErreur() = capture("blacklist-erreur") {
         BlacklistScreen(
             uiState = BlacklistUiState(
-                entries = listOf(BlacklistedSsid(id = 1, value = "Maison")),
+                preferences = listOf(
+                    NetworkPreference(
+                        id = 1,
+                        key = NetworkPreferenceKey("wifi:maison"),
+                        ssid = "Maison",
+                        desiredState = TunnelState.DISABLED,
+                        epochMillis = 1_770_000_000_000,
+                    ),
+                ),
                 error = BlacklistError.DUPLICATE,
             ),
-            onAdd = {},
+            onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
-            onRemoveException = {},
+            onSetPreferenceEnabled = { _, _ -> },
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},
@@ -245,10 +238,10 @@ class ScreensScreenshotTest : ScreenshotTest() {
         // contraste ou de débordement se verrait le plus.
         BlacklistScreen(
             uiState = BlacklistUiState(canReadSsid = false),
-            onAdd = {},
+            onAdd = { _, _ -> },
             onRename = { _, _ -> },
             onRemove = {},
-            onRemoveException = {},
+            onSetPreferenceEnabled = { _, _ -> },
             onAddCurrentSsid = {},
             onDismissError = {},
             onMobileRuleChange = {},

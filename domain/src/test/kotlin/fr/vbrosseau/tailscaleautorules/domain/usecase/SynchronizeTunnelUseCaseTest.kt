@@ -2,16 +2,16 @@ package fr.vbrosseau.tailscaleautorules.domain.usecase
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleSettings
@@ -34,7 +34,7 @@ class SynchronizeTunnelUseCaseTest {
     private val clock = FakeClock(1_000)
     private val controller = FakeTailscaleController()
     private val journal = FakeJournalRepository(clock)
-    private val blacklist = FakeBlacklistRepository()
+    private val preferences = FakeNetworkPreferenceRepository(clock)
     private val settings = FakeSettingsRepository()
     private val observer = FakeNetworkObserver()
 
@@ -44,12 +44,11 @@ class SynchronizeTunnelUseCaseTest {
             settingsRepository = settings,
             evaluateRules =
                 EvaluateRulesUseCase(
-                    blacklistRepository = blacklist,
-                    networkPreferenceRepository = FakeNetworkPreferenceRepository(),
+                    networkPreferenceRepository = preferences,
                     settingsRepository = settings,
                     engine =
                         RuleEngine(
-                            setOf(AirplaneModeRule(), BlacklistedWifiRule(), OtherWifiRule(), MobileNetworkRule()),
+                            setOf(AirplaneModeRule(), NetworkPreferenceRule(), OtherWifiRule(), MobileNetworkRule()),
                         ),
                 ),
             controller = controller,
@@ -159,19 +158,19 @@ class SynchronizeTunnelUseCaseTest {
         }
 
     @Test
-    fun theBlacklistIsReadAtEachCycle() =
+    fun thePreferencesAreReadAtEachCycle() =
         runTest {
-            // Un SSID ajouté doit produire son effet à la synchronisation suivante,
-            // sans redémarrage ni invalidation manuelle.
+            // Une préférence déclarée doit produire son effet à la
+            // synchronisation suivante, sans redémarrage ni invalidation.
             assertIs<SynchronizationOutcome.Applied>(useCase(wifi("Maison")))
             assertTrue(controller.isRunning())
 
-            blacklist.add("Maison")
+            preferences.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
 
             val outcome = useCase(wifi("Maison"))
             assertEquals(
                 SynchronizationOutcome.Applied(
-                    ruleId = RuleId("blacklisted-wifi"),
+                    ruleId = RuleId("network-preference"),
                     previousState = TunnelState.ENABLED,
                     newState = TunnelState.DISABLED,
                 ),
@@ -182,13 +181,13 @@ class SynchronizeTunnelUseCaseTest {
     @Test
     fun userRuleSettingsAreReadAtEachCycle() =
         runTest {
-            blacklist.add("Maison")
+            preferences.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
             settings.setRuleSettings(
-                RuleId("blacklisted-wifi"),
-                RuleSettings(isEnabled = false, priority = 200),
+                RuleId("network-preference"),
+                RuleSettings(isEnabled = false, priority = 150),
             )
 
-            // La règle blacklist étant désactivée, « autres Wi-Fi » reprend la main.
+            // La règle des préférences étant désactivée, « Wi-Fi » reprend la main.
             val outcome = assertIs<SynchronizationOutcome.Applied>(useCase(wifi("Maison")))
             assertEquals(RuleId("other-wifi"), outcome.ruleId)
         }

@@ -6,11 +6,9 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
@@ -25,7 +23,7 @@ import kotlin.test.assertTrue
 
 /**
  * Éprouve le cycle complet du geste avec les vraies règles : détection sur
- * l'état courant, mémorisation, rejeu par la règle des exceptions, et
+ * l'état courant, mémorisation, rejeu par la règle des préférences, et
  * remplacement par un nouveau geste — la boucle que la documentation promet.
  */
 class CaptureManualOverrideUseCaseTest {
@@ -37,16 +35,20 @@ class CaptureManualOverrideUseCaseTest {
     private val controller = FakeTailscaleController()
     private val journal = FakeJournalRepository(clock)
     private val settings = FakeSettingsRepository()
-    private val exceptions = FakeNetworkPreferenceRepository(clock)
+
+    /** Le réseau de confiance d'hier : une préférence « toujours coupé ». */
+    private val preferences =
+        FakeNetworkPreferenceRepository(clock).apply {
+            seed(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+        }
 
     private val evaluateRules =
         EvaluateRulesUseCase(
-            blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
-            networkPreferenceRepository = exceptions,
+            networkPreferenceRepository = preferences,
             settingsRepository = settings,
             engine =
                 RuleEngine(
-                    setOf(NetworkPreferenceRule(), BlacklistedWifiRule(), MobileNetworkRule()),
+                    setOf(NetworkPreferenceRule(), MobileNetworkRule()),
                 ),
         )
 
@@ -56,7 +58,7 @@ class CaptureManualOverrideUseCaseTest {
             controller = controller,
             journalRepository = journal,
             detectManualOverride = DetectManualOverrideUseCase(observer, evaluateRules, clock),
-            recordManualOverride = RecordManualOverrideUseCase(settings, exceptions, journal),
+            recordManualOverride = RecordManualOverrideUseCase(settings, preferences, journal),
         )
 
     private val trustedWifi =
@@ -66,9 +68,9 @@ class CaptureManualOverrideUseCaseTest {
             ssid = "Maison",
         )
 
-    /** La règle blacklist a coupé le tunnel, puis l'utilisateur l'a rallumé. */
+    /** La préférence « coupé » a été appliquée, puis l'utilisateur a rallumé. */
     private suspend fun aTunnelReenabledByHandOnTrustedWifi() {
-        journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+        journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("network-preference"))
         clock.advanceBy(60_000)
         controller.enable()
         observer.emit(trustedWifi)
@@ -81,7 +83,7 @@ class CaptureManualOverrideUseCaseTest {
 
             assertTrue(capture())
 
-            val exception = exceptions.observeAll().first().single()
+            val exception = preferences.observeAll().first().single()
             assertEquals(NetworkPreferenceKey("wifi:maison"), exception.key)
             assertEquals(TunnelState.ENABLED, exception.desiredState)
             assertEquals(NetworkPreferenceRule.Id, journal.observeRecent().first().first().ruleId)
@@ -100,7 +102,7 @@ class CaptureManualOverrideUseCaseTest {
             // divergence, donc plus rien à mémoriser — le battement de secours
             // ne combat pas le geste.
             assertFalse(capture())
-            assertEquals(1, exceptions.observeAll().first().size)
+            assertEquals(1, preferences.observeAll().first().size)
         }
 
     @Test
@@ -115,7 +117,7 @@ class CaptureManualOverrideUseCaseTest {
             controller.disable()
 
             assertTrue(capture())
-            val exception = exceptions.observeAll().first().single()
+            val exception = preferences.observeAll().first().single()
             assertEquals(TunnelState.DISABLED, exception.desiredState)
         }
 
@@ -124,7 +126,7 @@ class CaptureManualOverrideUseCaseTest {
         runTest {
             // Le geste survient pendant que le VPN monte : le réseau porteur
             // perd fugacement sa validation. La capture ne doit pas le rater.
-            journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+            journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("network-preference"))
             clock.advanceBy(60_000)
             controller.enable()
             observer.emit(
@@ -138,7 +140,7 @@ class CaptureManualOverrideUseCaseTest {
             assertTrue(capture())
             assertEquals(
                 NetworkPreferenceKey("wifi:maison"),
-                exceptions.observeAll().first().single().key,
+                preferences.observeAll().first().single().key,
             )
         }
 
@@ -157,7 +159,7 @@ class CaptureManualOverrideUseCaseTest {
 
             clock.advanceBy(60_000)
             assertTrue(capture())
-            assertEquals(TunnelState.DISABLED, exceptions.observeAll().first().single().desiredState)
+            assertEquals(TunnelState.DISABLED, preferences.observeAll().first().single().desiredState)
         }
 
     @Test
@@ -165,12 +167,12 @@ class CaptureManualOverrideUseCaseTest {
         runTest {
             // La commande vient d'être journalisée : la divergence est la
             // latence du client, pas un geste.
-            journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+            journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("network-preference"))
             controller.enable()
             observer.emit(trustedWifi)
 
             assertFalse(capture())
-            assertTrue(exceptions.observeAll().first().isEmpty())
+            assertEquals(TunnelState.DISABLED, preferences.observeAll().first().single().desiredState)
         }
 
     @Test
@@ -180,7 +182,7 @@ class CaptureManualOverrideUseCaseTest {
             controller.available = false
 
             assertFalse(capture())
-            assertTrue(exceptions.observeAll().first().isEmpty())
+            assertEquals(TunnelState.DISABLED, preferences.observeAll().first().single().desiredState)
         }
 
     @Test
@@ -190,6 +192,6 @@ class CaptureManualOverrideUseCaseTest {
             settings.updateAppSettings { it.copy(isLearningEnabled = false) }
 
             assertFalse(capture(), "Constaté ne suffit pas : il faut aussi mémorisé.")
-            assertTrue(exceptions.observeAll().first().isEmpty())
+            assertEquals(TunnelState.DISABLED, preferences.observeAll().first().single().desiredState)
         }
 }

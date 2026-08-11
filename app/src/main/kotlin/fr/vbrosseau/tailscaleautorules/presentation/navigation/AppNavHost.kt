@@ -110,7 +110,7 @@ private fun NavGraphBuilder.blacklistDestination(onRequestLocationPermission: ()
             onAdd = viewModel::add,
             onRename = viewModel::rename,
             onRemove = viewModel::remove,
-            onRemoveException = viewModel::removeException,
+            onSetPreferenceEnabled = viewModel::setPreferenceEnabled,
             onAddCurrentSsid = viewModel::addCurrentSsid,
             onDismissError = viewModel::dismissError,
             onMobileRuleChange = viewModel::setMobileRuleEnabled,

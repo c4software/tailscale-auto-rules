@@ -27,8 +27,7 @@ object Contexts {
         ssid: String? = "Réseau inconnu",
         validated: Boolean = true,
         airplaneMode: Boolean = false,
-        blacklist: Set<String> = emptySet(),
-        exceptions: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
+        preferences: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
     ) = RuleContext(
         network =
             NetworkContext(
@@ -37,15 +36,14 @@ object Contexts {
                 isInternetValidated = validated,
                 ssid = ssid,
             ),
-        blacklistedSsids = blacklist,
-        networkPreferences = exceptions,
+        networkPreferences = preferences,
     )
 
     /** Réseau mobile. */
     fun cellular(
         validated: Boolean = true,
         airplaneMode: Boolean = false,
-        exceptions: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
+        preferences: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
     ) = RuleContext(
         network =
             NetworkContext(
@@ -53,7 +51,7 @@ object Contexts {
                 isAirplaneModeOn = airplaneMode,
                 isInternetValidated = validated,
             ),
-        networkPreferences = exceptions,
+        networkPreferences = preferences,
     )
 
     /** Transport non couvert par les règles de la version 1. */

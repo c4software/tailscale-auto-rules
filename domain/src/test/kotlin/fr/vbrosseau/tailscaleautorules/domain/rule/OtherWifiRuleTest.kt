@@ -1,7 +1,9 @@
 package fr.vbrosseau.tailscaleautorules.domain.rule
 
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
+import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,11 +22,15 @@ class OtherWifiRuleTest {
     }
 
     @Test
-    fun theRuleIgnoresTheBlacklistEntirely() {
-        // BlacklistedWifiRule, plus prioritaire, a déjà tranché ce cas.
+    fun theRuleIgnoresTheNetworkPreferencesEntirely() {
+        // NetworkPreferenceRule, plus prioritaire, a déjà tranché ce cas.
         // Vérifier à nouveau ici dupliquerait une connaissance qui pourrait
         // diverger.
-        val context = Contexts.wifi(ssid = "Maison", blacklist = setOf("Maison"))
+        val context =
+            Contexts.wifi(
+                ssid = "Maison",
+                preferences = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.DISABLED),
+            )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
     }

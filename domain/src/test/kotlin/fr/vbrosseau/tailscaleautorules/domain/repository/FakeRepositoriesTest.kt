@@ -18,78 +18,6 @@ import kotlin.test.assertTrue
  * couverts comme du code de production.
  */
 class FakeRepositoriesTest {
-    // --- Blacklist ---
-
-    @Test
-    fun anAddedSsidBecomesVisibleAndUsableByTheEngine() =
-        runTest {
-            val repository = FakeBlacklistRepository()
-
-            assertTrue(repository.add("Maison").isSuccess)
-
-            assertEquals(listOf("Maison"), repository.observeAll().first().map { it.value })
-            assertEquals(setOf("Maison"), repository.currentSsids())
-        }
-
-    @Test
-    fun aDuplicateIsRejectedOnItsCanonicalForm() =
-        runTest {
-            val repository = FakeBlacklistRepository(listOf("Maison"))
-
-            val result = repository.add("  maison ")
-
-            assertIs<DuplicateSsidException>(result.exceptionOrNull())
-            assertEquals(1, repository.observeAll().first().size)
-        }
-
-    @Test
-    fun renamingAnEntryKeepsItsIdentity() =
-        runTest {
-            val repository = FakeBlacklistRepository(listOf("Maison"))
-            val id = repository.observeAll().first().single().id
-
-            assertTrue(repository.update(id, "Maison Fibre").isSuccess)
-
-            val entry = repository.observeAll().first().single()
-            assertEquals(id, entry.id)
-            assertEquals("Maison Fibre", entry.value)
-        }
-
-    @Test
-    fun renamingAnEntryToItselfIsAllowed() =
-        runTest {
-            // Sans exclusion de l'entrée courante, une simple correction de casse
-            // se heurterait à son propre doublon.
-            val repository = FakeBlacklistRepository(listOf("maison"))
-            val id = repository.observeAll().first().single().id
-
-            assertTrue(repository.update(id, "Maison").isSuccess)
-            assertEquals("Maison", repository.observeAll().first().single().value)
-        }
-
-    @Test
-    fun renamingOntoAnotherEntryIsRejected() =
-        runTest {
-            val repository = FakeBlacklistRepository(listOf("Maison", "Bureau"))
-            val bureauId = repository.observeAll().first().last().id
-
-            val result = repository.update(bureauId, "maison")
-
-            assertIs<DuplicateSsidException>(result.exceptionOrNull())
-            assertEquals("Bureau", repository.observeAll().first().last().value)
-        }
-
-    @Test
-    fun removingAnEntryLeavesTheOthersUntouched() =
-        runTest {
-            val repository = FakeBlacklistRepository(listOf("Maison", "Bureau"))
-            val id = repository.observeAll().first().first().id
-
-            repository.remove(id)
-
-            assertEquals(listOf("Bureau"), repository.observeAll().first().map { it.value })
-        }
-
     // --- Journal ---
 
     @Test
@@ -198,6 +126,47 @@ class FakeRepositoriesTest {
             repository.remove(id)
 
             assertEquals(listOf(NetworkPreferenceKey.Cellular), repository.observeAll().first().map { it.key })
+        }
+
+    @Test
+    fun renamingAPreferenceKeepsItsIdentity() =
+        runTest {
+            val repository = FakeNetworkPreferenceRepository()
+            repository.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+            val id = repository.observeAll().first().single().id
+
+            assertTrue(repository.update(id, "Maison Fibre").isSuccess)
+
+            val entry = repository.observeAll().first().single()
+            assertEquals(id, entry.id)
+            assertEquals("Maison Fibre", entry.ssid)
+            assertEquals(NetworkPreferenceKey.forWifi("Maison Fibre"), entry.key)
+        }
+
+    @Test
+    fun renamingOntoAnotherPreferenceIsRejected() =
+        runTest {
+            val repository = FakeNetworkPreferenceRepository()
+            repository.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+            repository.upsert(NetworkPreferenceKey.forWifi("Bureau"), "Bureau", TunnelState.DISABLED)
+            val bureauId = repository.observeAll().first().first { it.ssid == "Bureau" }.id
+
+            val result = repository.update(bureauId, "  maison ")
+
+            assertIs<DuplicateSsidException>(result.exceptionOrNull())
+        }
+
+    @Test
+    fun renamingAPreferenceToItselfIsAllowed() =
+        runTest {
+            // Sans exclusion de l'entrée courante, une simple correction de
+            // casse se heurterait à son propre doublon.
+            val repository = FakeNetworkPreferenceRepository()
+            repository.upsert(NetworkPreferenceKey.forWifi("maison"), "maison", TunnelState.DISABLED)
+            val id = repository.observeAll().first().single().id
+
+            assertTrue(repository.update(id, "Maison").isSuccess)
+            assertEquals("Maison", repository.observeAll().first().single().ssid)
         }
 
     // --- Préférences ---
