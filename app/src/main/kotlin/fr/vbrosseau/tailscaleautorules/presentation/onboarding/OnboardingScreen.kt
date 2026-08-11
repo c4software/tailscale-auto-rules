@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +23,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,6 +77,32 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(initialPage = initialPage) { PAGE_COUNT }
     val scope = rememberCoroutineScope()
 
+    // Une `Surface`, parce que l'écran vit hors du `Scaffold` : sans elle,
+    // rien ne pose la couleur de contenu, et le texte restait noir sur le
+    // fond sombre — le même défaut que le harnais de captures a eu.
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        OnboardingBody(
+            pagerState = pagerState,
+            onAdvance = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+            onRequestNotificationPermission = onRequestNotificationPermission,
+            onRequestLocationPermission = onRequestLocationPermission,
+            onFinish = onFinish,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingBody(
+    pagerState: PagerState,
+    onAdvance: () -> Unit,
+    onRequestNotificationPermission: () -> Unit,
+    onRequestLocationPermission: () -> Unit,
+    onFinish: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -104,9 +132,7 @@ fun OnboardingScreen(
             LearningChoiceRow(onFinish = onFinish)
         } else {
             Button(
-                onClick = {
-                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                },
+                onClick = onAdvance,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag(OnboardingTestTags.CONTINUE),

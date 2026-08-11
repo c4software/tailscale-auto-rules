@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -106,7 +107,11 @@ private fun AppRoot(
     val onboarding by onboardingViewModel.uiState.collectAsStateWithLifecycle()
 
     when {
-        onboarding.isLoading -> LoadingIndicator(modifier = modifier)
+        // Sous une `Surface` : hors du `Scaffold`, rien d'autre ne pose le
+        // fond ni la couleur de contenu du thème.
+        onboarding.isLoading -> Surface(modifier = modifier.fillMaxSize()) {
+            LoadingIndicator()
+        }
         !onboarding.isDone -> OnboardingScreen(
             onRequestNotificationPermission = requestNotificationPermission,
             onRequestLocationPermission = requestLocationPermission,
