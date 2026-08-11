@@ -574,18 +574,28 @@ DataStore n'existe pas (étape 21).
 
 ---
 
-## 21. Exceptions dynamiques — data : Room v2 et DataStore `[ ]`
+## 21. Exceptions dynamiques — data : Room v2 et DataStore `[x]`
 
-- [ ] `NetworkExceptionEntity` — table `network_exception`, index unique sur
+- [x] `NetworkExceptionEntity` — table `network_exception`, index unique sur
       la clé réseau, état désiré, horodatage de création
-- [ ] `NetworkExceptionDao` + `RoomNetworkExceptionRepository`
-- [ ] **Première migration Room du projet** : version 2, schéma exporté,
-      `room-testing`, test de migration préservant blacklist et journal
-- [ ] DataStore : `learning.enabled`, `learning.prompted`
-- [ ] `EvaluateRulesUseCase` alimente le contexte depuis le repository — câblé
+- [x] `NetworkExceptionDao` (upsert transactionnel conservant l'identité) +
+      `RoomNetworkExceptionRepository` (lignes illisibles écartées, comme le
+      journal)
+- [x] **Première migration Room du projet** : version 2, schéma exporté,
+      `room-testing`, test de migration préservant blacklist et journal et
+      éprouvant l'index unique
+- [x] DataStore : `learning_enabled`, `learning_prompted` +
+      `AppSettings.isLearningPrompted`
+- [x] `EvaluateRulesUseCase` alimente le contexte depuis le repository — câblé
       ici plutôt qu'à l'étape 19 : la liaison Hilt exige l'implémentation
-- [ ] DI : DAO, repository, `NetworkExceptionRule` dans `RuleModule` (seul
-      enregistrement requis), cas d'usage dans `UseCaseModule`
+- [x] DI : DAO, migration, repository, `NetworkExceptionRule` dans
+      `RuleModule` (seul enregistrement requis). Le rejeu est actif dès cette
+      étape ; la capture arrive à l'étape 22
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès. Les schémas sont rattachés aux assets du variant de débogage : AGP
+ne fusionne aucun asset pour les tests unitaires, Robolectric ne voit que
+ceux du variant ; la release n'embarque rien.
 
 ---
 

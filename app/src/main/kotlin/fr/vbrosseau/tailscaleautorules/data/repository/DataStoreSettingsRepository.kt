@@ -33,6 +33,8 @@ class DataStoreSettingsRepository @Inject constructor(
         dataStore.edit { preferences ->
             val updated = transform(preferences.toAppSettings())
             preferences[SettingsKeys.ServiceEnabled] = updated.isServiceEnabled
+            preferences[SettingsKeys.LearningEnabled] = updated.isLearningEnabled
+            preferences[SettingsKeys.LearningPrompted] = updated.isLearningPrompted
             preferences[SettingsKeys.StartOnBoot] = updated.startOnBoot
             preferences[SettingsKeys.VerboseLogging] = updated.verboseLogging
         }
@@ -62,6 +64,8 @@ class DataStoreSettingsRepository @Inject constructor(
         val defaults = AppSettings.Defaults
         return AppSettings(
             isServiceEnabled = this[SettingsKeys.ServiceEnabled] ?: defaults.isServiceEnabled,
+            isLearningEnabled = this[SettingsKeys.LearningEnabled] ?: defaults.isLearningEnabled,
+            isLearningPrompted = this[SettingsKeys.LearningPrompted] ?: defaults.isLearningPrompted,
             startOnBoot = this[SettingsKeys.StartOnBoot] ?: defaults.startOnBoot,
             verboseLogging = this[SettingsKeys.VerboseLogging] ?: defaults.verboseLogging,
         )

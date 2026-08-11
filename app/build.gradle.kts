@@ -122,6 +122,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    sourceSets {
+        // Le test de migration lit les schémas versionnés comme des assets :
+        // c'est ainsi que MigrationTestHelper reconstruit une base à l'ancienne
+        // version avant de la faire migrer. Ils sont rattachés au variant de
+        // débogage — et non au source set `test` — car AGP ne fusionne aucun
+        // asset pour les tests unitaires : Robolectric ne voit que les assets
+        // du variant. La release n'embarque rien.
+        getByName("debug").assets.srcDir("$projectDir/schemas")
+    }
+
     testOptions {
         unitTests {
             // Requis par Robolectric pour résoudre les ressources et le manifeste.
@@ -277,6 +287,9 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(testFixtures(project(":domain")))
+    // Rejoue la migration 1 → 2 contre les schémas versionnés : la première
+    // migration du projet ne se vérifie pas autrement qu'avec une vraie base.
+    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)

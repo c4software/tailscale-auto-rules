@@ -58,8 +58,20 @@ class DataStoreSettingsRepositoryTest {
         val settings = repository.observeAppSettings().first()
 
         assertTrue(settings.isServiceEnabled)
+        assertTrue(settings.isLearningEnabled)
+        assertTrue(!settings.isLearningPrompted)
         assertTrue(settings.startOnBoot)
         assertTrue(!settings.verboseLogging)
+    }
+
+    @Test
+    fun theLearningPreferencesAreRoundTripped() = runTest {
+        repository.updateAppSettings { it.copy(isLearningEnabled = false, isLearningPrompted = true) }
+
+        val settings = repository.observeAppSettings().first()
+        assertTrue(!settings.isLearningEnabled)
+        assertTrue(settings.isLearningPrompted)
+        assertTrue(settings.isServiceEnabled, "Les autres préférences ne bougent pas.")
     }
 
     @Test

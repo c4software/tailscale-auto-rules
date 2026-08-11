@@ -7,6 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
@@ -31,6 +32,7 @@ class DetectManualOverrideUseCaseTest {
             evaluateRules =
                 EvaluateRulesUseCase(
                     blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
+                    networkExceptionRepository = FakeNetworkExceptionRepository(),
                     settingsRepository = FakeSettingsRepository(),
                     engine = RuleEngine(setOf(BlacklistedWifiRule(), MobileNetworkRule())),
                 ),

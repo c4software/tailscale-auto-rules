@@ -13,6 +13,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
@@ -81,7 +82,7 @@ class AutomationCoordinatorTest {
 
         val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
         val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
-        val evaluateRules = EvaluateRulesUseCase(blacklist, settings, engine)
+        val evaluateRules = EvaluateRulesUseCase(blacklist, FakeNetworkExceptionRepository(), settings, engine)
         val detectManualOverride = DetectManualOverrideUseCase(
             networkObserver = observer,
             evaluateRules = evaluateRules,

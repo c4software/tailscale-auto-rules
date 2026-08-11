@@ -7,6 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
@@ -53,7 +54,7 @@ class BlacklistViewModelTest {
         synchronizeTunnel = SynchronizeTunnelUseCase(
             networkObserver = networkObserver,
             settingsRepository = settings,
-            evaluateRules = EvaluateRulesUseCase(repository, settings, engine),
+            evaluateRules = EvaluateRulesUseCase(repository, FakeNetworkExceptionRepository(), settings, engine),
             controller = controller,
             journalRepository = journal,
         ),
