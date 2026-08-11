@@ -16,6 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -70,12 +73,18 @@ private fun AppRoot(
     onLocationPermissionGranted: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Chaque octroi est compté : le parcours de premier lancement s'en sert
+    // pour avancer de lui-même — la page a rempli son office.
+    var grantedPermissionCount by remember { mutableIntStateOf(0) }
+
     // La demande de permission a besoin de l'Activity : elle est lancée ici et
     // transmise à l'écran qui en a l'usage, plutôt qu'obtenue par un Context
     // reconstitué au fond de l'arbre.
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { }
+    ) { granted ->
+        if (granted) grantedPermissionCount++
+    }
 
     // La localisation grossière est demandée conjointement : Android refuse la
     // permission fine seule depuis la version 12. Seule la permission fine
@@ -85,6 +94,7 @@ private fun AppRoot(
     ) { results ->
         if (results[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
             onLocationPermissionGranted()
+            grantedPermissionCount++
         }
     }
 
@@ -117,6 +127,7 @@ private fun AppRoot(
             onRequestLocationPermission = requestLocationPermission,
             onFinish = onboardingViewModel::finish,
             modifier = modifier,
+            grantedPermissionCount = grantedPermissionCount,
         )
 
         else -> MainScaffold(

@@ -5,6 +5,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -82,6 +85,30 @@ class OnboardingScreenTest {
             .performScrollTo()
             .performClick()
         assertEquals(1, locationRequests)
+    }
+
+    @Test
+    fun grantingAPermissionAdvancesTheJourneyByItself() {
+        // L'octroi vaut « continuer » : la page a rempli son office. Le refus,
+        // lui, n'incrémente pas le compteur — la main reste à l'utilisateur.
+        var grants by mutableStateOf(0)
+        composeRule.setContent {
+            AppTheme(dynamicColor = false) {
+                OnboardingScreen(
+                    onRequestNotificationPermission = {},
+                    onRequestLocationPermission = {},
+                    onFinish = {},
+                    initialPage = 1,
+                    grantedPermissionCount = grants,
+                )
+            }
+        }
+        composeRule.onNodeWithTag(OnboardingTestTags.page(1)).assertIsDisplayed()
+
+        grants = 1
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag(OnboardingTestTags.page(2)).assertIsDisplayed()
     }
 
     @Test

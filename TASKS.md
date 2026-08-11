@@ -717,6 +717,10 @@ retirée.
 - [x] Tests écran + ViewModel ; références Roborazzi (pages en clair et
       sombre), captures relues
 
+**Complément.** Un octroi de permission fait avancer le parcours de
+lui-même — la page a rempli son office ; un refus laisse la main
+(SPECS §6.5).
+
 **Défaut de harnais corrigé au passage.** Les captures peignaient le fond du
 thème sans poser de `Surface` : le texte hors carte restait noir dans toutes
 les références sombres — un rendu que l'application, sous son `Scaffold`, n'a

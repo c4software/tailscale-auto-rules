@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,9 +74,19 @@ fun OnboardingScreen(
     onFinish: (learningEnabled: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     initialPage: Int = 0,
+    grantedPermissionCount: Int = 0,
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage) { PAGE_COUNT }
     val scope = rememberCoroutineScope()
+
+    // Un octroi vaut « continuer » : la page a rempli son office, rester
+    // dessus n'apporterait qu'un appui de plus. Un refus, lui, laisse la
+    // main — l'utilisateur avance quand il veut.
+    LaunchedEffect(grantedPermissionCount) {
+        if (grantedPermissionCount > 0 && pagerState.currentPage < LEARNING_PAGE) {
+            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+        }
+    }
 
     // Une `Surface`, parce que l'écran vit hors du `Scaffold` : sans elle,
     // rien ne pose la couleur de contenu, et le texte restait noir sur le

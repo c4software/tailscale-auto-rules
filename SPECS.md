@@ -316,6 +316,8 @@ Chaque demande de permission est ainsi précédée de son explication — ce son
 ces pages qui tiennent le rôle d'écran préalable exigé par §8 — et chacune
 peut être refusée : les cartes d'explication de l'application (§6.2, §6.3)
 rattrapent un refus au moment où la fonctionnalité en a réellement besoin.
+Un octroi fait avancer le parcours de lui-même — la page a rempli son
+office ; un refus laisse la main.
 
 Le parcours ne se montre qu'une fois : la réponse de la dernière page vaut
 choix d'apprentissage (§6.3) et clôture le premier lancement, quelle qu'elle
