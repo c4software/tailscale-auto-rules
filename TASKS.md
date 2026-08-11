@@ -803,3 +803,21 @@ noms sur la notion.
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 362 tests, 0 échec ; `:app:verifyRoborazziDebug` → succès.
+
+---
+
+## 29. Traduction anglaise `[x]`
+
+L'anglais devient la **langue par défaut** — toute locale sans traduction
+dédiée l'obtient — et le français, langue de référence du projet, vit dans
+`values-fr` : les utilisateurs francophones ne voient aucune différence.
+
+- [x] `values/strings.xml` traduit en anglais (111 chaînes), le français
+      déplacé tel quel dans `values-fr/`
+- [x] Les tests Robolectric et les captures s'exécutent en `fr-rFR`
+      (`robolectric.properties`) : les assertions textuelles et les
+      références visuelles restent sur la langue de référence
+- [x] `lint` passe — les deux langues portent les mêmes clés
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès ; `:app:verifyRoborazziDebug` → succès, références inchangées.

@@ -1,0 +1,134 @@
+<resources>
+    <string name="app_name">Tailscale Auto Rules</string>
+
+    <!-- Navigation -->
+    <string name="destination_home">Accueil</string>
+    <string name="destination_networks">Réseaux</string>
+    <string name="destination_journal">Journal</string>
+    <string name="destination_settings">Paramètres</string>
+
+    <!--
+      Libellés courts de la barre de navigation. « Réseaux de confiance » y
+      passait sur deux lignes, ce qui décalait son icône par rapport aux autres.
+      Le titre d'écran, lui, garde le libellé complet.
+    -->
+    <string name="destination_short_home">Accueil</string>
+    <string name="destination_short_networks">Réseaux</string>
+    <string name="destination_short_journal">Journal</string>
+    <string name="destination_short_settings">Paramètres</string>
+
+    <!-- Accueil -->
+    <string name="home_tunnel_title">Tunnel Tailscale</string>
+    <string name="home_tunnel_enabled">Activé</string>
+    <string name="home_tunnel_disabled">Désactivé</string>
+    <string name="home_tunnel_unknown">Indéterminé</string>
+    <string name="home_network_title">Réseau</string>
+    <string name="home_transport_none">Aucun réseau</string>
+    <string name="home_transport_wifi">Wi-Fi</string>
+    <string name="home_transport_cellular">Réseau mobile</string>
+    <string name="home_transport_ethernet">Ethernet</string>
+    <string name="home_transport_other">Autre</string>
+    <string name="home_ssid_unavailable">SSID indisponible</string>
+    <string name="home_last_change_title">Dernier changement</string>
+    <string name="home_no_change_yet">Aucun changement enregistré</string>
+    <string name="home_change_summary">%1$s → %2$s</string>
+    <string name="home_synchronize">Synchroniser</string>
+    <string name="home_synchronizing">Synchronisation…</string>
+    <string name="home_manual_override_enabled">Tunnel activé manuellement. La règle « %1$s » aurait voulu le couper : votre choix est respecté, et les règles reprendront la main au prochain changement de réseau.</string>
+    <string name="home_manual_override_disabled">Tunnel désactivé manuellement. La règle « %1$s » aurait voulu l\'activer : votre choix est respecté, et les règles reprendront la main au prochain changement de réseau.</string>
+    <string name="home_manual_override_enabled_memorized">Tunnel activé manuellement. La règle « %1$s » aurait voulu le couper : votre choix est mémorisé et sera rejoué sur ce réseau. La préférence se gère depuis l\'écran des réseaux.</string>
+    <string name="home_manual_override_disabled_memorized">Tunnel désactivé manuellement. La règle « %1$s » aurait voulu l\'activer : votre choix est mémorisé et sera rejoué sur ce réseau. La préférence se gère depuis l\'écran des réseaux.</string>
+    <!-- Premier lancement -->
+    <string name="onboarding_continue">Continuer</string>
+    <string name="onboarding_welcome_title">Bienvenue</string>
+    <string name="onboarding_welcome_body">Tailscale Auto Rules active ou coupe votre tunnel Tailscale selon le réseau : coupé sur vos Wi-Fi de confiance, actif partout ailleurs — données mobiles comprises. Une fois configurée, l\'application ne demande plus rien.\n\nElle pilote l\'application Tailscale officielle, qui doit être installée : elle ne remplace ni le client, ni le VPN.</string>
+    <string name="onboarding_notification_title">Une notification permanente</string>
+    <string name="onboarding_notification_body">Suivre le réseau en continu exige un service visible : Android lui impose une notification permanente. Elle n\'est pas un réglage — elle affiche en direct l\'état du tunnel et la règle qui l\'a décidé, et permet de couper l\'automatisation sans ouvrir l\'application.</string>
+    <string name="onboarding_notification_grant">Autoriser les notifications</string>
+    <string name="onboarding_location_title">Reconnaître vos réseaux Wi-Fi</string>
+    <string name="onboarding_location_body">Android réserve la lecture du nom des réseaux Wi-Fi (SSID) aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus.\n\nSeul le nom du réseau est lu : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
+    <string name="onboarding_location_grant">Autoriser la localisation</string>
+    <string name="onboarding_learning_title">Apprendre vos gestes ?</string>
+    <string name="onboarding_learning_body">Quand vous activez ou coupez Tailscale à la main sur un réseau, l\'application peut mémoriser ce choix et le rejouer à chaque retour sur ce réseau. Les préférences apprises se gèrent depuis l\'écran des réseaux, et ce réglage se change à tout moment dans les paramètres.</string>
+    <string name="onboarding_learning_accept">Activer</string>
+    <string name="onboarding_learning_decline">Ne pas activer</string>
+    <string name="home_disable_automation">Désactiver l\'automatisation</string>
+    <string name="home_automation_disabled">Automatisation désactivée : le tunnel ne bougera plus tout seul. Elle se réactive depuis les paramètres.</string>
+    <string name="home_tailscale_missing_title">Client Tailscale introuvable</string>
+    <string name="home_tailscale_missing_body">Installez l\'application Tailscale officielle : sans elle, aucune règle ne peut être appliquée.</string>
+
+    <!-- Réseaux -->
+    <string name="networks_title">Réseaux</string>
+    <string name="networks_mobile_title">Réseau mobile</string>
+    <string name="networks_mobile_summary">Active automatiquement le tunnel en données mobiles (4G/5G).</string>
+    <string name="networks_explanation">Forcez le tunnel réseau par réseau — coupé sur vos réseaux de confiance, actif où vous l\'exigez. Les réseaux absents de la liste suivent l\'automatisme, et vos gestes dans Tailscale s\'y enregistrent aussi. Glissez une carte sur le côté pour rendre le réseau à l\'automatisme.</string>
+    <string name="networks_empty">Aucune préférence : l\'automatisme décide partout — tunnel coupé nulle part, actif sur tous les réseaux.</string>
+    <string name="networks_add">Ajouter un réseau</string>
+    <string name="networks_add_current">Ajouter « %1$s »</string>
+    <string name="networks_ssid_label">Nom du réseau (SSID)</string>
+    <string name="networks_rename">Renommer</string>
+    <string name="networks_remove">Supprimer « %1$s »</string>
+    <string name="networks_confirm">Valider</string>
+    <string name="networks_cancel">Annuler</string>
+    <string name="networks_error_duplicate">Ce réseau figure déjà dans la liste.</string>
+    <string name="networks_error_blank">Le nom du réseau ne peut pas être vide.</string>
+    <string name="networks_error_unknown">L\'enregistrement a échoué.</string>
+    <string name="networks_location_title">Autorisation de localisation requise</string>
+    <string name="networks_location_body">Android réserve la lecture du nom des réseaux Wi-Fi aux applications autorisées à accéder à la localisation. Sans elle, vos réseaux de confiance ne peuvent pas être reconnus. Cette application ne consulte que le nom du réseau : ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.</string>
+    <string name="networks_location_grant">Autoriser</string>
+    <string name="networks_cellular">Données mobiles</string>
+    <string name="networks_state_enabled">Tunnel toujours actif sur ce réseau</string>
+    <string name="networks_state_disabled">Tunnel toujours coupé sur ce réseau</string>
+    <string name="networks_dialog_enabled">Tunnel actif sur ce réseau</string>
+
+    <!-- Journal -->
+    <string name="journal_explanation">Les %1$d derniers changements d\'état du tunnel.</string>
+    <string name="journal_empty">Aucun changement enregistré pour l\'instant.</string>
+    <string name="journal_clear">Effacer le journal</string>
+    <string name="journal_clear_confirm_title">Effacer le journal ?</string>
+    <string name="journal_clear_confirm_body">Les entrées enregistrées seront définitivement supprimées.</string>
+    <string name="journal_clear_confirm">Effacer</string>
+    <string name="journal_cancel">Annuler</string>
+    <string name="journal_transition">%1$s → %2$s</string>
+
+    <!-- Paramètres -->
+    <string name="settings_service_title">Automatisation active</string>
+    <string name="settings_service_summary">Applique les règles à chaque changement de réseau.</string>
+    <string name="settings_learning_title">Apprendre mes gestes</string>
+    <string name="settings_learning_summary">Mémorise vos activations et coupures manuelles du tunnel, réseau par réseau, et les rejoue. Les exceptions déjà apprises restent appliquées tant qu\'elles ne sont pas supprimées.</string>
+    <string name="settings_boot_title">Démarrage automatique</string>
+    <string name="settings_boot_summary">Réarme l\'automatisation après un redémarrage du téléphone.</string>
+    <string name="settings_notification_notice">Une notification permanente affiche l\'état du tunnel et la règle appliquée. Android l\'impose : observer le réseau en continu demande un service visible.</string>
+    <string name="settings_notification_permission">Autorisation de notification requise.</string>
+    <string name="settings_notification_grant">Autoriser</string>
+    <string name="settings_logging_title">Journalisation détaillée</string>
+    <string name="settings_logging_summary">Consigne davantage de détails pour le diagnostic.</string>
+    <string name="settings_battery_title">Optimisation de la batterie</string>
+    <string name="settings_battery_summary">Sans exemption, Android peut retarder les réveils de l\'application.</string>
+    <string name="settings_battery_action">Ouvrir les réglages</string>
+    <string name="settings_battery_exempted">L\'application est déjà exemptée.</string>
+    <string name="settings_replay_onboarding">Revoir le premier lancement</string>
+    <string name="settings_about_title">À propos</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_license">Licence MIT</string>
+    <string name="settings_disabled_notice">L\'automatisation est désactivée : aucune règle n\'est appliquée.</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">État du tunnel</string>
+    <string name="notification_channel_description">Indique en permanence si le tunnel Tailscale est actif, et pourquoi.</string>
+    <string name="notification_tunnel_enabled">Tunnel activé</string>
+    <string name="notification_tunnel_disabled">Tunnel désactivé</string>
+    <string name="notification_tunnel_unknown">État du tunnel indéterminé</string>
+    <string name="notification_reason">Raison : %1$s</string>
+    <string name="notification_no_reason">Aucune règle appliquée pour l\'instant</string>
+    <string name="notification_manual_override">Modifié manuellement — les règles reprendront la main au prochain changement de réseau</string>
+    <string name="notification_disable_automation">Désactiver l\'automatisation</string>
+
+    <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
+    <string name="rule_airplane_mode">Mode avion</string>
+    <string name="rule_blacklisted_wifi">Wi-Fi de confiance</string>
+    <string name="rule_other_wifi">Wi-Fi non reconnu</string>
+    <string name="rule_mobile_network">Réseau mobile</string>
+    <string name="rule_network_preference">Préférence de réseau</string>
+    <string name="rule_unknown">Règle inconnue</string>
+</resources>

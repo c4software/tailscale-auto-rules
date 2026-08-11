@@ -10,6 +10,9 @@ voir les réserves de [TASKS.md](./TASKS.md).
 
 ### Ajouté depuis la première version
 
+- **Traduction anglaise.** L'anglais devient la langue par défaut — toute
+  locale sans traduction dédiée l'obtient — et le français reste servi aux
+  locales francophones.
 - **Préférences de réseau : la blacklist et les gestes fusionnent.** Une seule
   notion par réseau — tunnel toujours coupé (le réseau de confiance d'hier) ou
   toujours actif, l'absence valant automatisme — alimentée par la déclaration
