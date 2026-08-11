@@ -645,6 +645,19 @@ ceux du variant ; la release n'embarque rien.
       par le battement. La clé est désormais une pure identité (§4.5), et la
       capture est retentée avant chaque cycle.
 
+      **Revérifié sur Pixel 10 Pro après correctif** — le geste (tunnel
+      rallumé à la main sur le Wi-Fi de confiance « ::1 ») est mémorisé dès
+      le cycle suivant :
+
+      ```
+      network_exception : wifi:::1 → ENABLED
+      journal : network-exception DISABLED→ENABLED, après blacklisted-wifi ENABLED→DISABLED
+      ```
+
+      Reste à observer sur la durée : le rejeu après un aller-retour de
+      réseau, et un battement de secours qui constate `AlreadyInTargetState`
+      au lieu de combattre le geste.
+
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès.
 
