@@ -1,7 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.domain.repository
 
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
@@ -16,23 +16,23 @@ import kotlinx.coroutines.flow.asStateFlow
  * survit au nouveau geste — pour que les tests en aval rencontrent le même
  * comportement qu'en production.
  */
-class FakeNetworkExceptionRepository(private val clock: Clock = FakeClock()) : NetworkExceptionRepository {
+class FakeNetworkPreferenceRepository(private val clock: Clock = FakeClock()) : NetworkPreferenceRepository {
     private var nextId = 1L
-    private val entries = MutableStateFlow(emptyList<NetworkException>())
+    private val entries = MutableStateFlow(emptyList<NetworkPreference>())
 
-    override fun observeAll(): Flow<List<NetworkException>> = entries.asStateFlow()
+    override fun observeAll(): Flow<List<NetworkPreference>> = entries.asStateFlow()
 
-    override suspend fun current(): Map<NetworkExceptionKey, TunnelState> =
+    override suspend fun current(): Map<NetworkPreferenceKey, TunnelState> =
         entries.value.associate { it.key to it.desiredState }
 
     override suspend fun upsert(
-        key: NetworkExceptionKey,
+        key: NetworkPreferenceKey,
         ssid: String?,
         desiredState: TunnelState,
     ) {
         val existing = entries.value.firstOrNull { it.key == key }
         val entry =
-            NetworkException(
+            NetworkPreference(
                 id = existing?.id ?: nextId++,
                 key = key,
                 ssid = ssid,

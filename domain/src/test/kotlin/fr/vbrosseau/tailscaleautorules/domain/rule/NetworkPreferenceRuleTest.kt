@@ -1,20 +1,20 @@
 package fr.vbrosseau.tailscaleautorules.domain.rule
 
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class NetworkExceptionRuleTest {
-    private val rule = NetworkExceptionRule()
+class NetworkPreferenceRuleTest {
+    private val rule = NetworkPreferenceRule()
 
     @Test
     fun aMemorizedEnableIsReplayedOnItsWifi() {
         val context =
             Contexts.wifi(
                 ssid = "Maison",
-                exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
@@ -25,7 +25,7 @@ class NetworkExceptionRuleTest {
         val context =
             Contexts.wifi(
                 ssid = "Aéroport",
-                exceptions = mapOf(NetworkExceptionKey("wifi:aéroport") to TunnelState.DISABLED),
+                exceptions = mapOf(NetworkPreferenceKey("wifi:aéroport") to TunnelState.DISABLED),
             )
 
         assertEquals(RuleDecision.DISABLE, rule.evaluate(context))
@@ -38,7 +38,7 @@ class NetworkExceptionRuleTest {
         val context =
             Contexts.wifi(
                 ssid = "  MAISON ",
-                exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
@@ -48,18 +48,18 @@ class NetworkExceptionRuleTest {
     fun aCellularExceptionCoversAllMobileData() {
         val context =
             Contexts.cellular(
-                exceptions = mapOf(NetworkExceptionKey.Cellular to TunnelState.DISABLED),
+                exceptions = mapOf(NetworkPreferenceKey.Cellular to TunnelState.DISABLED),
             )
 
         assertEquals(RuleDecision.DISABLE, rule.evaluate(context))
     }
 
     @Test
-    fun anotherNetworkExceptionDoesNotLeak() {
+    fun anotherNetworkPreferenceDoesNotLeak() {
         val context =
             Contexts.wifi(
                 ssid = "Bureau",
-                exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))
@@ -78,7 +78,7 @@ class NetworkExceptionRuleTest {
         val context =
             Contexts.wifi(
                 ssid = null,
-                exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))
@@ -93,7 +93,7 @@ class NetworkExceptionRuleTest {
             Contexts.wifi(
                 ssid = "Maison",
                 validated = false,
-                exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
             )
 
         assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
@@ -110,7 +110,7 @@ class NetworkExceptionRuleTest {
         // porte un malgré tout, la règle doit s'abstenir plutôt que décider.
         val context =
             Contexts.cellular(
-                exceptions = mapOf(NetworkExceptionKey.Cellular to TunnelState.UNKNOWN),
+                exceptions = mapOf(NetworkPreferenceKey.Cellular to TunnelState.UNKNOWN),
             )
 
         assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))
@@ -120,7 +120,7 @@ class NetworkExceptionRuleTest {
     fun itIsEnabledByDefaultAndSitsBetweenAirplaneModeAndBlacklist() {
         assertEquals(true, rule.defaultSettings.isEnabled)
         assertEquals(Priorities.NETWORK_EXCEPTION, rule.defaultSettings.priority)
-        assertEquals(NetworkExceptionRule.Id, rule.id)
+        assertEquals(NetworkPreferenceRule.Id, rule.id)
         check(Priorities.AIRPLANE_MODE < Priorities.NETWORK_EXCEPTION) {
             "Le mode avion doit primer sur les exceptions."
         }

@@ -1,6 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.domain.rule
 
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 
@@ -18,7 +18,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
  * l'utilisateur ne dépend pas de l'accès Internet, et le VPN qui monte fait
  * fugacement perdre sa validation au réseau porteur.
  */
-class NetworkExceptionRule : Rule {
+class NetworkPreferenceRule : Rule {
     override val id = Id
 
     override val defaultSettings =
@@ -28,9 +28,9 @@ class NetworkExceptionRule : Rule {
         )
 
     override fun evaluate(context: RuleContext): RuleDecision {
-        val key = NetworkExceptionKey.from(context.network) ?: return RuleDecision.NO_DECISION
+        val key = NetworkPreferenceKey.from(context.network) ?: return RuleDecision.NO_DECISION
 
-        return when (context.networkExceptions[key]) {
+        return when (context.networkPreferences[key]) {
             TunnelState.ENABLED -> RuleDecision.ENABLE
             TunnelState.DISABLED -> RuleDecision.DISABLE
             TunnelState.UNKNOWN, null -> RuleDecision.NO_DECISION
@@ -43,6 +43,6 @@ class NetworkExceptionRule : Rule {
          * la capture du geste journalise sous cet identifiant, et la détection
          * d'un nouveau geste s'y compare.
          */
-        val Id = RuleId("network-exception")
+        val Id = RuleId("network-preference")
     }
 }

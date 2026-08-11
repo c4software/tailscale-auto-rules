@@ -1,12 +1,12 @@
 package fr.vbrosseau.tailscaleautorules.domain.usecase
 
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 
 /**
  * Mémorise un geste manuel comme exception dynamique (SPECS.md §3.3).
@@ -15,7 +15,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
  * règle de base ou une exception déjà apprise : la mémoire d'un réseau est son
  * dernier geste, sans autre cas particulier.
  *
- * La mémorisation écrit aussi une entrée de journal sous [NetworkExceptionRule.Id].
+ * La mémorisation écrit aussi une entrée de journal sous [NetworkPreferenceRule.Id].
  * Ce n'est pas qu'une trace : la détection d'un geste exige que le journal
  * atteste de la décision courante — sans cette entrée, le prochain geste sur le
  * même réseau serait invisible, le journal portant encore une cible périmée.
@@ -27,7 +27,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
  */
 class RecordManualOverrideUseCase(
     private val settingsRepository: SettingsRepository,
-    private val exceptionRepository: NetworkExceptionRepository,
+    private val exceptionRepository: NetworkPreferenceRepository,
     private val journalRepository: JournalRepository,
 ) {
     /** @return `true` lorsque le geste a été mémorisé. */
@@ -35,7 +35,7 @@ class RecordManualOverrideUseCase(
         networkContext: NetworkContext,
         manualOverride: ManualOverride,
     ): Boolean {
-        val key = if (isLearningAllowed(networkContext)) NetworkExceptionKey.from(networkContext) else null
+        val key = if (isLearningAllowed(networkContext)) NetworkPreferenceKey.from(networkContext) else null
         if (key == null) return false
 
         val observedState = manualOverride.observedState
@@ -44,7 +44,7 @@ class RecordManualOverrideUseCase(
         journalRepository.record(
             previousState = previousState,
             newState = observedState,
-            ruleId = NetworkExceptionRule.Id,
+            ruleId = NetworkPreferenceRule.Id,
         )
         return true
     }

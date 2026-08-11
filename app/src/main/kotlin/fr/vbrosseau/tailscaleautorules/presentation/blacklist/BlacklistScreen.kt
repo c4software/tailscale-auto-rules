@@ -39,8 +39,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import fr.vbrosseau.tailscaleautorules.R
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingIndicator
 import fr.vbrosseau.tailscaleautorules.presentation.SwitchCard
@@ -194,7 +194,7 @@ private fun LazyListScope.entryItems(
  * n'y a rien à montrer : un titre orphelin poserait une question sans réponse.
  */
 private fun LazyListScope.exceptionItems(
-    exceptions: List<NetworkException>,
+    exceptions: List<NetworkPreference>,
     onRemoveException: (Long) -> Unit,
 ) {
     if (exceptions.isEmpty()) return
@@ -231,7 +231,7 @@ private fun LazyListScope.exceptionItems(
  */
 @Composable
 private fun ExceptionRow(
-    exception: NetworkException,
+    exception: NetworkPreference,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -490,16 +490,16 @@ private fun BlacklistScreenPreview() {
                     BlacklistedSsid(id = 2, value = "Bureau"),
                 ),
                 exceptions = listOf(
-                    NetworkException(
+                    NetworkPreference(
                         id = 1,
-                        key = NetworkExceptionKey("wifi:maison"),
+                        key = NetworkPreferenceKey("wifi:maison"),
                         ssid = "Maison",
                         desiredState = TunnelState.ENABLED,
                         epochMillis = 0,
                     ),
-                    NetworkException(
+                    NetworkPreference(
                         id = 2,
-                        key = NetworkExceptionKey.Cellular,
+                        key = NetworkPreferenceKey.Cellular,
                         ssid = null,
                         desiredState = TunnelState.DISABLED,
                         epochMillis = 0,

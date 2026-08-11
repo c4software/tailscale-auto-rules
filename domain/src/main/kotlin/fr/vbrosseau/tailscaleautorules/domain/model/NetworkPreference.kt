@@ -11,14 +11,14 @@ package fr.vbrosseau.tailscaleautorules.domain.model
  * qui l'a vu naître.
  */
 @JvmInline
-value class NetworkExceptionKey(val value: String) {
+value class NetworkPreferenceKey(val value: String) {
     init {
         require(value.isNotBlank()) { "Une clé de réseau ne peut pas être vide." }
     }
 
     companion object {
         /** Toutes les données mobiles, faute d'identifiant plus fin. */
-        val Cellular = NetworkExceptionKey("cellular")
+        val Cellular = NetworkPreferenceKey("cellular")
 
         /**
          * Dérive la clé du réseau courant, ou `null` s'il n'est pas
@@ -31,9 +31,9 @@ value class NetworkExceptionKey(val value: String) {
          * geste — activer le VPN fait fugacement perdre sa validation au
          * réseau qui le porte.
          */
-        fun from(context: NetworkContext): NetworkExceptionKey? =
+        fun from(context: NetworkContext): NetworkPreferenceKey? =
             when (context.transport) {
-                NetworkTransport.WIFI -> context.ssid?.let { NetworkExceptionKey("wifi:${it.asSsidKey()}") }
+                NetworkTransport.WIFI -> context.ssid?.let { NetworkPreferenceKey("wifi:${it.asSsidKey()}") }
                 NetworkTransport.CELLULAR -> Cellular
                 else -> null
             }
@@ -50,9 +50,9 @@ value class NetworkExceptionKey(val value: String) {
  * @param desiredState état du tunnel que l'utilisateur a choisi sur ce réseau.
  * @param epochMillis date du dernier geste mémorisé.
  */
-data class NetworkException(
+data class NetworkPreference(
     val id: Long,
-    val key: NetworkExceptionKey,
+    val key: NetworkPreferenceKey,
     val ssid: String?,
     val desiredState: TunnelState,
     val epochMillis: Long,
@@ -61,7 +61,7 @@ data class NetworkException(
         require(desiredState != TunnelState.UNKNOWN) {
             "Une exception mémorise un choix ferme : ENABLED ou DISABLED, jamais UNKNOWN."
         }
-        require((key == NetworkExceptionKey.Cellular) == (ssid == null)) {
+        require((key == NetworkPreferenceKey.Cellular) == (ssid == null)) {
             "Le SSID d'affichage accompagne exactement les clés Wi-Fi (key=${key.value}, ssid=$ssid)."
         }
         require(ssid == null || ssid.isNotBlank()) {

@@ -1,12 +1,12 @@
 package fr.vbrosseau.tailscaleautorules.data.repository
 
-import fr.vbrosseau.tailscaleautorules.data.local.NetworkExceptionDao
-import fr.vbrosseau.tailscaleautorules.data.local.NetworkExceptionEntity
+import fr.vbrosseau.tailscaleautorules.data.local.NetworkPreferenceDao
+import fr.vbrosseau.tailscaleautorules.data.local.NetworkPreferenceEntity
 import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
-import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -17,29 +17,29 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class RoomNetworkExceptionRepository @Inject constructor(
-    private val dao: NetworkExceptionDao,
+class RoomNetworkPreferenceRepository @Inject constructor(
+    private val dao: NetworkPreferenceDao,
     private val clock: Clock,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-) : NetworkExceptionRepository {
+) : NetworkPreferenceRepository {
 
-    override fun observeAll(): Flow<List<NetworkException>> = dao.observeAll()
+    override fun observeAll(): Flow<List<NetworkPreference>> = dao.observeAll()
         .map { entities -> entities.mapNotNull { it.toDomainOrNull() } }
         .flowOn(ioDispatcher)
 
-    override suspend fun current(): Map<NetworkExceptionKey, TunnelState> = withContext(ioDispatcher) {
+    override suspend fun current(): Map<NetworkPreferenceKey, TunnelState> = withContext(ioDispatcher) {
         dao.getAll()
             .mapNotNull { it.toDomainOrNull() }
             .associate { it.key to it.desiredState }
     }
 
     override suspend fun upsert(
-        key: NetworkExceptionKey,
+        key: NetworkPreferenceKey,
         ssid: String?,
         desiredState: TunnelState,
     ) = withContext(ioDispatcher) {
         dao.upsertByKey(
-            NetworkExceptionEntity(
+            NetworkPreferenceEntity(
                 networkKey = key.value,
                 ssid = ssid,
                 desiredState = desiredState.name,
@@ -56,16 +56,16 @@ class RoomNetworkExceptionRepository @Inject constructor(
      * planter l'affichage, ni surtout laisser une ligne aberrante piloter le
      * tunnel.
      */
-    private fun NetworkExceptionEntity.toDomainOrNull(): NetworkException? {
+    private fun NetworkPreferenceEntity.toDomainOrNull(): NetworkPreference? {
         val state =
             TunnelState.entries.firstOrNull { it.name == desiredState }
                 ?.takeIf { it != TunnelState.UNKNOWN }
                 ?: return null
 
         return runCatching {
-            NetworkException(
+            NetworkPreference(
                 id = id,
-                key = NetworkExceptionKey(networkKey),
+                key = NetworkPreferenceKey(networkKey),
                 ssid = ssid,
                 desiredState = state,
                 epochMillis = epochMillis,

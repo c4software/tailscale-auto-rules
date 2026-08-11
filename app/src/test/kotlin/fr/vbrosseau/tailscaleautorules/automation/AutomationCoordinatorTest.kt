@@ -14,11 +14,11 @@ import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
@@ -77,7 +77,7 @@ class AutomationCoordinatorTest {
     private val clock = FakeClock()
     private val journal = FakeJournalRepository(clock)
     private val observer = FakeNetworkObserver()
-    private val exceptions = FakeNetworkExceptionRepository(clock)
+    private val exceptions = FakeNetworkPreferenceRepository(clock)
     private lateinit var coordinator: AutomationCoordinator
 
     @Before
@@ -86,7 +86,7 @@ class AutomationCoordinatorTest {
         Shadows.shadowOf(context as Application)
             .grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-        val engine = RuleEngine(setOf(NetworkExceptionRule(), MobileNetworkRule(), BlacklistedWifiRule()))
+        val engine = RuleEngine(setOf(NetworkPreferenceRule(), MobileNetworkRule(), BlacklistedWifiRule()))
         val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
         val evaluateRules = EvaluateRulesUseCase(blacklist, exceptions, settings, engine)
         val detectManualOverride = DetectManualOverrideUseCase(

@@ -2,19 +2,19 @@ package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleSettings
@@ -47,10 +47,10 @@ class BlacklistViewModelTest {
     private val settings = FakeSettingsRepository()
     private val controller = FakeTailscaleController()
     private val journal = FakeJournalRepository(FakeClock())
-    private val exceptions = FakeNetworkExceptionRepository()
+    private val exceptions = FakeNetworkPreferenceRepository()
     private val engine = RuleEngine(
         setOf(
-            NetworkExceptionRule(),
+            NetworkPreferenceRule(),
             AirplaneModeRule(),
             BlacklistedWifiRule(),
             OtherWifiRule(),
@@ -308,7 +308,7 @@ class BlacklistViewModelTest {
 
     @Test
     fun learnedExceptionsAreExposedMostRecentFirst() = runTest {
-        exceptions.upsert(NetworkExceptionKey("wifi:maison"), "Maison", TunnelState.ENABLED)
+        exceptions.upsert(NetworkPreferenceKey("wifi:maison"), "Maison", TunnelState.ENABLED)
 
         val model = viewModel()
 
@@ -320,7 +320,7 @@ class BlacklistViewModelTest {
         // Le geste avait coupé le tunnel en données mobiles ; supprimer
         // l'exception doit laisser la règle mobile le remonter dans la foulée,
         // pas au prochain changement de réseau (SPECS.md §6.2).
-        exceptions.upsert(NetworkExceptionKey.Cellular, null, TunnelState.DISABLED)
+        exceptions.upsert(NetworkPreferenceKey.Cellular, null, TunnelState.DISABLED)
         observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
         val model = viewModel()
         val id = model.uiState.value.exceptions.single().id

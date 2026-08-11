@@ -17,7 +17,7 @@ import androidx.room.PrimaryKey
     tableName = "network_exception",
     indices = [Index(value = ["network_key"], unique = true)],
 )
-data class NetworkExceptionEntity(
+data class NetworkPreferenceEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 

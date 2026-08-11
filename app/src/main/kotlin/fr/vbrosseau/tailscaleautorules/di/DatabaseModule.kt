@@ -10,7 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import fr.vbrosseau.tailscaleautorules.data.local.AppDatabase
 import fr.vbrosseau.tailscaleautorules.data.local.BlacklistDao
 import fr.vbrosseau.tailscaleautorules.data.local.JournalDao
-import fr.vbrosseau.tailscaleautorules.data.local.NetworkExceptionDao
+import fr.vbrosseau.tailscaleautorules.data.local.NetworkPreferenceDao
 import javax.inject.Singleton
 
 @Module
@@ -31,6 +31,6 @@ object DatabaseModule {
     fun provideJournalDao(database: AppDatabase): JournalDao = database.journalDao()
 
     @Provides
-    fun provideNetworkExceptionDao(database: AppDatabase): NetworkExceptionDao =
-        database.networkExceptionDao()
+    fun provideNetworkPreferenceDao(database: AppDatabase): NetworkPreferenceDao =
+        database.networkPreferenceDao()
 }

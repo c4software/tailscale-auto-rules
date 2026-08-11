@@ -743,28 +743,41 @@ valant automatisme — alimentée par la déclaration **et** par les gestes.
 
 ---
 
-## 26. Préférences de réseau — domaine `[ ]`
+## 26. Préférences de réseau — renommage `[x]`
 
-- [ ] Renommage `NetworkException*` → `NetworkPreference*` (modèle, clé,
-      contrat, fake, cas d'usage) ; `RuleId("network-preference")`
-- [ ] `NetworkPreferenceRule` (150) remplace `BlacklistedWifiRule` **et**
-      `NetworkExceptionRule` ; `RuleContext` perd `blacklistedSsids`
-- [ ] `BlacklistRepository` supprimé ; le contrat des préférences gagne le
-      renommage (`update`, conflit de doublon)
-- [ ] Tests : chaque branche de la règle unifiée, `ShippedRulesTest` rejoue le
-      tableau §4 fusionné, cas d'usage réalignés
+Le renommage seul, pour que chaque commit compile : la sémantique ne bouge
+pas ici.
+
+- [x] `NetworkException*` → `NetworkPreference*` partout (modèle, clé,
+      contrat, fake, règle, entité, DAO, repository Room, tests)
+- [x] `RuleId("network-preference")` ; l'ancien identifiant reste traduisible
+      pour les entrées de journal écrites avant la fusion
+- [x] Table Room et schémas inchangés — la migration appartient à l'étape 27
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès.
 
 ---
 
-## 27. Préférences de réseau — data : Room v3 `[ ]`
+## 27. Préférences de réseau — la fusion `[ ]`
 
-- [ ] Table `network_preference` ; migration 2→3 **fusionnante** : les
-      exceptions copiées, la blacklist versée en « toujours coupé » là où
+La suppression de la blacklist traverse les trois couches d'un seul tenant :
+retirer la règle sans retirer son écran ne compilerait pas.
+
+- [ ] Domaine : `NetworkPreferenceRule` absorbe `BlacklistedWifiRule`
+      (supprimée) ; `RuleContext` perd `blacklistedSsids` ;
+      `BlacklistRepository` et son Fake supprimés ; le contrat des
+      préférences gagne le renommage (`update`, conflit de doublon) et
+      l'ajout déclaré
+- [ ] Data : table `network_preference` ; migration 2→3 **fusionnante** — les
+      préférences copiées, la blacklist versée en « toujours coupé » là où
       aucun geste n'a déjà tranché (le geste, plus récent, gagne), les deux
-      anciennes tables supprimées
-- [ ] `RoomNetworkPreferenceRepository` (+ renommage avec unicité portée par
-      l'index) ; `RoomBlacklistRepository` supprimé ; DI réalignée
-- [ ] Tests de migration : fusion, conflit geste/déclaration, chaîne 1→2→3
+      anciennes tables supprimées ; `RoomBlacklistRepository` supprimé ; DI
+      réalignée
+- [ ] Interface : l'écran des réseaux bascule sur le seul repository des
+      préférences — la mise en forme finale appartient à l'étape 28
+- [ ] Tests : chaque branche de la règle unifiée, `ShippedRulesTest` fusionné,
+      migration (fusion, conflit geste/déclaration, chaîne 1→2→3)
 
 ---
 

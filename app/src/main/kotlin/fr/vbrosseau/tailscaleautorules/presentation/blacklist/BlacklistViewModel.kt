@@ -7,7 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.asSsidKey
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.DuplicateSsidException
-import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
@@ -32,7 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class BlacklistViewModel @Inject constructor(
     private val repository: BlacklistRepository,
-    private val exceptionRepository: NetworkExceptionRepository,
+    private val exceptionRepository: NetworkPreferenceRepository,
     private val settingsRepository: SettingsRepository,
     private val synchronizeTunnel: SynchronizeTunnelUseCase,
     private val systemStatus: SystemStatus,

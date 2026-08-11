@@ -1,6 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.domain.engine
 
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.RuleDecision
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
@@ -8,7 +8,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.Contexts
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.Rule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
@@ -26,7 +26,7 @@ class ShippedRulesTest {
     private val rules: Set<Rule> =
         setOf(
             AirplaneModeRule(),
-            NetworkExceptionRule(),
+            NetworkPreferenceRule(),
             BlacklistedWifiRule(),
             OtherWifiRule(),
             MobileNetworkRule(),
@@ -96,12 +96,12 @@ class ShippedRulesTest {
                 Contexts.wifi(
                     ssid = "Maison",
                     blacklist = setOf("Maison"),
-                    exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                    exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
                 ),
             )
 
         assertEquals(RuleDecision.ENABLE, evaluation.decision)
-        assertEquals(RuleId("network-exception"), evaluation.ruleId)
+        assertEquals(RuleId("network-preference"), evaluation.ruleId)
     }
 
     @Test
@@ -109,12 +109,12 @@ class ShippedRulesTest {
         val evaluation =
             engine.evaluate(
                 Contexts.cellular(
-                    exceptions = mapOf(NetworkExceptionKey.Cellular to TunnelState.DISABLED),
+                    exceptions = mapOf(NetworkPreferenceKey.Cellular to TunnelState.DISABLED),
                 ),
             )
 
         assertEquals(RuleDecision.DISABLE, evaluation.decision)
-        assertEquals(RuleId("network-exception"), evaluation.ruleId)
+        assertEquals(RuleId("network-preference"), evaluation.ruleId)
     }
 
     @Test
@@ -125,7 +125,7 @@ class ShippedRulesTest {
                 Contexts.wifi(
                     ssid = "Maison",
                     airplaneMode = true,
-                    exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                    exceptions = mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
                 ),
             )
 

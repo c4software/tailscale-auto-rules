@@ -1,7 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.domain.repository
 
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import kotlinx.coroutines.flow.Flow
 
@@ -13,12 +13,12 @@ import kotlinx.coroutines.flow.Flow
  * **remplace** donc l'entrée existante — jamais de suppression implicite ; on
  * ne revient au comportement automatique qu'en supprimant l'exception.
  */
-interface NetworkExceptionRepository {
+interface NetworkPreferenceRepository {
     /** Liste observable, du geste le plus récent au plus ancien. */
-    fun observeAll(): Flow<List<NetworkException>>
+    fun observeAll(): Flow<List<NetworkPreference>>
 
     /** Instantané sous la forme attendue par le moteur de règles. */
-    suspend fun current(): Map<NetworkExceptionKey, TunnelState>
+    suspend fun current(): Map<NetworkPreferenceKey, TunnelState>
 
     /**
      * Mémorise un geste, en remplaçant l'éventuelle exception du même réseau.
@@ -27,7 +27,7 @@ interface NetworkExceptionRepository {
      * injectée : l'appelant n'a pas à connaître l'heure.
      */
     suspend fun upsert(
-        key: NetworkExceptionKey,
+        key: NetworkPreferenceKey,
         ssid: String?,
         desiredState: TunnelState,
     )

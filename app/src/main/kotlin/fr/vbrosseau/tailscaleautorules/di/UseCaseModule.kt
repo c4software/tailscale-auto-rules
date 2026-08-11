@@ -8,7 +8,7 @@ import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.Clock
@@ -34,12 +34,12 @@ object UseCaseModule {
     @Singleton
     fun provideEvaluateRulesUseCase(
         blacklistRepository: BlacklistRepository,
-        networkExceptionRepository: NetworkExceptionRepository,
+        networkPreferenceRepository: NetworkPreferenceRepository,
         settingsRepository: SettingsRepository,
         engine: RuleEngine,
     ): EvaluateRulesUseCase = EvaluateRulesUseCase(
         blacklistRepository = blacklistRepository,
-        networkExceptionRepository = networkExceptionRepository,
+        networkPreferenceRepository = networkPreferenceRepository,
         settingsRepository = settingsRepository,
         engine = engine,
     )
@@ -76,11 +76,11 @@ object UseCaseModule {
     @Singleton
     fun provideRecordManualOverrideUseCase(
         settingsRepository: SettingsRepository,
-        networkExceptionRepository: NetworkExceptionRepository,
+        networkPreferenceRepository: NetworkPreferenceRepository,
         journalRepository: JournalRepository,
     ): RecordManualOverrideUseCase = RecordManualOverrideUseCase(
         settingsRepository = settingsRepository,
-        exceptionRepository = networkExceptionRepository,
+        exceptionRepository = networkPreferenceRepository,
         journalRepository = journalRepository,
     )
 

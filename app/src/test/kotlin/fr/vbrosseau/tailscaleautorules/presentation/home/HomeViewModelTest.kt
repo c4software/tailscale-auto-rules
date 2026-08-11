@@ -7,7 +7,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
@@ -39,7 +39,7 @@ class HomeViewModelTest {
     private val settings = FakeSettingsRepository()
     private val blacklist = FakeBlacklistRepository(initial = listOf("Maison"))
     private val engine = RuleEngine(setOf(MobileNetworkRule(), BlacklistedWifiRule()))
-    private val evaluateRules = EvaluateRulesUseCase(blacklist, FakeNetworkExceptionRepository(), settings, engine)
+    private val evaluateRules = EvaluateRulesUseCase(blacklist, FakeNetworkPreferenceRepository(), settings, engine)
 
     private fun TestScope.viewModel() = HomeViewModel(
         networkObserver = observer,

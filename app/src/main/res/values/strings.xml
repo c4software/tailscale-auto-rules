@@ -130,6 +130,6 @@
     <string name="rule_blacklisted_wifi">Wi-Fi de confiance</string>
     <string name="rule_other_wifi">Wi-Fi non reconnu</string>
     <string name="rule_mobile_network">Réseau mobile</string>
-    <string name="rule_network_exception">Exception dynamique</string>
+    <string name="rule_network_preference">Préférence de réseau</string>
     <string name="rule_unknown">Règle inconnue</string>
 </resources>

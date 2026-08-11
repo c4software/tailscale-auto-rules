@@ -9,7 +9,7 @@ import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.rule.AirplaneModeRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.OtherWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.Rule
 import javax.inject.Singleton
@@ -35,7 +35,7 @@ object RuleModule {
     @Provides
     @Singleton
     @IntoSet
-    fun provideNetworkExceptionRule(): Rule = NetworkExceptionRule()
+    fun provideNetworkPreferenceRule(): Rule = NetworkPreferenceRule()
 
     @Provides
     @Singleton

@@ -3,7 +3,7 @@ package fr.vbrosseau.tailscaleautorules.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.JournalRepository
@@ -80,7 +80,7 @@ class HomeViewModel @Inject constructor(
             // si une règle l'avait voulu.
             manualOverride = detectManualOverride(network, tunnel.state, lastChange),
             willMemorizeManualGesture = settings.isLearningEnabled &&
-                NetworkExceptionKey.from(network) != null,
+                NetworkPreferenceKey.from(network) != null,
         )
     }.stateIn(viewModelScope, UiStateSharing, HomeUiState(isLoading = true))
 

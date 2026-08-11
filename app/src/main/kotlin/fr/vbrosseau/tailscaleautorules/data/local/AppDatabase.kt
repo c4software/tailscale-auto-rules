@@ -12,14 +12,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * dans DataStore (SPECS.md §9). Les deux supports ne se recouvrent jamais.
  */
 @Database(
-    entities = [BlacklistedSsidEntity::class, JournalEntryEntity::class, NetworkExceptionEntity::class],
+    entities = [BlacklistedSsidEntity::class, JournalEntryEntity::class, NetworkPreferenceEntity::class],
     version = 2,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun blacklistDao(): BlacklistDao
     abstract fun journalDao(): JournalDao
-    abstract fun networkExceptionDao(): NetworkExceptionDao
+    abstract fun networkPreferenceDao(): NetworkPreferenceDao
 
     companion object {
         const val NAME = "tailscale-auto-rules.db"

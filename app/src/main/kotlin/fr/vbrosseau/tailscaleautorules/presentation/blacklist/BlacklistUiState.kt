@@ -1,7 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.presentation.blacklist
 
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
 
 /**
  * État de l'écran de gestion des réseaux de confiance.
@@ -13,7 +13,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
 data class BlacklistUiState(
     val entries: List<BlacklistedSsid> = emptyList(),
     /** Gestes mémorisés (SPECS.md §6.2) — la section n'existe que s'il y en a. */
-    val exceptions: List<NetworkException> = emptyList(),
+    val exceptions: List<NetworkPreference> = emptyList(),
     val currentSsid: String? = null,
     val isCurrentSsidAlreadyListed: Boolean = false,
     val canReadSsid: Boolean = true,

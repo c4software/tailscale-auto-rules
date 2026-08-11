@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
-class NetworkExceptionTest {
+class NetworkPreferenceTest {
     @Test
     fun aWifiKeyUsesTheCanonicalSsid() {
         val context =
@@ -15,7 +15,7 @@ class NetworkExceptionTest {
                 ssid = "  Maison ",
             )
 
-        assertEquals(NetworkExceptionKey("wifi:maison"), NetworkExceptionKey.from(context))
+        assertEquals(NetworkPreferenceKey("wifi:maison"), NetworkPreferenceKey.from(context))
     }
 
     @Test
@@ -28,7 +28,7 @@ class NetworkExceptionTest {
                 isInternetValidated = true,
             )
 
-        assertEquals(NetworkExceptionKey.Cellular, NetworkExceptionKey.from(context))
+        assertEquals(NetworkPreferenceKey.Cellular, NetworkPreferenceKey.from(context))
     }
 
     @Test
@@ -40,7 +40,7 @@ class NetworkExceptionTest {
                 ssid = null,
             )
 
-        assertNull(NetworkExceptionKey.from(context))
+        assertNull(NetworkPreferenceKey.from(context))
     }
 
     @Test
@@ -56,15 +56,15 @@ class NetworkExceptionTest {
             )
         val cellular = NetworkContext(transport = NetworkTransport.CELLULAR)
 
-        assertEquals(NetworkExceptionKey("wifi:maison"), NetworkExceptionKey.from(wifi))
-        assertEquals(NetworkExceptionKey.Cellular, NetworkExceptionKey.from(cellular))
+        assertEquals(NetworkPreferenceKey("wifi:maison"), NetworkPreferenceKey.from(wifi))
+        assertEquals(NetworkPreferenceKey.Cellular, NetworkPreferenceKey.from(cellular))
     }
 
     @Test
     fun uncoveredTransportsYieldNoKey() {
-        assertNull(NetworkExceptionKey.from(NetworkContext.Disconnected))
+        assertNull(NetworkPreferenceKey.from(NetworkContext.Disconnected))
         assertNull(
-            NetworkExceptionKey.from(
+            NetworkPreferenceKey.from(
                 NetworkContext(
                     transport = NetworkTransport.ETHERNET,
                     isInternetValidated = true,
@@ -72,7 +72,7 @@ class NetworkExceptionTest {
             ),
         )
         assertNull(
-            NetworkExceptionKey.from(
+            NetworkPreferenceKey.from(
                 NetworkContext(
                     transport = NetworkTransport.OTHER,
                     isInternetValidated = true,
@@ -83,15 +83,15 @@ class NetworkExceptionTest {
 
     @Test
     fun aBlankKeyIsRejected() {
-        assertFailsWith<IllegalArgumentException> { NetworkExceptionKey("  ") }
+        assertFailsWith<IllegalArgumentException> { NetworkPreferenceKey("  ") }
     }
 
     @Test
     fun anExceptionNeverMemorizesAnUnknownState() {
         assertFailsWith<IllegalArgumentException> {
-            NetworkException(
+            NetworkPreference(
                 id = 1L,
-                key = NetworkExceptionKey.Cellular,
+                key = NetworkPreferenceKey.Cellular,
                 ssid = null,
                 desiredState = TunnelState.UNKNOWN,
                 epochMillis = 0L,
@@ -104,18 +104,18 @@ class NetworkExceptionTest {
         // Une clé Wi-Fi sans SSID d'affichage, ou l'inverse, trahirait une
         // dérivation incohérente au moment de la capture.
         assertFailsWith<IllegalArgumentException> {
-            NetworkException(
+            NetworkPreference(
                 id = 1L,
-                key = NetworkExceptionKey("wifi:maison"),
+                key = NetworkPreferenceKey("wifi:maison"),
                 ssid = null,
                 desiredState = TunnelState.ENABLED,
                 epochMillis = 0L,
             )
         }
         assertFailsWith<IllegalArgumentException> {
-            NetworkException(
+            NetworkPreference(
                 id = 1L,
-                key = NetworkExceptionKey.Cellular,
+                key = NetworkPreferenceKey.Cellular,
                 ssid = "Maison",
                 desiredState = TunnelState.ENABLED,
                 epochMillis = 0L,
@@ -126,9 +126,9 @@ class NetworkExceptionTest {
     @Test
     fun aBlankDisplaySsidIsRejected() {
         assertFailsWith<IllegalArgumentException> {
-            NetworkException(
+            NetworkPreference(
                 id = 1L,
-                key = NetworkExceptionKey("wifi:maison"),
+                key = NetworkPreferenceKey("wifi:maison"),
                 ssid = "  ",
                 desiredState = TunnelState.ENABLED,
                 epochMillis = 0L,
@@ -139,9 +139,9 @@ class NetworkExceptionTest {
     @Test
     fun aWellFormedExceptionIsAccepted() {
         val exception =
-            NetworkException(
+            NetworkPreference(
                 id = 7L,
-                key = NetworkExceptionKey("wifi:maison"),
+                key = NetworkPreferenceKey("wifi:maison"),
                 ssid = "Maison",
                 desiredState = TunnelState.DISABLED,
                 epochMillis = 42L,

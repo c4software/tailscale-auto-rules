@@ -2,8 +2,8 @@ package fr.vbrosseau.tailscaleautorules.presentation
 
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
 import fr.vbrosseau.tailscaleautorules.domain.model.JournalEntry
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
@@ -182,16 +182,16 @@ class ScreensScreenshotTest : ScreenshotTest() {
             uiState = BlacklistUiState(
                 entries = listOf(BlacklistedSsid(id = 1, value = "Maison")),
                 exceptions = listOf(
-                    NetworkException(
+                    NetworkPreference(
                         id = 1,
-                        key = NetworkExceptionKey("wifi:maison"),
+                        key = NetworkPreferenceKey("wifi:maison"),
                         ssid = "Maison",
                         desiredState = TunnelState.ENABLED,
                         epochMillis = 1_770_000_000_000,
                     ),
-                    NetworkException(
+                    NetworkPreference(
                         id = 2,
-                        key = NetworkExceptionKey.Cellular,
+                        key = NetworkPreferenceKey.Cellular,
                         ssid = null,
                         desiredState = TunnelState.DISABLED,
                         epochMillis = 1_770_000_000_000,

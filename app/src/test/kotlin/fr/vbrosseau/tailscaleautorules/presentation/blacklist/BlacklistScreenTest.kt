@@ -14,8 +14,8 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import fr.vbrosseau.tailscaleautorules.domain.model.BlacklistedSsid
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkException
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreference
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.presentation.LoadingTestTags
 import fr.vbrosseau.tailscaleautorules.presentation.theme.AppTheme
@@ -63,16 +63,16 @@ class BlacklistScreenTest {
     )
 
     private val twoExceptions = listOf(
-        NetworkException(
+        NetworkPreference(
             id = 1,
-            key = NetworkExceptionKey("wifi:maison"),
+            key = NetworkPreferenceKey("wifi:maison"),
             ssid = "Maison",
             desiredState = TunnelState.ENABLED,
             epochMillis = 0,
         ),
-        NetworkException(
+        NetworkPreference(
             id = 2,
-            key = NetworkExceptionKey.Cellular,
+            key = NetworkPreferenceKey.Cellular,
             ssid = null,
             desiredState = TunnelState.DISABLED,
             epochMillis = 0,

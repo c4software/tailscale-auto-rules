@@ -4,7 +4,7 @@ import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEvaluation
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.repository.BlacklistRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.NetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
 
@@ -23,7 +23,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.RuleContext
  */
 class EvaluateRulesUseCase(
     private val blacklistRepository: BlacklistRepository,
-    private val networkExceptionRepository: NetworkExceptionRepository,
+    private val networkPreferenceRepository: NetworkPreferenceRepository,
     private val settingsRepository: SettingsRepository,
     private val engine: RuleEngine,
 ) {
@@ -32,7 +32,7 @@ class EvaluateRulesUseCase(
             RuleContext(
                 network = networkContext,
                 blacklistedSsids = blacklistRepository.currentSsids(),
-                networkExceptions = networkExceptionRepository.current(),
+                networkPreferences = networkPreferenceRepository.current(),
                 settings = settingsRepository.currentRuleSettings(),
             ),
         )

@@ -2,17 +2,17 @@ package fr.vbrosseau.tailscaleautorules.domain.usecase
 
 import fr.vbrosseau.tailscaleautorules.domain.engine.RuleEngine
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.network.FakeNetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeBlacklistRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
 import fr.vbrosseau.tailscaleautorules.domain.rule.BlacklistedWifiRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.MobileNetworkRule
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
@@ -37,16 +37,16 @@ class CaptureManualOverrideUseCaseTest {
     private val controller = FakeTailscaleController()
     private val journal = FakeJournalRepository(clock)
     private val settings = FakeSettingsRepository()
-    private val exceptions = FakeNetworkExceptionRepository(clock)
+    private val exceptions = FakeNetworkPreferenceRepository(clock)
 
     private val evaluateRules =
         EvaluateRulesUseCase(
             blacklistRepository = FakeBlacklistRepository(initial = listOf("Maison")),
-            networkExceptionRepository = exceptions,
+            networkPreferenceRepository = exceptions,
             settingsRepository = settings,
             engine =
                 RuleEngine(
-                    setOf(NetworkExceptionRule(), BlacklistedWifiRule(), MobileNetworkRule()),
+                    setOf(NetworkPreferenceRule(), BlacklistedWifiRule(), MobileNetworkRule()),
                 ),
         )
 
@@ -82,9 +82,9 @@ class CaptureManualOverrideUseCaseTest {
             assertTrue(capture())
 
             val exception = exceptions.observeAll().first().single()
-            assertEquals(NetworkExceptionKey("wifi:maison"), exception.key)
+            assertEquals(NetworkPreferenceKey("wifi:maison"), exception.key)
             assertEquals(TunnelState.ENABLED, exception.desiredState)
-            assertEquals(NetworkExceptionRule.Id, journal.observeRecent().first().first().ruleId)
+            assertEquals(NetworkPreferenceRule.Id, journal.observeRecent().first().first().ruleId)
         }
 
     @Test
@@ -137,7 +137,7 @@ class CaptureManualOverrideUseCaseTest {
 
             assertTrue(capture())
             assertEquals(
-                NetworkExceptionKey("wifi:maison"),
+                NetworkPreferenceKey("wifi:maison"),
                 exceptions.observeAll().first().single().key,
             )
         }

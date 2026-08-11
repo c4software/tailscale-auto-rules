@@ -1,13 +1,13 @@
 package fr.vbrosseau.tailscaleautorules.domain.usecase
 
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeJournalRepository
-import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkExceptionRepository
+import fr.vbrosseau.tailscaleautorules.domain.repository.FakeNetworkPreferenceRepository
 import fr.vbrosseau.tailscaleautorules.domain.repository.FakeSettingsRepository
-import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkExceptionRule
+import fr.vbrosseau.tailscaleautorules.domain.rule.NetworkPreferenceRule
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
 import kotlinx.coroutines.flow.first
@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
 
 class RecordManualOverrideUseCaseTest {
     private val settings = FakeSettingsRepository()
-    private val exceptions = FakeNetworkExceptionRepository()
+    private val exceptions = FakeNetworkPreferenceRepository()
     private val journal = FakeJournalRepository()
     private val useCase = RecordManualOverrideUseCase(settings, exceptions, journal)
 
@@ -47,14 +47,14 @@ class RecordManualOverrideUseCaseTest {
 
             assertTrue(recorded)
             val exception = exceptions.observeAll().first().single()
-            assertEquals(NetworkExceptionKey("wifi:maison"), exception.key)
+            assertEquals(NetworkPreferenceKey("wifi:maison"), exception.key)
             assertEquals("Maison", exception.ssid)
             assertEquals(TunnelState.ENABLED, exception.desiredState)
 
             // Sans cette entrée, le journal porterait encore l'ancienne cible
             // et le prochain geste sur ce réseau serait invisible.
             val entry = journal.observeRecent().first().single()
-            assertEquals(NetworkExceptionRule.Id, entry.ruleId)
+            assertEquals(NetworkPreferenceRule.Id, entry.ruleId)
             assertEquals(TunnelState.DISABLED, entry.previousState)
             assertEquals(TunnelState.ENABLED, entry.newState)
         }
@@ -70,7 +70,7 @@ class RecordManualOverrideUseCaseTest {
 
             assertTrue(recorded)
             val exception = exceptions.observeAll().first().single()
-            assertEquals(NetworkExceptionKey.Cellular, exception.key)
+            assertEquals(NetworkPreferenceKey.Cellular, exception.key)
             assertEquals(null, exception.ssid)
             assertEquals(TunnelState.DISABLED, exception.desiredState)
         }
@@ -85,7 +85,7 @@ class RecordManualOverrideUseCaseTest {
             val recorded =
                 useCase(
                     trustedWifi,
-                    ManualOverride(TunnelState.DISABLED, NetworkExceptionRule.Id),
+                    ManualOverride(TunnelState.DISABLED, NetworkPreferenceRule.Id),
                 )
 
             assertTrue(recorded)
@@ -175,7 +175,7 @@ class RecordManualOverrideUseCaseTest {
 
             assertTrue(useCase(unvalidatedWifi, ManualOverride(TunnelState.ENABLED, RuleId("blacklisted-wifi"))))
             assertEquals(
-                NetworkExceptionKey("wifi:maison"),
+                NetworkPreferenceKey("wifi:maison"),
                 exceptions.observeAll().first().single().key,
             )
         }

@@ -1,6 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.domain.repository
 
-import fr.vbrosseau.tailscaleautorules.domain.model.NetworkExceptionKey
+import fr.vbrosseau.tailscaleautorules.domain.model.NetworkPreferenceKey
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleId
 import fr.vbrosseau.tailscaleautorules.domain.rule.RuleSettings
@@ -142,13 +142,13 @@ class FakeRepositoriesTest {
     @Test
     fun aMemorizedGestureBecomesVisibleAndUsableByTheEngine() =
         runTest {
-            val repository = FakeNetworkExceptionRepository()
+            val repository = FakeNetworkPreferenceRepository()
 
-            repository.upsert(NetworkExceptionKey("wifi:maison"), "Maison", TunnelState.ENABLED)
+            repository.upsert(NetworkPreferenceKey("wifi:maison"), "Maison", TunnelState.ENABLED)
 
             assertEquals("Maison", repository.observeAll().first().single().ssid)
             assertEquals(
-                mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
+                mapOf(NetworkPreferenceKey("wifi:maison") to TunnelState.ENABLED),
                 repository.current(),
             )
         }
@@ -159,12 +159,12 @@ class FakeRepositoriesTest {
             // SPECS.md §3.3 : une seule mémoire par réseau, l'identité de
             // l'entrée survit au remplacement.
             val clock = FakeClock(1_000)
-            val repository = FakeNetworkExceptionRepository(clock)
-            repository.upsert(NetworkExceptionKey.Cellular, null, TunnelState.DISABLED)
+            val repository = FakeNetworkPreferenceRepository(clock)
+            repository.upsert(NetworkPreferenceKey.Cellular, null, TunnelState.DISABLED)
             val id = repository.observeAll().first().single().id
 
             clock.advanceBy(5_000)
-            repository.upsert(NetworkExceptionKey.Cellular, null, TunnelState.ENABLED)
+            repository.upsert(NetworkPreferenceKey.Cellular, null, TunnelState.ENABLED)
 
             val entry = repository.observeAll().first().single()
             assertEquals(id, entry.id)
@@ -176,28 +176,28 @@ class FakeRepositoriesTest {
     fun theMostRecentGestureComesFirst() =
         runTest {
             val clock = FakeClock(1_000)
-            val repository = FakeNetworkExceptionRepository(clock)
+            val repository = FakeNetworkPreferenceRepository(clock)
 
-            repository.upsert(NetworkExceptionKey("wifi:maison"), "Maison", TunnelState.ENABLED)
+            repository.upsert(NetworkPreferenceKey("wifi:maison"), "Maison", TunnelState.ENABLED)
             clock.advanceBy(5_000)
-            repository.upsert(NetworkExceptionKey.Cellular, null, TunnelState.DISABLED)
+            repository.upsert(NetworkPreferenceKey.Cellular, null, TunnelState.DISABLED)
 
             val entries = repository.observeAll().first()
-            assertEquals(NetworkExceptionKey.Cellular, entries.first().key)
-            assertEquals(NetworkExceptionKey("wifi:maison"), entries.last().key)
+            assertEquals(NetworkPreferenceKey.Cellular, entries.first().key)
+            assertEquals(NetworkPreferenceKey("wifi:maison"), entries.last().key)
         }
 
     @Test
     fun removingAnExceptionLeavesTheOthersUntouched() =
         runTest {
-            val repository = FakeNetworkExceptionRepository()
-            repository.upsert(NetworkExceptionKey("wifi:maison"), "Maison", TunnelState.ENABLED)
-            repository.upsert(NetworkExceptionKey.Cellular, null, TunnelState.DISABLED)
+            val repository = FakeNetworkPreferenceRepository()
+            repository.upsert(NetworkPreferenceKey("wifi:maison"), "Maison", TunnelState.ENABLED)
+            repository.upsert(NetworkPreferenceKey.Cellular, null, TunnelState.DISABLED)
             val id = repository.observeAll().first().first { it.ssid == "Maison" }.id
 
             repository.remove(id)
 
-            assertEquals(listOf(NetworkExceptionKey.Cellular), repository.observeAll().first().map { it.key })
+            assertEquals(listOf(NetworkPreferenceKey.Cellular), repository.observeAll().first().map { it.key })
         }
 
     // --- Préférences ---
