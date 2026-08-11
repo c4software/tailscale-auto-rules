@@ -6,9 +6,12 @@ s'enchaînent sans validation intermédiaire (voir [AGENTS.md](./AGENTS.md) §1)
 
 Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 
-> **Les dix-sept étapes sont terminées.** L'étape 17 a remplacé le mécanisme
-> d'observation retenu à l'étape 11, inopérant par construction ; l'automatisation
-> en arrière-plan est désormais vérifiée sur terminal réel.
+> **Les dix-sept étapes de la version initiale sont terminées.** L'étape 17 a
+> remplacé le mécanisme d'observation retenu à l'étape 11, inopérant par
+> construction ; l'automatisation en arrière-plan est vérifiée sur terminal
+> réel. Les étapes 18 à 23 ajoutent les **exceptions dynamiques** —
+> mémorisation des gestes manuels par réseau ([SPECS.md](./SPECS.md) §3.3 et
+> §4.5).
 >
 > Les points ouverts ne bloquent pas : deux dépendent d'outils tiers, deux se
 > font hors du dépôt.
@@ -510,3 +513,94 @@ dont relève le SSID — que s'il se déclare de type `location`.
 23:36:04  CELLULAR              → mobile-network   → Applied DISABLED→ENABLED
 23:36:29  WIFI, ssid=::1        → blacklisted-wifi → Applied ENABLED→DISABLED
 ```
+
+---
+
+## 18. Exceptions dynamiques — spécification `[x]`
+
+Le geste manuel devient une **mémoire par réseau** ([SPECS.md](./SPECS.md)
+§3.3), là où la spécification affirmait l'inverse — le geste était respecté
+jusqu'au changement de réseau suivant. Amender la spécification **avant** le
+code : elle est la référence de toutes les étapes qui suivent.
+
+- [x] §3.3 réécrit : le geste est mémorisé, un nouveau geste remplace
+      l'exception, la suppression se fait à l'écran des réseaux de confiance
+- [x] §4 : règle « Exception dynamique », priorité 150 ; détail en §4.5
+      (clés canoniques `wifi:<ssid>` / `cellular`, portées, cas exclus)
+- [x] §6.1 : la carte d'intervention manuelle annonce la mémorisation ;
+      invitation unique au premier lancement
+- [x] §6.2 : section « Exceptions apprises », suppression par glissement
+- [x] §6.3 : réglage « Apprendre mes gestes », activé par défaut
+- [x] §7 : la notification attribue l'état mémorisé à « Exception dynamique »
+- [x] §9 : table Room des exceptions, une entrée par clé réseau
+- [x] §10.3 : point ouvert — un VPN tiers peut être pris pour un geste
+- [x] Étapes 18 à 23 consignées ici
+
+---
+
+## 19. Exceptions dynamiques — domaine : modèle et règle `[ ]`
+
+- [ ] `NetworkException` + `NetworkExceptionKey` (fabrique
+      `from(NetworkContext)`, clés de [SPECS.md](./SPECS.md) §4.5,
+      canonicalisation partagée avec la blacklist)
+- [ ] Contrat `NetworkExceptionRepository` (`observeAll`, `current`, `upsert`,
+      `remove`) + `FakeNetworkExceptionRepository` dans `testFixtures`
+- [ ] `RuleContext.networkExceptions` — extension prévue par le type, les
+      règles existantes ne changent pas
+- [ ] `NetworkExceptionRule`, priorité 150 (`Priorities`), chaque branche
+      testée, `NO_DECISION` compris
+- [ ] `EvaluateRulesUseCase` alimente le contexte depuis le repository
+- [ ] `ShippedRulesTest` rejoue le tableau §4 complété
+
+---
+
+## 20. Exceptions dynamiques — domaine : capture du geste `[ ]`
+
+- [ ] `RecordManualOverrideUseCase` — gardes : apprentissage activé, service
+      activé, clé dérivable, pas de mode avion ; **upsert** systématique de
+      l'état observé ; entrée de journal sous `network-exception`, sans quoi
+      le geste suivant serait indétectable (le détecteur compare au journal)
+- [ ] `AppSettings.isLearningEnabled` (défaut : activé) + Fake mis à jour
+- [ ] Tests JVM : chaque garde, création, remplacement, journalisation
+
+---
+
+## 21. Exceptions dynamiques — data : Room v2 et DataStore `[ ]`
+
+- [ ] `NetworkExceptionEntity` — table `network_exception`, index unique sur
+      la clé réseau, état désiré, horodatage de création
+- [ ] `NetworkExceptionDao` + `RoomNetworkExceptionRepository`
+- [ ] **Première migration Room du projet** : version 2, schéma exporté,
+      `room-testing`, test de migration préservant blacklist et journal
+- [ ] DataStore : `learning.enabled`, `learning.prompted`
+- [ ] DI : DAO, repository, `NetworkExceptionRule` dans `RuleModule` (seul
+      enregistrement requis), cas d'usage dans `UseCaseModule`
+
+---
+
+## 22. Exceptions dynamiques — automation : brancher la capture `[ ]`
+
+- [ ] `AutomationCoordinator.onTunnelStateSettled()` — détection puis
+      enregistrement sous un `Mutex` partagé avec la synchronisation, pour
+      qu'un battement concurrent ne bascule pas le tunnel entre les deux
+- [ ] `TunnelWatchService.watchTunnel()` appelle le coordinateur après la
+      fenêtre de stabilisation, au lieu du seul rafraîchissement de
+      notification
+- [ ] Tests Robolectric du scénario complet : cycle → geste → exception
+      créée → cycle idempotent → nouveau geste → exception remplacée
+- [ ] Validation sur terminal réel, relevés consignés ici
+
+---
+
+## 23. Exceptions dynamiques — interface `[ ]`
+
+- [ ] Paramètres : interrupteur « Apprendre mes gestes »
+- [ ] Accueil : invitation unique au premier lancement (activer / ne pas
+      activer), carte d'intervention manuelle reformulée
+- [ ] Réseaux de confiance : section « Exceptions apprises » — réseaux
+      dérogés uniquement, comportement rejoué, **suppression par glissement**
+      (`SwipeToDismissBox`, premier usage du geste dans l'application),
+      section absente si vide
+- [ ] Libellés de `network-exception` (journal, notification, accueil)
+- [ ] Tests ViewModels + écrans ; références Roborazzi réenregistrées et
+      relues image par image

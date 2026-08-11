@@ -1,6 +1,6 @@
 # Spécification fonctionnelle — Tailscale Auto Rules
 
-Version du document : 1.0 · Dernière mise à jour : 2026-08-06
+Version du document : 1.1 · Dernière mise à jour : 2026-08-11
 
 Ce document décrit **ce que** fait l'application. Le **comment** est décrit dans
 [ARCHITECTURE.md](./ARCHITECTURE.md), l'ordre de construction dans
@@ -112,12 +112,27 @@ les deux se voit donc, au lieu d'être masquée.
 
 L'utilisateur peut changer l'état du tunnel sans passer par l'application —
 typiquement l'activer depuis le client officiel alors qu'il est sur un réseau
-de confiance. Ce geste est **respecté** : aucun cycle ne se déclenche tant que
-le réseau ne change pas, donc l'automatisation ne le combat pas. Les règles
-reprennent la main au changement de réseau suivant — ou immédiatement si
-l'utilisateur presse « Synchroniser ».
+de confiance. Ce geste est **mémorisé** : l'application enregistre une
+**exception dynamique** pour le réseau courant (§4.5), qui rejoue ce choix à
+chaque passage sur ce réseau — changement de réseau, redémarrage et battement
+de secours compris. Un nouveau geste sur le même réseau **remplace**
+l'exception ; revenir au comportement automatique se fait en supprimant
+l'exception sur l'écran des réseaux de confiance (§6.2). L'enregistrement est
+consigné au journal sous la règle « Exception dynamique ».
 
-Le geste est **reconnu et affiché** (accueil et notification) sur un critère
+La mémorisation se coupe par le réglage « Apprendre mes gestes » (§6.3).
+Coupée, le geste redevient éphémère : aucun cycle ne le combat tant que le
+réseau ne change pas, et les règles reprennent la main au changement de réseau
+suivant. Les exceptions **déjà apprises** continuent en revanche de se rejouer
+tant qu'elles ne sont pas supprimées : le réglage gouverne l'apprentissage,
+pas le rejeu.
+
+Un geste n'est mémorisé que si le réseau courant est identifiable (§4.5) : en
+Wi-Fi le SSID doit être lisible ; en cellulaire l'exception vaut pour toutes
+les données mobiles ; en mode avion, sans réseau validé ou sans identifiant,
+rien n'est appris.
+
+Le geste est **reconnu** (accueil et notification) sur un critère
 précis : la décision courante des règles a déjà été appliquée — le journal en
 atteste — et l'état constaté du tunnel la contredit pourtant. Une simple
 divergence ne suffit pas : elle est normale pendant les quelques secondes qui
@@ -136,6 +151,7 @@ Priorités : plus la valeur est basse, plus la règle est prioritaire.
 | Prio. | Règle | Condition | Décision |
 |---:|---|---|---|
 | 100 | **Mode avion** | Mode avion actif | `DISABLE` |
+| 150 | **Exception dynamique** | Un geste manuel a été mémorisé pour le réseau courant | l'état mémorisé |
 | 200 | **Wi-Fi blacklisté** | Connecté en Wi-Fi, SSID présent dans la blacklist | `DISABLE` |
 | 300 | **Wi-Fi non blacklisté** | Connecté en Wi-Fi, SSID absent de la blacklist | `ENABLE` |
 | 400 | **Réseau mobile** | Connecté en cellulaire (LTE / 4G / 5G / NR) | `ENABLE` |
@@ -169,6 +185,26 @@ Dans tous les autres cas, chaque règle retourne `NO_DECISION`.
 
 - Absence de réseau, ou réseau sans validation Internet : aucune règle ne se
   prononce. L'état du tunnel est conservé tel quel.
+
+### 4.5 Détail — Exception dynamique
+
+- Rejoue le dernier geste manuel mémorisé pour le réseau courant (§3.3).
+- Le réseau est identifié par une clé canonique :
+
+| Réseau courant | Clé | Portée de l'exception |
+|---|---|---|
+| Wi-Fi avec SSID lisible | `wifi:<ssid canonique>` | ce seul réseau |
+| Cellulaire | `cellular` | toutes les données mobiles |
+| Wi-Fi sans SSID, Ethernet, aucun réseau | — | pas d'exception |
+
+- La forme canonique du SSID est celle de la blacklist (§4.2) : insensible à
+  la casse, espaces de bordure ignorés.
+- Le cellulaire n'expose aucun identifiant : l'exception y est globale, au
+  singulier — « vos données mobiles ».
+- Priorité 150 : sous le mode avion — jamais de rejeu en avion — mais
+  au-dessus des règles Wi-Fi et mobile. Le choix explicite de l'utilisateur
+  prime sur le comportement par défaut, y compris sur un réseau blacklisté.
+- Sans réseau validé, la règle ne se prononce pas (§4.4).
 
 ---
 
@@ -206,8 +242,12 @@ Affiche, en lecture seule :
 - la dernière décision : règle déclenchante, sens de la décision, horodatage ;
 - une carte signalant une **intervention manuelle** lorsque l'état constaté
   contredit une décision déjà appliquée (§3.3) : elle nomme la règle
-  contredite, dit que le choix est respecté, et annonce que les règles
-  reprendront la main au prochain changement de réseau ;
+  contredite et dit que le choix est mémorisé pour le réseau courant — ou
+  simplement respecté jusqu'au prochain changement de réseau, si
+  l'apprentissage est coupé ou le réseau non identifiable. Une fois le geste
+  mémorisé, l'exception devient la décision courante et la carte se retire ;
+- une invitation unique, au premier lancement, à activer ou non
+  l'apprentissage des gestes (§6.3) ;
 - un bouton **Synchroniser** forçant un cycle immédiat ;
 - un bouton **Désactiver l'automatisation** — remplacé, lorsqu'elle est déjà
   inactive, par une mention explicite renvoyant aux paramètres.
@@ -224,18 +264,28 @@ Affiche, en lecture seule :
 - Action d'ajout rapide du **SSID courant**, désactivée si le SSID est
   indisponible.
 - Un SSID en doublon est refusé, avec un message explicite.
+- Une section **Exceptions apprises** liste les seuls réseaux où un geste
+  manuel a été mémorisé (§3.3) : nom du réseau — SSID, ou « Données mobiles »
+  — et comportement rejoué (tunnel actif ou coupé). Un glissement latéral
+  supprime l'exception ; le réseau revient au comportement automatique au
+  cycle suivant. La section est absente quand il n'y a rien à montrer.
 
 ### 6.3 Paramètres
 
 | Réglage | Type | Défaut |
 |---|---|---|
 | Service d'automatisation actif | interrupteur | activé |
+| Apprendre mes gestes (§3.3) | interrupteur | activé |
 | Démarrage automatique au boot | interrupteur | activé |
 | Notification persistante | interrupteur | désactivé |
 | Journalisation détaillée | interrupteur | désactivé |
 | Exemption d'optimisation de batterie | action | — |
 | Version de l'application | information | — |
 | Licence | information | MIT |
+
+L'apprentissage est proposé une seule fois au premier lancement, sur l'accueil
+(§6.1) : le choix — l'activer ou non — s'enregistre dans ce réglage, que
+l'écran des paramètres permet de reprendre à tout moment.
 
 ### 6.4 Journal
 
@@ -252,10 +302,12 @@ Persistante lorsqu'elle est visible, elle affiche :
 
 - **Tunnel :** Activé / Désactivé
 - **Raison :** libellé court de la règle ayant décidé (« Réseau mobile »,
-  « Wi-Fi de confiance », « Mode avion »…) — ou la mention d'une intervention
-  manuelle lorsque l'état constaté contredit une décision déjà appliquée
-  (§3.3) : attribuer à une règle un état qu'elle n'a pas produit serait un
-  mensonge.
+  « Wi-Fi de confiance », « Mode avion », « Exception dynamique »…) — ou la
+  mention d'une intervention manuelle lorsque l'état constaté contredit une
+  décision déjà appliquée (§3.3) : attribuer à une règle un état qu'elle n'a
+  pas produit serait un mensonge. Un geste mémorisé s'affiche sous
+  « Exception dynamique » : c'est désormais cette règle qui maintient l'état
+  voulu par l'utilisateur.
 
 Elle se rafraîchit à chaque cycle **et** à chaque mouvement du tunnel constaté
 hors cycle — activé à la main sur un réseau de confiance, coupé depuis le
@@ -315,6 +367,7 @@ Store.
 | Donnée | Support | Motif |
 |---|---|---|
 | Blacklist de SSID | Room | Collection interrogeable, CRUD, contrainte d'unicité |
+| Exceptions dynamiques (§4.5) | Room | Collection, une entrée par clé réseau, contrainte d'unicité |
 | Journal (500 entrées) | Room | Collection ordonnée avec purge |
 | Préférences (§6.3) | DataStore Preferences | Valeurs scalaires isolées |
 | Configuration des règles (`enabled`, `priority`) | DataStore Preferences | Valeurs scalaires par règle |
@@ -375,6 +428,15 @@ Les règles listées en §4 constituent la version 1. Les axes d'évolution
 (whitelist, BSSID, regex, horaires, batterie, Bluetooth, Exit Node…) sont
 mentionnés dans [PROMPT.md](./PROMPT.md) et doivent rester réalisables **sans
 modifier le moteur**. Ils ne sont pas planifiés à ce stade.
+
+### 10.3 Apprentissage et VPN tiers
+
+Android ne dit pas quelle application porte le tunnel actif (§10.1). Un autre
+VPN qui monte ou descend peut donc être pris pour un geste sur Tailscale, et
+créer une exception erronée. Trois garde-fous : le délai de grâce de dix
+secondes (§3.3), la visibilité des exceptions sur l'écran des réseaux de
+confiance — supprimables en un geste —, et le réglage « Apprendre mes
+gestes ». Le cas nominal — un seul VPN sur le terminal — n'est pas affecté.
 
 ---
 
