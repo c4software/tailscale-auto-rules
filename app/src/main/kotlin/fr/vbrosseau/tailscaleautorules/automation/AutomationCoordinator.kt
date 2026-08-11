@@ -101,7 +101,11 @@ class AutomationCoordinator @Inject constructor(
 
     /** Exécute un cycle et met à jour la notification si elle est visible. */
     suspend fun synchronize(): SynchronizationOutcome {
-        val outcome = cycleMutex.withLock { synchronizeTunnel() }
+        val outcome =
+            cycleMutex.withLock {
+                captureBeforeCycle()
+                synchronizeTunnel()
+            }
         refreshNotificationIfEnabled()
         return outcome
     }
@@ -114,7 +118,11 @@ class AutomationCoordinator @Inject constructor(
      * bénéfice du debounce et pourrait livrer un état différent.
      */
     suspend fun synchronize(networkContext: NetworkContext): SynchronizationOutcome {
-        val outcome = cycleMutex.withLock { synchronizeTunnel(networkContext) }
+        val outcome =
+            cycleMutex.withLock {
+                captureBeforeCycle()
+                synchronizeTunnel(networkContext)
+            }
         refreshNotificationIfEnabled()
         return outcome
     }
@@ -127,11 +135,26 @@ class AutomationCoordinator @Inject constructor(
      * geste ou simple écho d'une commande.
      */
     suspend fun onTunnelStateSettled() {
-        val recorded = cycleMutex.withLock { captureManualOverride() }
-        if (recorded) {
-            Timber.i("Geste manuel mémorisé pour le réseau courant")
-        }
+        cycleMutex.withLock { captureBeforeCycle() }
         refreshNotificationIfEnabled()
+    }
+
+    /**
+     * Constate et mémorise un éventuel geste en attente, sans jamais faire
+     * échouer le cycle qui suit.
+     *
+     * Appelée aussi **avant chaque cycle**, pas seulement quand le tunnel
+     * bouge : l'instantané pris à la stabilisation peut être perturbé — le
+     * VPN qui monte bouscule le réseau — et un geste raté à cet instant-là
+     * serait sinon combattu par le battement de secours au lieu d'être
+     * mémorisé.
+     */
+    private suspend fun captureBeforeCycle() {
+        runCatching { captureManualOverride() }
+            .onSuccess { recorded ->
+                if (recorded) Timber.i("Geste manuel mémorisé pour le réseau courant")
+            }
+            .onFailure { Timber.e(it, "Constat du geste manuel en échec") }
     }
 
     private suspend fun refreshNotification() {

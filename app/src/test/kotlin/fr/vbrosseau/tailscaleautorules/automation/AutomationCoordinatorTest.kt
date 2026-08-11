@@ -276,6 +276,24 @@ class AutomationCoordinatorTest {
     }
 
     @Test
+    fun aCycleMemorizesAPendingGestureInsteadOfFightingIt() = runTest {
+        // Le constat pris à la stabilisation du tunnel peut être perturbé par
+        // le VPN qui monte, et n'avoir rien mémorisé. Le cycle suivant —
+        // battement de secours compris — doit alors mémoriser le geste encore
+        // constaté, pas rallumer le tunnel que l'utilisateur vient de couper.
+        observer.emit(NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true))
+        coordinator.synchronize()
+        clock.advanceBy(60_000)
+        controller.disable()
+
+        val outcome = coordinator.synchronize()
+
+        assertEquals(TunnelState.DISABLED, exceptions.observeAll().first().single().desiredState)
+        assertIs<SynchronizationOutcome.AlreadyInTargetState>(outcome)
+        assertTrue(!controller.isRunning(), "Le geste est mémorisé, pas combattu.")
+    }
+
+    @Test
     fun anEchoOfAFreshCommandMemorizesNothingWhenTheTunnelSettles() = runTest {
         // Juste après un cycle, la divergence encore visible est la latence du
         // client : le passage du tunnel à l'état commandé ne doit pas créer

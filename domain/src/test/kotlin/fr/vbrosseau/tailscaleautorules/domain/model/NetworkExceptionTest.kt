@@ -44,7 +44,10 @@ class NetworkExceptionTest {
     }
 
     @Test
-    fun anUnvalidatedNetworkYieldsNoKey() {
+    fun theKeyIgnoresInternetValidation() {
+        // La clé est une identité, pas un état : l'activation du VPN fait
+        // fugacement perdre sa validation au réseau porteur, et exiger la
+        // validation faisait rater la capture du geste (SPECS.md §4.5).
         val wifi =
             NetworkContext(
                 transport = NetworkTransport.WIFI,
@@ -53,8 +56,8 @@ class NetworkExceptionTest {
             )
         val cellular = NetworkContext(transport = NetworkTransport.CELLULAR)
 
-        assertNull(NetworkExceptionKey.from(wifi))
-        assertNull(NetworkExceptionKey.from(cellular))
+        assertEquals(NetworkExceptionKey("wifi:maison"), NetworkExceptionKey.from(wifi))
+        assertEquals(NetworkExceptionKey.Cellular, NetworkExceptionKey.from(cellular))
     }
 
     @Test
@@ -64,6 +67,14 @@ class NetworkExceptionTest {
             NetworkExceptionKey.from(
                 NetworkContext(
                     transport = NetworkTransport.ETHERNET,
+                    isInternetValidated = true,
+                ),
+            ),
+        )
+        assertNull(
+            NetworkExceptionKey.from(
+                NetworkContext(
+                    transport = NetworkTransport.OTHER,
                     isInternetValidated = true,
                 ),
             ),

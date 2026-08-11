@@ -149,11 +149,35 @@ class RecordManualOverrideUseCaseTest {
                     isInternetValidated = true,
                     ssid = null,
                 )
-            val unvalidated = NetworkContext(transport = NetworkTransport.CELLULAR)
+            val ethernet =
+                NetworkContext(
+                    transport = NetworkTransport.ETHERNET,
+                    isInternetValidated = true,
+                )
 
             assertFalse(useCase(unreadableSsid, ManualOverride(TunnelState.ENABLED, RuleId("other-wifi"))))
-            assertFalse(useCase(unvalidated, ManualOverride(TunnelState.ENABLED, RuleId("mobile-network"))))
+            assertFalse(useCase(ethernet, ManualOverride(TunnelState.ENABLED, RuleId("mobile-network"))))
             assertTrue(exceptions.observeAll().first().isEmpty())
+        }
+
+    @Test
+    fun anUnvalidatedNetworkIsStillMemorized() =
+        runTest {
+            // Le geste survient typiquement pendant que le VPN monte, moment
+            // où le réseau porteur perd fugacement sa validation : refuser la
+            // mémorisation à cet instant la faisait rater à chaque fois.
+            val unvalidatedWifi =
+                NetworkContext(
+                    transport = NetworkTransport.WIFI,
+                    isInternetValidated = false,
+                    ssid = "Maison",
+                )
+
+            assertTrue(useCase(unvalidatedWifi, ManualOverride(TunnelState.ENABLED, RuleId("blacklisted-wifi"))))
+            assertEquals(
+                NetworkExceptionKey("wifi:maison"),
+                exceptions.observeAll().first().single().key,
+            )
         }
 
     @Test

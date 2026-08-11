@@ -85,7 +85,10 @@ class NetworkExceptionRuleTest {
     }
 
     @Test
-    fun anUnvalidatedNetworkAbstains() {
+    fun anUnvalidatedNetworkStillReplaysItsException() {
+        // Même logique que la blacklist (SPECS.md §4.2) : le choix de
+        // l'utilisateur ne dépend pas de l'accès Internet — et le VPN qui
+        // monte fait fugacement perdre sa validation au réseau porteur.
         val context =
             Contexts.wifi(
                 ssid = "Maison",
@@ -93,7 +96,7 @@ class NetworkExceptionRuleTest {
                 exceptions = mapOf(NetworkExceptionKey("wifi:maison") to TunnelState.ENABLED),
             )
 
-        assertEquals(RuleDecision.NO_DECISION, rule.evaluate(context))
+        assertEquals(RuleDecision.ENABLE, rule.evaluate(context))
     }
 
     @Test

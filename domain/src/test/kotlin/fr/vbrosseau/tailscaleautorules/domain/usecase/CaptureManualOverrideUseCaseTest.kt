@@ -120,6 +120,29 @@ class CaptureManualOverrideUseCaseTest {
         }
 
     @Test
+    fun aGestureOnAnUnvalidatedNetworkIsStillCaptured() =
+        runTest {
+            // Le geste survient pendant que le VPN monte : le réseau porteur
+            // perd fugacement sa validation. La capture ne doit pas le rater.
+            journal.record(TunnelState.ENABLED, TunnelState.DISABLED, RuleId("blacklisted-wifi"))
+            clock.advanceBy(60_000)
+            controller.enable()
+            observer.emit(
+                NetworkContext(
+                    transport = NetworkTransport.WIFI,
+                    isInternetValidated = false,
+                    ssid = "Maison",
+                ),
+            )
+
+            assertTrue(capture())
+            assertEquals(
+                NetworkExceptionKey("wifi:maison"),
+                exceptions.observeAll().first().single().key,
+            )
+        }
+
+    @Test
     fun anEchoWithinTheGraceWindowIsNotMemorized() =
         runTest {
             // La commande vient d'être journalisée : la divergence est la

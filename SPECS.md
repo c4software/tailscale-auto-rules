@@ -129,8 +129,11 @@ pas le rejeu.
 
 Un geste n'est mémorisé que si le réseau courant est identifiable (§4.5) : en
 Wi-Fi le SSID doit être lisible ; en cellulaire l'exception vaut pour toutes
-les données mobiles ; en mode avion, sans réseau validé ou sans identifiant,
-rien n'est appris.
+les données mobiles ; en mode avion ou sans identifiant, rien n'est appris.
+La mémorisation est retentée avant chaque cycle — battement de secours
+compris — tant que le geste reste constaté : un instantané réseau perturbé au
+moment de la bascule ne doit pas conduire l'automatisation à combattre le
+geste au lieu de le mémoriser.
 
 Le geste est **reconnu** (accueil et notification) sur un critère
 précis : la décision courante des règles a déjà été appliquée — le journal en
@@ -204,7 +207,10 @@ Dans tous les autres cas, chaque règle retourne `NO_DECISION`.
 - Priorité 150 : sous le mode avion — jamais de rejeu en avion — mais
   au-dessus des règles Wi-Fi et mobile. Le choix explicite de l'utilisateur
   prime sur le comportement par défaut, y compris sur un réseau blacklisté.
-- Sans réseau validé, la règle ne se prononce pas (§4.4).
+- La clé est une pure **identité** : comme la comparaison de la blacklist
+  (§4.2), elle ne dépend pas de la validation Internet. L'exiger ferait
+  précisément rater la capture — l'activation du VPN fait fugacement perdre
+  sa validation au réseau qui le porte.
 
 ---
 

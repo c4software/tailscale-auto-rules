@@ -22,17 +22,21 @@ value class NetworkExceptionKey(val value: String) {
 
         /**
          * Dérive la clé du réseau courant, ou `null` s'il n'est pas
-         * identifiable : réseau non validé, Wi-Fi sans SSID lisible, transport
-         * non couvert. `null` interdit à la fois l'apprentissage et le rejeu.
+         * identifiable : Wi-Fi sans SSID lisible, transport non couvert.
+         * `null` interdit à la fois l'apprentissage et le rejeu.
+         *
+         * La clé est une pure **identité** : la validation Internet n'entre
+         * pas en compte, comme pour la comparaison de la blacklist
+         * (SPECS.md §4.2). L'exiger faisait précisément rater la capture du
+         * geste — activer le VPN fait fugacement perdre sa validation au
+         * réseau qui le porte.
          */
-        fun from(context: NetworkContext): NetworkExceptionKey? {
-            if (!context.isUsable) return null
-            return when (context.transport) {
+        fun from(context: NetworkContext): NetworkExceptionKey? =
+            when (context.transport) {
                 NetworkTransport.WIFI -> context.ssid?.let { NetworkExceptionKey("wifi:${it.asSsidKey()}") }
                 NetworkTransport.CELLULAR -> Cellular
                 else -> null
             }
-        }
     }
 }
 

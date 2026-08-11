@@ -11,9 +11,12 @@ import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
  * règles Wi-Fi et mobile : le choix explicite de l'utilisateur prime sur le
  * comportement par défaut, y compris sur un réseau blacklisté.
  *
- * La dérivation de la clé porte déjà les abstentions — réseau non validé,
- * SSID illisible, transport non couvert : sans identité stable, l'exception
- * pourrait viser un autre réseau que celui du geste d'origine.
+ * La dérivation de la clé porte déjà les abstentions — SSID illisible,
+ * transport non couvert : sans identité stable, l'exception pourrait viser un
+ * autre réseau que celui du geste d'origine. La validation Internet n'entre
+ * pas en compte, comme pour la blacklist (SPECS.md §4.2) : le choix de
+ * l'utilisateur ne dépend pas de l'accès Internet, et le VPN qui monte fait
+ * fugacement perdre sa validation au réseau porteur.
  */
 class NetworkExceptionRule : Rule {
     override val id = Id

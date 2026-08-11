@@ -636,6 +636,15 @@ ceux du variant ; la release n'embarque rien.
       battement de secours compris — l'émulateur ne porte aucun VPN, la
       détection ne peut pas s'y déclencher.
 
+      **Premier essai sur Pixel : geste détecté mais non mémorisé.** Deux
+      causes, corrigées : la clé de réseau exigeait la validation Internet,
+      que le réseau porteur perd fugacement quand le VPN monte (la détection,
+      alignée sur la blacklist, passait — la mémorisation refusait) ; et la
+      capture ne courait qu'à la stabilisation du tunnel, sans reprise — un
+      instantané perturbé à cet instant condamnait le geste à être combattu
+      par le battement. La clé est désormais une pure identité (§4.5), et la
+      capture est retentée avant chaque cycle.
+
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès.
 
