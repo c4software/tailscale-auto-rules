@@ -95,7 +95,7 @@
     <string name="settings_service_title">Automatisation active</string>
     <string name="settings_service_summary">Applique les règles à chaque changement de réseau.</string>
     <string name="settings_learning_title">Apprendre mes gestes</string>
-    <string name="settings_learning_summary">Mémorise vos activations et coupures manuelles du tunnel, réseau par réseau, et les rejoue. Les exceptions déjà apprises restent appliquées tant qu\'elles ne sont pas supprimées.</string>
+    <string name="settings_learning_summary">Mémorise vos activations et coupures manuelles du tunnel, réseau par réseau, et les rejoue. Les préférences déjà apprises restent appliquées tant qu\'elles ne sont pas supprimées.</string>
     <string name="settings_boot_title">Démarrage automatique</string>
     <string name="settings_boot_summary">Réarme l\'automatisation après un redémarrage du téléphone.</string>
     <string name="settings_notification_notice">Une notification permanente affiche l\'état du tunnel et la règle appliquée. Android l\'impose : observer le réseau en continu demande un service visible.</string>
