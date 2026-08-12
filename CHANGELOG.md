@@ -3,12 +3,20 @@
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [1.0.0] — 2026-08-12
 
-Première version fonctionnelle complète. Non encore publiée sur le Play Store :
-voir les réserves de [TASKS.md](./TASKS.md).
+Première version publique. Le dossier de soumission — textes des deux fiches,
+captures d'écran réelles, icône, image mise en avant, réponses aux formulaires —
+est réuni dans [`store/`](./store), et la politique de confidentialité est
+publiée sur GitHub Pages par la CI.
 
 ### Ajouté depuis la première version
+
+- **Dossier de soumission Play Store.** Fiches anglaise et française, six
+  captures par langue prises sur émulateur, icône 512 et image mise en avant,
+  réponses aux formulaires de sécurité des données et de contenu, déclarations
+  des types de service de premier plan, politique de confidentialité publiée
+  automatiquement sur GitHub Pages.
 
 - **Traduction anglaise.** L'anglais devient la langue par défaut — toute
   locale sans traduction dédiée l'obtient — et le français reste servi aux
