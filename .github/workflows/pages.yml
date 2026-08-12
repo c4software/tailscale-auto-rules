@@ -117,14 +117,16 @@ jobs:
           </html>
           HTML
 
-      # `enablement` active GitHub Pages sur le dépôt si ce n'est pas déjà fait,
-      # et le règle sur une construction par workflow. Sans elle, la première
-      # exécution échoue sur un « Get Pages site failed » tant que personne n'est
-      # allé cocher l'option à la main : une publication qui se veut automatique
-      # ne doit pas dépendre d'un geste dans une interface.
+      # Pages est activé une fois pour toutes sur le dépôt, en mode
+      # « construction par workflow » :
+      #
+      #     gh api -X POST repos/<dépôt>/pages -f build_type=workflow
+      #
+      # `enablement: true` aurait évité cette commande, mais le `GITHUB_TOKEN`
+      # d'un workflow ne peut pas créer le site : l'API réclame un droit
+      # d'administration qu'aucune permission de workflow n'accorde. Essayé,
+      # constaté (« Resource not accessible by integration »).
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v4
         with:

@@ -56,10 +56,10 @@ Version des captures : **0.4.1** (`app-debug`, construite depuis l'étiquette `v
    https://c4software.github.io/tailscale-auto-rules/privacy-fr.html
    ```
 
-   Rien à cocher dans l'interface : le workflow active Pages lui-même
-   (`enablement: true`) et le règle sur une construction par workflow. Vérifier
-   tout de même que les deux URL répondent avant de les déclarer — une
-   politique injoignable fait rejeter la fiche.
+   Pages est déjà activé sur le dépôt, en mode « construction par workflow » :
+   rien à cocher dans l'interface, rien à refaire. Vérifier tout de même que
+   les deux URL répondent avant de les déclarer — une politique injoignable
+   fait rejeter la fiche.
 2. **Créer le keystore de production** hors du dépôt, et déposer les quatre
    secrets `RELEASE_KEYSTORE`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
    `RELEASE_KEY_PASSWORD` dans le dépôt GitHub — voir le README racine,
