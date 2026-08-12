@@ -1,0 +1,1 @@
+Active ou coupe votre tunnel Tailscale automatiquement, réseau par réseau.

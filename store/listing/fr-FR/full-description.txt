@@ -1,0 +1,40 @@
+Tailscale Auto Rules est une application compagnon de Tailscale. Elle vous évite d'avoir à penser à votre VPN : elle observe le réseau sur lequel se trouve votre téléphone et demande au client Tailscale officiel d'activer ou de couper le tunnel en conséquence.
+
+Ce n'est pas un VPN. Elle n'implémente aucune pile VPN, ne détient aucun compte et ne remplace rien. L'application Tailscale officielle doit être installée — celle-ci se contente de la piloter.
+
+CE QU'ELLE FAIT
+
+• Active le tunnel en données mobiles, et sur tout Wi-Fi que vous n'avez pas déclaré de confiance.
+• Le coupe sur vos réseaux de confiance — maison, bureau, partout où il est inutile.
+• Ne touche à rien en mode avion, ni lorsqu'aucune règle ne se prononce.
+• Apprend vos gestes : activez ou coupez Tailscale à la main sur un réseau, et ce choix est mémorisé puis rejoué à chaque retour sur ce réseau.
+
+LES PRÉFÉRENCES DE RÉSEAU
+
+Un écran, une liste. Chaque réseau qui compte reçoit un comportement clair — tunnel toujours coupé, ou toujours actif — que vous l'ayez déclaré vous-même ou que l'application l'ait appris d'un geste. Les réseaux absents de la liste suivent simplement l'automatisme. Un glissement latéral rend un réseau à l'automatisme.
+
+CHAQUE DÉCISION S'EXPLIQUE
+
+L'accueil affiche l'état constaté du tunnel, le réseau courant et la règle à l'origine du dernier changement. Un journal conserve les 500 derniers changements, chacun nommant la règle qui a décidé. Rien ne se produit sans une raison lisible.
+
+CONFIDENTIALITÉ
+
+• Rien ne quitte votre téléphone. Aucun compte, aucun serveur, aucune télémétrie, aucune publicité.
+• La permission de localisation sert à une seule chose : lire le nom du réseau Wi-Fi auquel vous êtes connecté, qu'Android classe parmi les données de localisation. Ni votre position, ni vos déplacements ne sont lus, enregistrés ou transmis.
+• Chaque permission est expliquée avant d'être demandée, et la refuser ne désactive que la fonctionnalité qui en dépend.
+
+POURQUOI UNE NOTIFICATION PERMANENTE
+
+Observer le réseau en continu exige un service de premier plan visible — Android l'impose depuis sa version 8, et rien ne permet de s'en passer pour une application qui doit réagir à un changement de réseau en quelques secondes plutôt qu'en un quart d'heure. La notification affiche l'état du tunnel et la règle qui l'a décidé, et permet de couper l'automatisation sans ouvrir l'application.
+
+PRÉREQUIS
+
+• L'application Tailscale officielle, installée et connectée.
+• Android 8.0 ou ultérieur.
+
+CODE OUVERT
+
+Licence MIT. Le code source complet, la spécification fonctionnelle et les notes d'architecture sont publics :
+https://github.com/c4software/tailscale-auto-rules
+
+Tailscale est une marque de Tailscale Inc. Cette application est un projet indépendant, sans affiliation avec Tailscale Inc., ni approbation ni parrainage de sa part.

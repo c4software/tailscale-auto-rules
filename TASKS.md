@@ -21,7 +21,7 @@ Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 > | Mode avion sans changement de réseau | 11 | mesure sur terminal |
 > | `lint` sur les sources de test | 5 | défaut AGP 9.3.1 |
 > | Robolectric sur l'API 37 | 3 | version à paraître |
-> | Captures d'écran, procédure Play Console | 15 | hors du dépôt |
+> | Envoi réel sur la Play Console | 15 | hors du dépôt |
 > | Protection de la branche `main` | 16 | interface GitHub |
 
 ---
@@ -391,10 +391,24 @@ assertion textuelle ne pouvait le détecter.
 
 ### Reste à faire avant publication
 
-- [ ] **Captures d'écran réelles** — demandent un terminal ou un émulateur ;
-      les emplacements sont en place dans le README.
-- [ ] **Procédure de publication détaillée** — la trame est dans le README ;
-      elle se complète au premier envoi réel sur la Play Console.
+- [x] **Captures d'écran réelles** — six écrans par langue, capturés sur
+      émulateur Pixel 6 (API 36) depuis l'étiquette `v0.4.1`, dans
+      [`store/screenshots/`](./store/screenshots). États réels : préférences
+      saisies dans l'application, journal issu de bascules Wi-Fi ↔ données
+      mobiles.
+- [x] **Dossier de soumission** — textes des deux fiches, icône 512, image mise
+      en avant, réponses aux formulaires (sécurité des données, contenu,
+      déclarations de service de premier plan) et politique de confidentialité,
+      dans [`store/`](./store).
+- [x] **Politique de confidentialité publiée par la CI** — le workflow
+      `pages.yml` la régénère sur GitHub Pages à chaque modification poussée sur
+      `main` ; le texte déclaré à Google ne peut pas diverger du dépôt. URL dans
+      [`store/README.md`](./store/README.md).
+- [ ] **Régler `Settings → Pages` sur « GitHub Actions »** — action unique, dans
+      l'interface GitHub ; sans elle le déploiement échoue.
+- [ ] **Procédure de publication détaillée** — l'ordre de saisie est dans
+      [`store/README.md`](./store/README.md) ; il se confirmera au premier envoi
+      réel sur la Play Console.
 
 ---
 

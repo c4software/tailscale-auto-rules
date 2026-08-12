@@ -204,6 +204,10 @@ elles doit y parvenir. Rien de tout cela n'est écrit dans le dépôt.
 > Trame vérifiée sur le papier, **pas encore éprouvée** : elle se complètera au
 > premier envoi réel sur la Play Console.
 
+Les éléments à téléverser — textes des deux fiches, captures d'écran, icône,
+image mise en avant, réponses aux formulaires et politique de confidentialité —
+sont réunis dans **[`store/`](./store)**, avec l'ordre de saisie détaillé.
+
 1. Créer un keystore de release, **hors du dépôt**, et le déposer dans les
    secrets du dépôt GitHub (voir *Signature* ci-dessus).
 2. Poser une étiquette `v*` : le workflow construit et signe l'App Bundle.

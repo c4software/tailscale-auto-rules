@@ -1,0 +1,104 @@
+name: Politique de confidentialité
+
+# Publie les politiques de confidentialité sur GitHub Pages.
+#
+# La Play Console exige une URL publique, stable et accessible sans
+# authentification : c'est la seule raison d'être de ce site. Il ne contient que
+# les deux politiques, générées depuis les fichiers du dépôt — le texte déclaré
+# à Google ne peut donc pas diverger de celui qui est versionné.
+#
+# Déclenché sur `main`, et seulement quand ces fichiers changent : republier à
+# chaque commit consommerait du crédit pour un résultat identique.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'store/privacy-policy-*.md'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Générer et déployer
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # `pandoc` est fourni par l'image ubuntu-latest. Le contrôle explicite
+      # évite un échec obscur si l'image cessait de l'embarquer.
+      - name: Vérifier la présence de pandoc
+        run: pandoc --version | head -1
+
+      - name: Générer le site
+        run: |
+          set -euo pipefail
+          mkdir -p site
+
+          cat > site/style.css <<'CSS'
+          :root { color-scheme: light dark; }
+          body {
+            margin: 0 auto; padding: 2rem 1.25rem; max-width: 44rem;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+          }
+          h1, h2 { line-height: 1.25; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #8884; padding: .5rem; text-align: left; vertical-align: top; }
+          code { font-size: .95em; }
+          nav { margin-bottom: 2rem; font-size: .95em; }
+          CSS
+
+          render() {
+            pandoc "$1" \
+              --from=gfm --to=html5 --standalone \
+              --metadata title="$2" \
+              --css=style.css \
+              --output "site/$3"
+          }
+
+          render store/privacy-policy-en.md "Privacy Policy — Tailscale Auto Rules" privacy-en.html
+          render store/privacy-policy-fr.md "Politique de confidentialité — Tailscale Auto Rules" privacy-fr.html
+
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Tailscale Auto Rules — Privacy Policy</title>
+              <link rel="stylesheet" href="style.css">
+            </head>
+            <body>
+              <h1>Tailscale Auto Rules</h1>
+              <p>Privacy policy / Politique de confidentialité :</p>
+              <ul>
+                <li><a href="privacy-en.html">English</a></li>
+                <li><a href="privacy-fr.html">Français</a></li>
+              </ul>
+              <p><a href="https://github.com/c4software/tailscale-auto-rules">Source code</a> — MIT licence.</p>
+            </body>
+          </html>
+          HTML
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

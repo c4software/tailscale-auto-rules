@@ -1,0 +1,8 @@
+Première version publique.
+
+• Active ou coupe le tunnel Tailscale automatiquement, réseau par réseau.
+• Préférences de réseau : réseau de confiance (tunnel coupé) ou tunnel toujours actif.
+• Apprend vos gestes dans Tailscale et les rejoue sur le même réseau.
+• Règles mode avion, données mobiles et Wi-Fi, chaque décision expliquée.
+• Journal des 500 derniers changements, avec la règle à l'origine de chacun.
+• Aucun compte, aucun serveur, aucune télémétrie : tout reste sur le téléphone.

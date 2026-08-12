@@ -1,0 +1,8 @@
+First public release.
+
+• Turns the Tailscale tunnel on or off automatically, network by network.
+• Network preferences: mark a network as trusted (tunnel off) or as always on.
+• Learns the gestures you make in Tailscale and replays them on the same network.
+• Airplane mode, mobile data and Wi-Fi rules, each decision explained.
+• History of the last 500 changes, with the rule behind each one.
+• No account, no server, no analytics: everything stays on the phone.

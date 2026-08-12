@@ -1,0 +1,40 @@
+Tailscale Auto Rules is a companion app for Tailscale. It never asks you to think about your VPN again: it watches the network your phone is on and asks the official Tailscale client to turn the tunnel on or off accordingly.
+
+It is not a VPN. It implements no tunnel of its own, holds no account, and replaces nothing. The official Tailscale app must be installed — this app simply drives it.
+
+WHAT IT DOES
+
+• Turns the tunnel ON when you are on mobile data or on a Wi-Fi network you have not marked as trusted.
+• Turns it OFF on your trusted networks — home, office, anywhere the tunnel is unnecessary.
+• Leaves the tunnel alone in airplane mode, and whenever no rule applies.
+• Learns your gestures: turn Tailscale on or off by hand on a network, and that choice is remembered and replayed every time you come back to it.
+
+NETWORK PREFERENCES
+
+One screen, one list. Every network you care about gets a clear behaviour — tunnel always off, or tunnel always on — whether you declared it yourself or the app learned it from a gesture. Networks that are not in the list simply follow the automation. Swipe a card sideways to hand a network back to the automation.
+
+EVERY DECISION IS EXPLAINED
+
+The home screen shows the observed tunnel state, the current network and the rule behind the last change. A history keeps the last 500 changes, each one naming the rule that decided it. Nothing happens without a reason you can read.
+
+PRIVACY
+
+• Nothing leaves your phone. No account, no server, no analytics, no advertising.
+• Location permission is used for exactly one thing: reading the name of the Wi-Fi network you are connected to, which Android classifies as location data. Your position and your movements are never read, stored or transmitted.
+• Every permission is explained before it is requested, and refusing one only disables the feature that needs it.
+
+WHY A PERMANENT NOTIFICATION
+
+Watching the network continuously requires a visible foreground service — Android has required this since version 8, and there is no way around it for an app that must react to a network change in seconds rather than in a quarter of an hour. The notification shows the live tunnel state and the rule that decided it, and lets you turn the automation off without opening the app.
+
+REQUIREMENTS
+
+• The official Tailscale app, installed and signed in.
+• Android 8.0 or later.
+
+OPEN SOURCE
+
+MIT licence. The whole source code, the functional specification and the architecture notes are public:
+https://github.com/c4software/tailscale-auto-rules
+
+Tailscale is a trademark of Tailscale Inc. This app is an independent project and is not affiliated with, endorsed by or sponsored by Tailscale Inc.
