@@ -117,7 +117,14 @@ jobs:
           </html>
           HTML
 
+      # `enablement` active GitHub Pages sur le dépôt si ce n'est pas déjà fait,
+      # et le règle sur une construction par workflow. Sans elle, la première
+      # exécution échoue sur un « Get Pages site failed » tant que personne n'est
+      # allé cocher l'option à la main : une publication qui se veut automatique
+      # ne doit pas dépendre d'un geste dans une interface.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v4
         with:

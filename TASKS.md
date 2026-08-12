@@ -404,8 +404,6 @@ assertion textuelle ne pouvait le détecter.
       `pages.yml` la régénère sur GitHub Pages à chaque modification poussée sur
       `main` ; le texte déclaré à Google ne peut pas diverger du dépôt. URL dans
       [`store/README.md`](./store/README.md).
-- [ ] **Régler `Settings → Pages` sur « GitHub Actions »** — action unique, dans
-      l'interface GitHub ; sans elle le déploiement échoue.
 - [ ] **Procédure de publication détaillée** — l'ordre de saisie est dans
       [`store/README.md`](./store/README.md) ; il se confirmera au premier envoi
       réel sur la Play Console.
