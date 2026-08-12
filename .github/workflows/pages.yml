@@ -38,10 +38,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # `pandoc` est fourni par l'image ubuntu-latest. Le contrôle explicite
-      # évite un échec obscur si l'image cessait de l'embarquer.
-      - name: Vérifier la présence de pandoc
-        run: pandoc --version | head -1
+      # Python-Markdown plutôt que pandoc : l'image des exécuteurs n'embarque
+      # plus ce dernier, et une dépendance installable en deux secondes vaut
+      # mieux qu'un paquet système de plusieurs centaines de mégaoctets.
+      - name: Installer le convertisseur Markdown
+        run: python3 -m pip install --quiet 'markdown==3.10'
 
       - name: Générer le site
         run: |
@@ -62,16 +63,38 @@ jobs:
           nav { margin-bottom: 2rem; font-size: .95em; }
           CSS
 
-          render() {
-            pandoc "$1" \
-              --from=gfm --to=html5 --standalone \
-              --metadata title="$2" \
-              --css=style.css \
-              --output "site/$3"
-          }
+          python3 - <<'PY'
+          import markdown
 
-          render store/privacy-policy-en.md "Privacy Policy — Tailscale Auto Rules" privacy-en.html
-          render store/privacy-policy-fr.md "Politique de confidentialité — Tailscale Auto Rules" privacy-fr.html
+          GABARIT = """<!doctype html>
+          <html lang="{lang}">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>{titre}</title>
+              <link rel="stylesheet" href="style.css">
+            </head>
+            <body>
+          <nav><a href="index.html">&#8592; Tailscale Auto Rules</a></nav>
+          {corps}
+            </body>
+          </html>
+          """
+
+          pages = [
+              ("store/privacy-policy-en.md", "en",
+               "Privacy Policy — Tailscale Auto Rules", "site/privacy-en.html"),
+              ("store/privacy-policy-fr.md", "fr",
+               "Politique de confidentialité — Tailscale Auto Rules", "site/privacy-fr.html"),
+          ]
+
+          for source, lang, titre, cible in pages:
+              with open(source, encoding="utf-8") as f:
+                  corps = markdown.markdown(f.read(), extensions=["tables"])
+              with open(cible, "w", encoding="utf-8") as f:
+                  f.write(GABARIT.format(lang=lang, titre=titre, corps=corps))
+              print(f"{source} -> {cible}")
+          PY
 
           cat > site/index.html <<'HTML'
           <!doctype html>
