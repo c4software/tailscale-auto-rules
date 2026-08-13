@@ -3,6 +3,29 @@
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
+## [1.0.1] — 2026-08-13
+
+Aucun changement de comportement : seuls le dossier de soumission et la
+déclaration que le manifeste porte à l'intention de Google évoluent.
+
+### Modifié
+
+- **Déclarations de services de premier plan rédigées en anglais.** Le
+  formulaire de la Play Console et son examen manuel se font dans cette langue,
+  et Google compare la déclaration « usage particulier » au sous-type déclaré
+  dans le manifeste : les deux sont désormais anglais, à l'identique.
+- **Scénario de la vidéo de démonstration**, que les deux formulaires exigent,
+  remplacé par celui réellement tourné sur appareil, et assorti des deux
+  écueils qui ont invalidé les premières prises : la règle des données mobiles
+  qui s'attribue la bascule pendant le trou de connectivité d'un changement de
+  Wi-Fi, et l'écran d'accueil du téléphone qui expose des données personnelles.
+
+### Corrigé
+
+- **Un mode « réactivité immédiate » qui n'a jamais existé.** Le manifeste et le
+  scénario de tournage évoquaient un réglage absent du code : le service observe
+  le réseau tant que l'automatisation est activée, sans option dédiée.
+
 ## [1.0.0] — 2026-08-12
 
 Première version publique. Le dossier de soumission — textes des deux fiches,
