@@ -303,21 +303,26 @@ que l'écran des paramètres permet de reprendre à tout moment.
 ### 6.5 Premier lancement
 
 Au premier démarrage, un parcours d'accueil remplace l'application le temps de
-quatre pages, qui avancent d'un bouton ou d'un glissement :
+quatre pages, qui avancent **au bouton seul** — le glissement est désactivé,
+pour qu'aucune page de permission ne soit franchie sans que sa demande ait été
+posée :
 
 | Page | Contenu | Action |
 |---|---|---|
 | 1. Bienvenue | Ce que fait l'application — et ce qu'elle ne fait pas : elle pilote le client officiel, elle ne remplace aucune pile VPN | Continuer |
-| 2. Notification | Pourquoi une notification permanente est imposée (§7) | Autoriser · Continuer |
-| 3. Localisation | Pourquoi lire un SSID exige la localisation, et ce qui n'est **pas** lu (§8) | Autoriser · Continuer |
+| 2. Notification | Pourquoi une notification permanente est imposée (§7) | Autoriser les notifications, puis Continuer |
+| 3. Localisation | Pourquoi lire un SSID exige la localisation, et ce qui n'est **pas** lu (§8) | Autoriser la localisation, puis Continuer |
 | 4. Apprentissage | La mémorisation des gestes (§3.3) | Activer · Ne pas activer |
 
-Chaque demande de permission est ainsi précédée de son explication — ce sont
-ces pages qui tiennent le rôle d'écran préalable exigé par §8 — et chacune
-peut être refusée : les cartes d'explication de l'application (§6.2, §6.3)
-rattrapent un refus au moment où la fonctionnalité en a réellement besoin.
-Un octroi fait avancer le parcours de lui-même — la page a rempli son
-office ; un refus laisse la main.
+Sur une page de permission, le bouton unique du bas porte la demande : le
+premier appui la pose, et l'appui suivant — le bouton redevenant
+« Continuer » — passe à la page suivante. Chaque demande est ainsi précédée de
+son explication — ce sont ces pages qui tiennent le rôle d'écran préalable
+exigé par §8 — et chacune peut être refusée : les cartes d'explication de
+l'application (§6.2, §6.3) rattrapent un refus au moment où la fonctionnalité
+en a réellement besoin. Un octroi fait avancer le parcours de lui-même — la
+page a rempli son office ; un refus laisse la main, sans jamais enfermer le
+parcours.
 
 Le parcours ne se montre qu'une fois : la réponse de la dernière page vaut
 choix d'apprentissage (§6.3) et clôture le premier lancement, quelle qu'elle

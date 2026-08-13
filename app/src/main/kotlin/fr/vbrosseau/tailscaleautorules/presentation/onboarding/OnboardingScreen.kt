@@ -19,7 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -27,7 +26,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,11 +57,13 @@ private val IconSize = 48.dp
 /**
  * Parcours du premier lancement (SPECS.md §6.5), sans état applicatif.
  *
- * Quatre pages qui avancent d'un bouton ou d'un glissement. Les pages de
- * permission tiennent le rôle d'écran d'explication préalable exigé par
- * SPECS.md §8 : la demande part de la page, jamais avant elle. Un refus est
- * sans conséquence ici — les cartes d'explication de l'application
- * redemandent au moment du besoin réel.
+ * Quatre pages qui avancent **au bouton seul** : le glissement est désactivé,
+ * pour qu'aucune page de permission ne puisse être franchie sans que sa
+ * demande ait été posée. Les pages tiennent le rôle d'écran d'explication
+ * préalable exigé par SPECS.md §8 : la demande part du bouton « Suivant » de
+ * la page qui explique, jamais avant elle. Un refus est sans conséquence
+ * ici — les cartes d'explication de l'application redemandent au moment du
+ * besoin réel, et un second appui passe à la suite.
  *
  * L'écran vit **hors** de l'ossature — pas de `Scaffold`, donc pas de gestion
  * d'insets héritée : il pose lui-même `safeDrawingPadding`, sans quoi le titre
@@ -79,14 +84,28 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(initialPage = initialPage) { PAGE_COUNT }
     val scope = rememberCoroutineScope()
 
-    // Un octroi vaut « continuer » : la page a rempli son office, rester
-    // dessus n'apporterait qu'un appui de plus. Un refus, lui, laisse la
-    // main — l'utilisateur avance quand il veut.
+    // Les pages dont la demande a déjà été posée. Sans cette mémoire, une page
+    // refusée serait un cul-de-sac : Android ne rouvre pas une boîte de
+    // dialogue définitivement refusée, donc le bouton ne rendrait plus la
+    // main. Le premier appui demande, le suivant avance.
+    var requestedPages by rememberSaveable { mutableStateOf(emptySet<Int>()) }
+
+    // Un octroi vaut « suivant » : la page a rempli son office, rester dessus
+    // n'apporterait qu'un appui de plus. Un refus, lui, laisse la main —
+    // l'utilisateur avance quand il veut.
     LaunchedEffect(grantedPermissionCount) {
         if (grantedPermissionCount > 0 && pagerState.currentPage < LEARNING_PAGE) {
             pagerState.animateScrollToPage(pagerState.currentPage + 1)
         }
     }
+
+    val advance = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } }
+    val page = pagerState.currentPage
+    val pendingRequest = when (page) {
+        NOTIFICATION_PAGE -> onRequestNotificationPermission
+        LOCATION_PAGE -> onRequestLocationPermission
+        else -> null
+    }?.takeIf { page !in requestedPages }
 
     // Une `Surface`, parce que l'écran vit hors du `Scaffold` : sans elle,
     // rien ne pose la couleur de contenu, et le texte restait noir sur le
@@ -97,9 +116,19 @@ fun OnboardingScreen(
     ) {
         OnboardingBody(
             pagerState = pagerState,
-            onAdvance = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-            onRequestNotificationPermission = onRequestNotificationPermission,
-            onRequestLocationPermission = onRequestLocationPermission,
+            primaryLabelRes = when {
+                pendingRequest == null -> R.string.onboarding_continue
+                page == NOTIFICATION_PAGE -> R.string.onboarding_notification_grant
+                else -> R.string.onboarding_location_grant
+            },
+            onPrimaryAction = {
+                if (pendingRequest == null) {
+                    advance()
+                } else {
+                    requestedPages = requestedPages + page
+                    pendingRequest()
+                }
+            },
             onFinish = onFinish,
         )
     }
@@ -108,9 +137,8 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingBody(
     pagerState: PagerState,
-    onAdvance: () -> Unit,
-    onRequestNotificationPermission: () -> Unit,
-    onRequestLocationPermission: () -> Unit,
+    @StringRes primaryLabelRes: Int,
+    onPrimaryAction: () -> Unit,
     onFinish: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -121,17 +149,16 @@ private fun OnboardingBody(
             .padding(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
+        // Glissement désactivé : le parcours n'avance que par le bouton, qui
+        // porte la demande de permission de la page.
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
                 .weight(1f)
                 .testTag(OnboardingTestTags.PAGER),
+            userScrollEnabled = false,
         ) { page ->
-            PageContent(
-                page = page,
-                onRequestNotificationPermission = onRequestNotificationPermission,
-                onRequestLocationPermission = onRequestLocationPermission,
-            )
+            PageContent(page = page)
         }
 
         PageDots(
@@ -143,12 +170,12 @@ private fun OnboardingBody(
             LearningChoiceRow(onFinish = onFinish)
         } else {
             Button(
-                onClick = onAdvance,
+                onClick = onPrimaryAction,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag(OnboardingTestTags.CONTINUE),
             ) {
-                Text(stringResource(R.string.onboarding_continue))
+                Text(stringResource(primaryLabelRes))
             }
         }
     }
@@ -157,8 +184,6 @@ private fun OnboardingBody(
 @Composable
 private fun PageContent(
     page: Int,
-    onRequestNotificationPermission: () -> Unit,
-    onRequestLocationPermission: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (page) {
@@ -176,9 +201,6 @@ private fun PageContent(
             titleRes = R.string.onboarding_notification_title,
             bodyRes = R.string.onboarding_notification_body,
             modifier = modifier,
-            grantLabelRes = R.string.onboarding_notification_grant,
-            grantTestTag = OnboardingTestTags.NOTIFICATION_GRANT,
-            onGrant = onRequestNotificationPermission,
         )
 
         LOCATION_PAGE -> OnboardingPage(
@@ -187,9 +209,6 @@ private fun PageContent(
             titleRes = R.string.onboarding_location_title,
             bodyRes = R.string.onboarding_location_body,
             modifier = modifier,
-            grantLabelRes = R.string.onboarding_location_grant,
-            grantTestTag = OnboardingTestTags.LOCATION_GRANT,
-            onGrant = onRequestLocationPermission,
         )
 
         LEARNING_PAGE -> OnboardingPage(
@@ -203,10 +222,10 @@ private fun PageContent(
 }
 
 /**
- * Une page du parcours : pastille d'icône, titre et texte centrés, et
- * l'éventuelle demande de permission.
+ * Une page du parcours : pastille d'icône, titre et texte centrés.
  *
- * Le bouton d'autorisation vit **dans** la page, sous son explication : c'est
+ * La page ne porte que l'explication ; la demande de permission part du bouton
+ * unique du bas, qui n'est atteignable qu'après cette explication — c'est
  * l'ordre qu'exige le Play Store, et celui qui donne une chance à la demande
  * d'être comprise.
  */
@@ -217,9 +236,6 @@ private fun OnboardingPage(
     @StringRes titleRes: Int,
     @StringRes bodyRes: Int,
     modifier: Modifier = Modifier,
-    @StringRes grantLabelRes: Int? = null,
-    grantTestTag: String? = null,
-    onGrant: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -257,14 +273,6 @@ private fun OnboardingPage(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (grantLabelRes != null && grantTestTag != null) {
-            FilledTonalButton(
-                onClick = onGrant,
-                modifier = Modifier.testTag(grantTestTag),
-            ) {
-                Text(stringResource(grantLabelRes))
-            }
-        }
     }
 }
 

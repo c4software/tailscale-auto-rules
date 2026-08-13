@@ -837,3 +837,27 @@ dédiée l'obtient — et le français, langue de référence du projet, vit dan
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès ; `:app:verifyRoborazziDebug` → succès, références inchangées.
+
+---
+
+## 30. Premier lancement : la permission au bouton « Suivant » `[x]`
+
+Le parcours avançait d'un glissement, ce qui permettait de franchir une page
+de permission sans que sa demande ait jamais été posée, et le bouton
+« Autoriser » vivait au milieu de la page, sous le texte — donc sous le pli
+sur les petits écrans. La demande passe sur le bouton du bas
+([SPECS.md](./SPECS.md) §6.5).
+
+- [x] `HorizontalPager` en `userScrollEnabled = false` : le parcours n'avance
+      que par le bouton
+- [x] Le bouton unique du bas porte la demande de la page : premier appui,
+      la demande part ; appui suivant, il redevient « Continuer » et avance
+- [x] Mémoire des pages déjà demandées (`rememberSaveable`) : sans elle, un
+      refus définitif serait un cul-de-sac — Android ne rouvre plus la boîte
+      de dialogue, donc le bouton ne rendrait plus la main
+- [x] Retrait des boutons `FilledTonalButton` internes et de leurs repères
+      de test ; tests d'écran mis à jour, glissement inerte couvert
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès ; `:app:verifyRoborazziDebug` → succès, références inchangées (les
+deux pages capturées ne portaient pas de bouton d'autorisation).

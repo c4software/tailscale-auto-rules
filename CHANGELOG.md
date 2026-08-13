@@ -3,6 +3,18 @@
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Modifié
+
+- **Le parcours de premier lancement demande la permission au bouton.** Sur les
+  pages notification et localisation, la demande part désormais du bouton du
+  bas : le premier appui la pose, l'appui suivant passe à la page suivante. Le
+  bouton « Autoriser » interne, qui pouvait rester sous le pli, disparaît.
+- **Glissement retiré du parcours de premier lancement** : les pages n'avancent
+  plus qu'au bouton, pour qu'aucune page de permission ne soit franchie sans
+  que sa demande ait été posée.
+
 ## [1.0.1] — 2026-08-13
 
 Aucun changement de comportement : seuls le dossier de soumission et la
