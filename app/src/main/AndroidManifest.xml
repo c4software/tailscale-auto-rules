@@ -77,7 +77,7 @@
             android:foregroundServiceType="specialUse|location">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Observation continue de l'état du réseau afin d'activer ou de désactiver le tunnel Tailscale selon les règles de l'utilisateur. Aucun autre type de service de premier plan ne décrit ce besoin." />
+                android:value="Continuous monitoring of network state in order to enable or disable the Tailscale VPN tunnel according to rules defined by the user. No other foreground service type describes this need: it is neither a data sync, nor a connected device, nor location tracking." />
         </service>
 
         <receiver

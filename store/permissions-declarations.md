@@ -4,50 +4,67 @@ Textes à coller dans **Play Console → Contenu de l'application**. Deux
 déclarations sont obligatoires et font l'objet d'un examen manuel : le type de
 service de premier plan `specialUse`, et l'usage de la localisation.
 
+Le formulaire de la Play Console et son examen manuel sont en anglais : **les
+textes cités ci-dessous sont en anglais**, la prose qui les entoure reste en
+français. Le sous-type déclaré dans le manifeste
+(`PROPERTY_SPECIAL_USE_FGS_SUBTYPE`) est rédigé dans la même langue que la
+déclaration du §1, que Google compare à ce champ.
+
 ---
 
 ## 1. Service de premier plan — `specialUse`
 
 **Fonctionnalité concernée :** observation continue de l'état du réseau.
+**Tâche à cocher dans le formulaire :** *Other*, seule option proposée.
 
-> L'application active ou désactive le tunnel VPN Tailscale de l'utilisateur
-> selon des règles qu'il configure : réseau de confiance, données mobiles, mode
-> avion. Réagir à un changement de réseau exige d'être notifié par
-> `ConnectivityManager.NetworkCallback` en permanence, ce qu'un processus vivant
-> seul permet — donc un service de premier plan.
+> The app enables or disables the user's Tailscale VPN tunnel according to rules
+> they configure: trusted network, mobile data, airplane mode. Reacting to a
+> network change requires being notified by
+> `ConnectivityManager.NetworkCallback` at all times, which only a living
+> process allows — hence a foreground service.
 >
-> Aucun type prédéfini ne décrit ce besoin : il ne s'agit ni de synchronisation
-> de données, ni d'appareil connecté, ni de lecture multimédia, ni de
-> localisation au sens usuel. D'où `specialUse`.
+> No predefined type describes this need: it is neither a data sync, nor a
+> connected device, nor media playback, nor location tracking in the usual
+> sense. Hence `specialUse`.
 >
-> Les solutions sans service ont été mesurées et écartées :
-> `registerNetworkCallback(NetworkRequest, PendingIntent)` ne délivre qu'un
-> réveil unique avant que le système ne relâche l'inscription, et une
-> vérification périodique est plafonnée à quinze minutes par la plateforme —
-> une application censée suivre le réseau qui réagirait un quart d'heure plus
-> tard ne rendrait pas le service annoncé.
+> Service-free alternatives were measured and ruled out:
+> `registerNetworkCallback(NetworkRequest, PendingIntent)` delivers a single
+> wake-up before the system releases the registration, and periodic checks are
+> capped at fifteen minutes by the platform — an app meant to follow the network
+> that reacted a quarter of an hour later would not deliver the advertised
+> service.
 >
-> Le service n'effectue aucune communication réseau pour son compte. Sa
-> notification affiche l'état du tunnel, la règle appliquée, et permet de
-> couper l'automatisation.
+> The service performs no network communication of its own. Its notification
+> shows the tunnel state, the rule applied, and lets the user turn the
+> automation off.
 
 **Sous-type déclaré dans le manifeste** (`PROPERTY_SPECIAL_USE_FGS_SUBTYPE`) :
-observation continue de l'état du réseau afin d'activer ou de désactiver le
-tunnel Tailscale selon les règles de l'utilisateur.
+
+> Continuous monitoring of network state in order to enable or disable the
+> Tailscale VPN tunnel according to rules defined by the user. No other
+> foreground service type describes this need: it is neither a data sync, nor a
+> connected device, nor location tracking.
 
 ---
 
 ## 2. Service de premier plan — `location`
 
-> Le service lit le nom (SSID) du réseau Wi-Fi courant pour reconnaître les
-> réseaux de confiance de l'utilisateur. Depuis Android 10, un service de
-> premier plan n'accède à cette information que s'il se déclare de type
-> `location` : sans cela, le nom du réseau revient vide en arrière-plan et la
-> règle des réseaux de confiance ne peut jamais s'appliquer.
+**Tâche à cocher dans le formulaire :** *Other*. Aucune des cases proposées ne
+convient — ni *Background location updates*, ni *User-initiated location
+sharing*, ni *Navigation*, ni *Geofencing* : le type `location` n'est déclaré
+que pour lire le SSID.
+
+> This app does not access any geographic location. The foreground service
+> declares the "location" type solely because Android classifies the Wi-Fi
+> network name (SSID) as location data since Android 10: without this type, the
+> SSID is returned empty whenever the app is not in the foreground. The SSID is
+> compared locally against a list of trusted networks defined by the user, in
+> order to enable or disable the Tailscale VPN tunnel.
 >
-> Aucune position n'est lue : ni GPS, ni triangulation, ni géorepérage. Le
-> service ne consulte que le SSID, et uniquement si l'utilisateur a accordé la
-> permission de localisation.
+> No position is ever read: no GPS, no triangulation, no geofencing. No
+> coordinates are stored or transmitted, and the app does not request
+> ACCESS_BACKGROUND_LOCATION. The service reads the SSID only, and only if the
+> user has granted the location permission.
 
 ---
 
@@ -56,20 +73,52 @@ tunnel Tailscale selon les règles de l'utilisateur.
 L'application ne demande **pas** `ACCESS_BACKGROUND_LOCATION`. Si le formulaire
 interroge malgré tout sur l'usage de la localisation :
 
-> La permission de localisation sert exclusivement à lire le nom (SSID) du
-> réseau Wi-Fi auquel l'appareil est connecté — Android classe cette
-> information parmi les données de localisation et n'y donne accès qu'à ce
-> titre. Le SSID sert à reconnaître les réseaux que l'utilisateur a déclarés de
-> confiance, afin de couper le tunnel VPN sur ceux-là.
+> The location permission is used exclusively to read the name (SSID) of the
+> Wi-Fi network the device is connected to — Android classifies this piece of
+> information as location data and grants access to it on that basis only. The
+> SSID is used to recognise the networks the user has marked as trusted, in
+> order to turn the VPN tunnel off on those.
 >
-> Aucune coordonnée n'est lue, aucune donnée de localisation n'est enregistrée
-> ni transmise : rien ne quitte l'appareil. La permission est facultative —
-> refusée, l'application continue de fonctionner sans reconnaître les réseaux
-> Wi-Fi par leur nom.
+> No coordinates are ever read, no location data is stored or transmitted:
+> nothing leaves the device. The permission is optional — if denied, the app
+> keeps working, without recognising Wi-Fi networks by name.
 
 ---
 
-## 4. Tableau de synthèse des permissions
+## 4. Vidéo de démonstration (obligatoire)
+
+Les deux déclarations de service de premier plan exigent un **lien vidéo**, sans
+lequel le formulaire ne peut être soumis. Le lien doit rester accessible sans
+authentification (YouTube en « non répertoriée », ou Google Drive partagé à
+« tous les utilisateurs disposant du lien ») et pointer directement sur la
+vidéo, pas sur un dossier.
+
+**Filmer sur un appareil réel, avec le vrai client Tailscale installé.** La
+doublure `com.tailscale.ipn` employée pour les captures d'écran ne bascule aucun
+tunnel : une vidéo tournée sur l'émulateur ne montrerait pas la fonctionnalité
+déclarée, ce qui est le motif de rejet le plus courant.
+
+Une seule vidéo peut servir aux deux déclarations, à condition qu'elle montre
+les deux usages. Scénario, environ une minute :
+
+1. Ouvrir l'application, montrer une règle « réseau de confiance » configurée
+   avec le SSID du Wi-Fi domestique, et le mode « réactivité immédiate » activé.
+2. Passer l'application en arrière-plan. Montrer la notification persistante du
+   service : état du tunnel, règle appliquée, action de coupure. *(couvre
+   `specialUse`)*
+3. Se déconnecter du Wi-Fi de confiance, ou passer sur un autre réseau. Montrer
+   la notification qui change d'état et le client Tailscale qui active le
+   tunnel, sans que l'utilisateur ait rouvert l'application. *(couvre
+   `location` : le SSID est lu par le service en arrière-plan)*
+4. Revenir sur le réseau de confiance, montrer le tunnel qui se coupe.
+
+Commenter les étapes en anglais, à l'écrit (sous-titres ou cartons) ou à l'oral,
+en nommant explicitement ce que la vidéo démontre — un relecteur qui ne fait pas
+le lien entre le SSID et la permission de localisation rejette la déclaration.
+
+---
+
+## 5. Tableau de synthèse des permissions
 
 | Permission | Motif | Facultative ? |
 |---|---|---|
