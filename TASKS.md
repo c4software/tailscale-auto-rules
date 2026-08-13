@@ -13,15 +13,14 @@ Légende : `[x]` terminé · `[~]` partiel · `[ ]` à faire
 > mémorisation des gestes manuels par réseau ([SPECS.md](./SPECS.md) §3.3 et
 > §4.5).
 >
-> Les points ouverts ne bloquent pas : deux dépendent d'outils tiers, deux se
-> font hors du dépôt.
+> Les points ouverts ne bloquent pas : deux dépendent d'outils tiers, un se
+> mesure sur terminal, un se règle hors du dépôt.
 >
 > | Point | Étape | Nature |
 > |---|---|---|
 > | Mode avion sans changement de réseau | 11 | mesure sur terminal |
 > | `lint` sur les sources de test | 5 | défaut AGP 9.3.1 |
 > | Robolectric sur l'API 37 | 3 | version à paraître |
-> | Envoi réel sur la Play Console | 15 | hors du dépôt |
 > | Protection de la branche `main` | 16 | interface GitHub |
 
 ---
@@ -404,9 +403,9 @@ assertion textuelle ne pouvait le détecter.
       `pages.yml` la régénère sur GitHub Pages à chaque modification poussée sur
       `main` ; le texte déclaré à Google ne peut pas diverger du dépôt. URL dans
       [`store/README.md`](./store/README.md).
-- [ ] **Procédure de publication détaillée** — l'ordre de saisie est dans
-      [`store/README.md`](./store/README.md) ; il se confirmera au premier envoi
-      réel sur la Play Console.
+- [x] **Procédure de publication détaillée** — l'ordre de saisie est dans
+      [`store/README.md`](./store/README.md) ; il a été confirmé par l'envoi réel
+      sur la Play Console, l'application est publiée.
 
 ---
 

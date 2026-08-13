@@ -11,11 +11,18 @@ connexions de confiance.**
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
 [![Min SDK](https://img.shields.io/badge/minSdk-26-brightgreen.svg)](https://developer.android.com/tools/releases/platforms)
 
-> ⚠️ **Première version fonctionnelle, pas encore publiée.** Les quatre écrans,
-> le moteur de règles et l'automatisation sont livrés, testés, et **vérifiés sur
-> un terminal réel** (Pixel 10 Pro) : application fermée, le tunnel s'active en
-> passant en 5G et se désactive en retrouvant un réseau de confiance. Les
-> réserves restantes sont listées en tête de [TASKS.md](./TASKS.md).
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=fr.vbrosseau.tailscaleautorules">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png"
+         alt="Disponible sur Google Play" height="80">
+  </a>
+</p>
+
+> **Publiée sur le Play Store.** Les quatre écrans, le moteur de règles et
+> l'automatisation sont livrés, testés, et **vérifiés sur un terminal réel**
+> (Pixel 10 Pro) : application fermée, le tunnel s'active en passant en 5G et se
+> désactive en retrouvant un réseau de confiance. Les réserves restantes sont
+> listées en tête de [TASKS.md](./TASKS.md).
 
 ---
 
@@ -201,8 +208,7 @@ elles doit y parvenir. Rien de tout cela n'est écrit dans le dépôt.
 
 ## Publication sur le Play Store
 
-> Trame vérifiée sur le papier, **pas encore éprouvée** : elle se complètera au
-> premier envoi réel sur la Play Console.
+> Trame **éprouvée** : c'est celle qui a servi à publier l'application.
 
 Les éléments à téléverser — textes des deux fiches, captures d'écran, icône,
 image mise en avant, réponses aux formulaires et politique de confidentialité —
