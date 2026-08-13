@@ -99,18 +99,29 @@ tunnel : une vidéo tournée sur l'émulateur ne montrerait pas la fonctionnalit
 déclarée, ce qui est le motif de rejet le plus courant.
 
 Une seule vidéo peut servir aux deux déclarations, à condition qu'elle montre
-les deux usages. Scénario, environ une minute :
+les deux usages. Scénario tourné, quatre-vingt-quinze secondes :
 
-1. Ouvrir l'application, montrer une règle « réseau de confiance » configurée
-   avec le SSID du Wi-Fi domestique, et le mode « réactivité immédiate » activé.
+1. Ouvrir l'application sur le réseau de confiance : tunnel coupé, nom du réseau
+   affiché. Montrer l'onglet des réseaux et ses deux règles opposées, l'une
+   coupant le tunnel, l'autre l'activant, toutes deux désignées par leur SSID.
 2. Passer l'application en arrière-plan. Montrer la notification persistante du
-   service : état du tunnel, règle appliquée, action de coupure. *(couvre
-   `specialUse`)*
-3. Se déconnecter du Wi-Fi de confiance, ou passer sur un autre réseau. Montrer
-   la notification qui change d'état et le client Tailscale qui active le
-   tunnel, sans que l'utilisateur ait rouvert l'application. *(couvre
-   `location` : le SSID est lu par le service en arrière-plan)*
-4. Revenir sur le réseau de confiance, montrer le tunnel qui se coupe.
+   service : état du tunnel et règle appliquée. *(couvre `specialUse`)*
+3. Changer de réseau Wi-Fi sans toucher à l'application. Montrer la notification
+   qui bascule à « Tunnel on », avec pour motif la préférence de réseau. *(couvre
+   `location` : la décision vient du seul SSID, lu en arrière-plan)*
+4. Revenir dans l'application, puis sur le réseau de confiance : le tunnel se
+   recoupe à l'écran.
+
+⚠️ **Désactiver la règle des données mobiles avant de filmer.** Un changement de
+Wi-Fi passe par un bref instant sans connectivité : la règle des données mobiles
+s'applique alors la première, et l'application attribue la bascule à ce motif —
+la vidéo ne démontre plus la lecture du SSID, donc plus rien qui justifie
+`FOREGROUND_SERVICE_LOCATION`. Constaté à la première prise.
+
+⚠️ **Ne jamais montrer l'écran d'accueil du téléphone** : fond d'écran et
+applications personnelles s'y trouvent. Pour figurer l'arrière-plan, ouvrir un
+écran de réglages Android sans données personnelles — celui de l'affichage
+convient.
 
 Commenter les étapes en anglais, à l'écrit (sous-titres ou cartons) ou à l'oral,
 en nommant explicitement ce que la vidéo démontre — un relecteur qui ne fait pas

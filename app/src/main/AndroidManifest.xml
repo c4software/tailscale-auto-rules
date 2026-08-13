@@ -24,10 +24,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
-      Observation continue du réseau (mode « réactivité immédiate »). Aucun type
-      de service prédéfini ne décrit ce besoin : ni synchronisation de données,
-      ni appareil connecté, ni localisation. D'où « usage particulier », dont le
-      motif est déclaré sur le service lui-même.
+      Observation continue du réseau, tant que l'automatisation est activée.
+      Aucun type de service prédéfini ne décrit ce besoin : ni synchronisation
+      de données, ni appareil connecté, ni localisation. D'où « usage
+      particulier », dont le motif est déclaré sur le service lui-même.
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
