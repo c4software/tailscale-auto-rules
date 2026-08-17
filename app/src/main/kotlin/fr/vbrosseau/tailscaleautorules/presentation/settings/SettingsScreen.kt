@@ -171,6 +171,7 @@ private fun BackgroundLocationSection(
         onAction = onRequestBackgroundLocation,
         testTag = SettingsTestTags.BACKGROUND_LOCATION,
         modifier = modifier,
+        title = stringResource(R.string.settings_background_location_title),
     )
 }
 
@@ -233,6 +234,7 @@ private fun ActionCard(
     onAction: () -> Unit,
     testTag: String,
     modifier: Modifier = Modifier,
+    title: String? = null,
 ) {
     Card(
         modifier = modifier
@@ -254,6 +256,9 @@ private fun ActionCard(
                 .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
+            if (title != null) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium)
+            }
             Text(text = message)
             FilledTonalButton(
                 onClick = onAction,
