@@ -372,29 +372,29 @@ est une mesure, pas un objectif.
 │       │   │                 DetectManualOverrideUseCase
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
 │       ├── testFixtures/…/  les 6 Fakes + fabriques Contexts
-│       └── test/…/          109 tests JVM
+│       └── test/…/          146 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/
 │       │   ├── kotlin/fr/vbrosseau/tailscaleautorules/
 │       │   │   ├── TailscaleAutoRulesApplication.kt · MainActivity.kt
-│       │   │   ├── automation/           Trigger, Coordinator, 3 receveurs
+│       │   │   ├── automation/           Trigger, Coordinator, TunnelWatchService, 2 receveurs
 │       │   │   ├── data/local/           Room (base, DAO, entités), clés DataStore
 │       │   │   ├── data/network/         AndroidNetworkObserver
 │       │   │   ├── data/repository/      Room…Repository, DataStoreSettingsRepository
 │       │   │   ├── data/tailscale/       AndroidTailscaleController
 │       │   │   ├── notification/         NotificationChannels, TunnelNotifier
 │       │   │   ├── di/                   10 modules Hilt
-│       │   │   └── presentation/         SystemStatus, libellés
+│       │   │   └── presentation/         SystemStatus, ForegroundStateTracker, libellés
 │       │   │       ├── theme/           AppTheme, Color, Spacing
 │       │   │       ├── navigation/      AppNavHost, AppNavigationBar, AppDestination
 │       │   │       ├── home/            écran + ViewModel + UiState
-│       │   │       ├── blacklist/       écran + ViewModel + UiState
+│       │   │       ├── networks/        écran + ViewModel + UiState
 │       │   │       ├── settings/        écran + ViewModel + UiState
 │       │   │       └── journal/         écran + ViewModel + UiState + mise en forme
 │       │   ├── res/
 │       │   └── AndroidManifest.xml
-│       └── test/…/          186 tests (Robolectric, DataStore, ViewModels, Compose)
+│       └── test/…/          244 tests (Robolectric, DataStore, ViewModels, Compose)
 ├── app/schemas/             schémas Room versionnés
 ├── config/detekt/detekt.yml
 ├── gradle/libs.versions.toml
