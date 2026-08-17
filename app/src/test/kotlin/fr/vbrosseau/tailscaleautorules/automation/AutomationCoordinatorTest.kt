@@ -314,11 +314,12 @@ class AutomationCoordinatorTest {
     }
 
     @Test
-    fun aBackgroundStartBlockedByLocationPostsAReminderInsteadOfArming() = runTest {
+    fun aBackgroundStartBlockedByLocationDeclinesSilently() = runTest {
         // Une localisation « pendant l'utilisation » fait rejeter le service
         // de type « localisation » démarré depuis l'arrière-plan : tenter
-        // quand même le ferait mourir à la naissance. Le rappel est alors le
-        // seul signe que l'automatisation attend l'ouverture de l'application.
+        // quand même le ferait mourir à la naissance. Pas de rappel ici :
+        // ce chemin court aussi à l'ouverture à froid, quelques instants
+        // avant la première activité, et le rappel y clignoterait.
         systemStatus.ssidReadable = true
         systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = false
@@ -326,7 +327,48 @@ class AutomationCoordinatorTest {
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
 
         assertTrue(!trigger.isArmed)
+        assertNull(postedReminder())
+    }
+
+    @Test
+    fun aBlockedBootPostsTheReminder() = runTest {
+        // Au boot, personne ne viendra armer ensuite : le rappel est le seul
+        // signe que l'automatisation attend l'ouverture de l'application.
+        systemStatus.ssidReadable = true
+        systemStatus.ssidReadableInBackground = false
+        systemStatus.appInForeground = false
+
+        coordinator.applySettingsAfterBoot(AppSettings(isServiceEnabled = true))
+
+        assertTrue(!trigger.isArmed)
         assertNotNull(postedReminder())
+    }
+
+    @Test
+    fun aStartableBootArmsWithoutReminder() = runTest {
+        systemStatus.ssidReadable = true
+        systemStatus.ssidReadableInBackground = true
+        systemStatus.appInForeground = false
+
+        coordinator.applySettingsAfterBoot(AppSettings(isServiceEnabled = true))
+
+        assertTrue(trigger.isArmed)
+        assertNull(postedReminder())
+    }
+
+    @Test
+    fun aDisabledBootNeitherArmsNorReminds() = runTest {
+        // Sans automatisation, il n'y a rien à démarrer : inviter à ouvrir
+        // l'application promettrait une synchronisation qui n'aura pas lieu.
+        settings.updateAppSettings { it.copy(isServiceEnabled = false) }
+        systemStatus.ssidReadable = true
+        systemStatus.ssidReadableInBackground = false
+        systemStatus.appInForeground = false
+
+        coordinator.applySettingsAfterBoot(AppSettings(isServiceEnabled = false))
+
+        assertTrue(!trigger.isArmed)
+        assertNull(postedReminder())
     }
 
     @Test

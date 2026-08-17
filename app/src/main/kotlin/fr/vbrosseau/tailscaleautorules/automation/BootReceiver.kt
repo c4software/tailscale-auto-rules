@@ -42,12 +42,7 @@ class BootReceiver : BroadcastReceiver() {
                 // ici évite de réarmer une automatisation que l'utilisateur a
                 // volontairement laissée au repos.
                 if (settings.startOnBoot) {
-                    // La garde du démarrage en arrière-plan vit dans
-                    // applySettings : elle doit couvrir aussi l'armement fait
-                    // par l'observation des réglages au démarrage du
-                    // processus, qui précède ce receveur.
-                    coordinator.applySettings(settings)
-                    coordinator.synchronize()
+                    coordinator.applySettingsAfterBoot(settings)
                 }
             } finally {
                 pendingResult.finish()

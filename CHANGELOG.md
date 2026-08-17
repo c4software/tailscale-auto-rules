@@ -14,6 +14,15 @@ Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
   à la naissance. Désormais, une notification invite à ouvrir l'application
   pour démarrer la synchronisation, au lieu d'une tentative vouée à l'échec.
 
+- **Un redémarrage du téléphone effaçait les préférences apprises.** Le tunnel
+  encore éteint au démarrage était pris pour un geste manuel « coupé », qui
+  remplaçait la préférence (« toujours actif » redevenait « toujours coupé »).
+  Les attestations du journal antérieures au dernier boot ne comptent plus.
+- **Le service pouvait encore partir du boot voué au rejet.** Pendant un
+  receveur de diffusion, Android élève l'importance du processus au niveau
+  « premier plan », ce qui trompait la garde de l'armement. Le premier plan se
+  constate désormais par les activités démarrées.
+
 ### Ajouté
 
 - **Localisation « Toujours autoriser », en option.** Une carte des paramètres

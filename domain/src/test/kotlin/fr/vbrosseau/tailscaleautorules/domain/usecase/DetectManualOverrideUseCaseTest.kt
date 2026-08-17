@@ -169,4 +169,38 @@ class DetectManualOverrideUseCaseTest {
         runTest {
             assertNull(detect(trustedWifi, TunnelState.ENABLED, lastChange = null))
         }
+
+    @Test
+    fun anAttestationFromBeforeTheBootProvesNothing() =
+        runTest {
+            // Un redémarrage remet le tunnel dans son état par défaut sans
+            // qu'aucune main n'y touche : l'entrée de la session précédente ne
+            // doit pas transformer ce simple fait en geste. Constaté sur
+            // appareil : une préférence « toujours actif » redevenait
+            // « toujours coupé » à chaque reboot.
+            clock.bootMillis = 30_000
+
+            assertNull(
+                detect(
+                    trustedWifi,
+                    TunnelState.ENABLED,
+                    applied(TunnelState.DISABLED, "network-preference"),
+                ),
+            )
+        }
+
+    @Test
+    fun anAttestationFromTheCurrentSessionStillProves() =
+        runTest {
+            // Le premier cycle de la session réatteste la décision au journal :
+            // la détection doit reprendre sur cette entrée-là.
+            clock.bootMillis = 30_000
+            val reattested =
+                applied(TunnelState.DISABLED, "network-preference").copy(epochMillis = 40_000)
+
+            assertEquals(
+                ManualOverride(TunnelState.ENABLED, RuleId("network-preference")),
+                detect(trustedWifi, TunnelState.ENABLED, reattested),
+            )
+        }
 }

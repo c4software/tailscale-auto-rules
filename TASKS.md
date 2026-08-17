@@ -895,3 +895,29 @@ arme dès la création du processus, avant que le receveur s'exécute.
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 377 tests, 0 échec ; `:app:verifyRoborazziDebug` → seule la capture
 attendue divergeait, réenregistrée puis relue en clair et sombre.
+
+---
+
+## 32. Un redémarrage ne vaut pas geste, un receveur ne vaut pas premier plan `[x]`
+
+Deux constats du reboot d'essai sur appareil (décisions n°34 et n°35).
+
+- [x] La préférence « toujours actif » redevenait « toujours coupé » à chaque
+      reboot : le tunnel encore éteint au démarrage divergeait de
+      l'attestation du journal de la session précédente, et la détection y
+      voyait un geste manuel. `Clock` expose `bootEpochMillis()` ; une entrée
+      antérieure au boot n'atteste plus, le premier cycle de la session
+      réatteste ([SPECS.md](./SPECS.md) §3.3)
+- [x] La garde de l'armement laissait passer le boot : pendant un receveur,
+      le système élève l'importance du processus au niveau « premier plan ».
+      `ForegroundStateTracker` compte les activités démarrées et remplace
+      `getMyMemoryState`
+- [x] Le rappel « ouvrez l'application » ne part plus que du chemin du boot
+      (`applySettingsAfterBoot`) : publié depuis `applySettings`, il aurait
+      clignoté à chaque ouverture à froid, l'observation des réglages
+      s'exécutant avant la première activité
+- [x] SPECS.md consigne aussi le délai de livraison de `BOOT_COMPLETED`,
+      une à deux minutes hors de notre contrôle (§7.2)
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 390 tests, 0 échec (interface intacte, captures inchangées).

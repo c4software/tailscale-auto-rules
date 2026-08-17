@@ -52,24 +52,45 @@ class AutomationCoordinator @Inject constructor(
      * limitée à « pendant l'utilisation » fait rejeter par Android le service
      * de type « localisation », celui qu'impose la lecture du SSID, dès qu'il
      * part de l'arrière-plan. Tenter quand même le ferait mourir à la
-     * naissance (constaté au boot sur appareil). À la place, une notification
-     * invite à ouvrir l'application, seul geste qui rende le démarrage à
-     * nouveau permis. La garde ne peut pas vivre dans le receveur de boot :
-     * l'observation des réglages arme depuis n'importe quel démarrage de
-     * processus, y compris celui créé pour livrer le boot, avant même que le
-     * receveur s'exécute.
+     * naissance (constaté au boot sur appareil). La garde ne peut pas vivre
+     * dans le receveur de boot : l'observation des réglages arme depuis
+     * n'importe quel démarrage de processus, y compris celui créé pour livrer
+     * le boot, avant même que le receveur s'exécute.
+     *
+     * Le refus est silencieux : à l'ouverture à froid de l'application, ce
+     * chemin court quelques instants avant la première activité, et publier
+     * le rappel ici le ferait clignoter à chaque lancement. Le boot, seul
+     * moment où personne ne viendra armer ensuite, publie le sien via
+     * [applySettingsAfterBoot].
      */
     suspend fun applySettings(settings: AppSettings) {
         when {
             !settings.isServiceEnabled -> trigger.disarm()
             isWatchStartableNow -> trigger.arm()
-            else -> {
-                Timber.i("Service non démarrable depuis l'arrière-plan : rappel publié")
-                notifier.showStartupReminder()
-            }
+            else -> Timber.i("Service non démarrable depuis l'arrière-plan : armement décliné")
         }
 
         applyNotification(settings)
+    }
+
+    /**
+     * Chemin du redémarrage du terminal : applique, puis invite si besoin.
+     *
+     * Quand l'armement a été décliné, la notification de rappel est le seul
+     * signe que l'automatisation attend l'ouverture de l'application : aucun
+     * autre passage au premier plan ne viendra armer de lui-même. Le cycle
+     * final vaut pour les règles lisibles sans SSID, données mobiles en tête,
+     * et réatteste la décision courante au journal de cette session.
+     */
+    suspend fun applySettingsAfterBoot(settings: AppSettings) {
+        applySettings(settings)
+
+        if (settings.isServiceEnabled && !isWatchStartableNow) {
+            Timber.i("Rappel de démarrage publié")
+            notifier.showStartupReminder()
+        }
+
+        synchronize()
     }
 
     /**
@@ -118,14 +139,24 @@ class AutomationCoordinator @Inject constructor(
      * potentiellement différents.
      */
     private suspend fun applyNotification(settings: AppSettings) {
-        if (settings.notificationIsVisible) {
-            refreshNotification()
-        } else {
+        if (!settings.notificationIsVisible) {
             // Désactiver l'automatisation retire aussi la notification :
             // laisser un état affiché que plus rien ne met à jour serait pire
             // que ne rien afficher.
             notifier.hide()
+            return
         }
+
+        val status = describeTunnelStatus()
+
+        Timber.i(
+            "Notification : état %s, règle %s, geste manuel %b",
+            status.state,
+            status.ruleId?.value ?: "aucune",
+            status.isManuallyOverridden,
+        )
+
+        notifier.show(status.state, status.ruleId, status.isManuallyOverridden)
     }
 
     /**
@@ -204,16 +235,4 @@ class AutomationCoordinator @Inject constructor(
             .onFailure { Timber.e(it, "Constat du geste manuel en échec") }
     }
 
-    private suspend fun refreshNotification() {
-        val status = describeTunnelStatus()
-
-        Timber.i(
-            "Notification : état %s, règle %s, geste manuel %b",
-            status.state,
-            status.ruleId?.value ?: "aucune",
-            status.isManuallyOverridden,
-        )
-
-        notifier.show(status.state, status.ruleId, status.isManuallyOverridden)
-    }
 }

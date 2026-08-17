@@ -120,6 +120,13 @@ apprise ; revenir au comportement automatique se fait en la supprimant sur
 l'écran des réseaux (§6.2). L'enregistrement est consigné au journal sous la
 règle « Préférence de réseau ».
 
+Un redémarrage du terminal ne vaut jamais geste : il remet le tunnel dans son
+état par défaut sans qu'aucune main n'y touche, et le journal de la session
+précédente n'atteste plus de rien. La détection ne reprend qu'une fois la
+décision réattestée par le premier cycle de la nouvelle session ; sans quoi
+une préférence « toujours actif » se voyait remplacée par « toujours coupé »
+à chaque redémarrage.
+
 La mémorisation se coupe par le réglage « Apprendre mes gestes » (§6.3).
 Coupée, le geste redevient éphémère : aucun cycle ne le combat tant que le
 réseau ne change pas, et les règles reprennent la main au changement de réseau
@@ -385,6 +392,10 @@ ponctuelle invite à ouvrir l'application pour démarrer la synchronisation.
 Elle vit sur un canal « Rappels » distinct, d'importance normale : elle attend
 un geste, là où la notification d'état se consulte. Rejetable, à disparition
 automatique au toucher, elle est retirée dès que le service démarre.
+
+Elle peut mettre une à deux minutes à paraître : Android livre
+`BOOT_COMPLETED` aux applications une à une, dans une file que l'application
+ne contrôle pas.
 
 ---
 

@@ -1,7 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.presentation
 
 import android.Manifest
-import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -47,11 +46,12 @@ interface SystemStatus {
     fun canReadSsidInBackground(): Boolean
 
     /**
-     * Vrai lorsque le processus est au premier plan aux yeux du système.
+     * Vrai lorsqu'une activité de l'application est visible.
      *
      * C'est ce qui rend un démarrage de service de type « localisation »
      * acceptable malgré une permission limitée au premier plan : la décision
-     * d'armer doit donc le savoir.
+     * d'armer doit donc le savoir. Le constat vient des activités, pas de
+     * l'importance du processus, que le système élève pendant un receveur.
      */
     fun isAppInForeground(): Boolean
 
@@ -71,6 +71,7 @@ interface SystemStatus {
 class AndroidSystemStatus @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val notifier: TunnelNotifier,
+    private val foregroundStateTracker: ForegroundStateTracker,
 ) : SystemStatus {
 
     override fun canNotify(): Boolean = notifier.canNotify()
@@ -89,11 +90,7 @@ class AndroidSystemStatus @Inject constructor(
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION,
             ) == PackageManager.PERMISSION_GRANTED
 
-    override fun isAppInForeground(): Boolean {
-        val state = ActivityManager.RunningAppProcessInfo()
-        ActivityManager.getMyMemoryState(state)
-        return state.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-    }
+    override fun isAppInForeground(): Boolean = foregroundStateTracker.isInForeground
 
     override fun isIgnoringBatteryOptimizations(): Boolean =
         context.getSystemService(PowerManager::class.java)

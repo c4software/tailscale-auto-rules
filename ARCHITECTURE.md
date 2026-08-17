@@ -352,7 +352,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 31 complètes. 377 tests, 0 échec.
+Étapes 1 à 32 complètes. 390 tests, 0 échec.
 
 ```
 .
@@ -500,4 +500,6 @@ lui — là où un réveil par diffusion ne survivait pas d'un processus à l'au
 | 32 | Blacklist et gestes fusionnés en préférences de réseau | Deux notions disaient la même chose en deux endroits ; une seule table, une seule règle, la dernière volonté gagne quelle que soit son origine |
 | 30 | Un nouveau geste **remplace** l'exception, jamais de suppression implicite | La mémoire d'un réseau est son dernier geste ; le retour au comportement automatique est un acte explicite sur l'écran des réseaux |
 | 31 | Capture et cycles sérialisés par un mutex du coordinateur | Un battement concurrent ne doit pas basculer le tunnel entre le constat d'un geste et sa mémorisation |
-| 33 | La garde du démarrage en arrière-plan vit dans `applySettings`, seul point d'armement | Une localisation « pendant l'utilisation » fait rejeter par Android le service de type « localisation » démarré depuis l'arrière-plan : il mourrait à la naissance. Un rappel « ouvrir l'application » remplace alors l'armement ; `ACCESS_BACKGROUND_LOCATION`, proposée en option, lève la restriction. La garde ne peut pas vivre dans le receveur de boot : l'observation des réglages arme dès la création du processus, avant lui. Le service garde en plus un repli sans type « localisation » pour les redémarrages `START_STICKY` |
+| 33 | La garde du démarrage en arrière-plan vit dans `applySettings`, seul point d'armement | Une localisation « pendant l'utilisation » fait rejeter par Android le service de type « localisation » démarré depuis l'arrière-plan : il mourrait à la naissance. La garde décline en silence ; le chemin du boot, seul moment où personne ne viendra armer ensuite, publie le rappel « ouvrir l'application », et `ACCESS_BACKGROUND_LOCATION`, proposée en option, lève la restriction. La garde ne peut pas vivre dans le receveur de boot : l'observation des réglages arme dès la création du processus, avant lui. Le service garde en plus un repli sans type « localisation » pour les redémarrages `START_STICKY` |
+| 34 | Le premier plan se constate par les activités, jamais par l'importance du processus | Pendant l'exécution d'un receveur, le système élève l'importance au niveau « premier plan » : la garde de l'armement laissait passer au boot un service voué au rejet. Un compteur d'activités démarrées (`ForegroundStateTracker`) ne ment pas |
+| 35 | Une entrée de journal d'avant le dernier boot n'atteste d'aucun geste | Un redémarrage remet le tunnel dans son état par défaut sans intervention ; prendre l'attestation de la session précédente au mot transformait ce fait en geste et remplaçait « toujours actif » par « toujours coupé » à chaque reboot. `Clock` expose l'instant du boot ; le premier cycle de la session réatteste |

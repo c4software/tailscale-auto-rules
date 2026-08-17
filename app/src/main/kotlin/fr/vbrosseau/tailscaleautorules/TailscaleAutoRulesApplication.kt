@@ -5,6 +5,7 @@ import dagger.hilt.android.HiltAndroidApp
 import fr.vbrosseau.tailscaleautorules.automation.AutomationCoordinator
 import fr.vbrosseau.tailscaleautorules.di.ApplicationScope
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
+import fr.vbrosseau.tailscaleautorules.presentation.ForegroundStateTracker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -33,6 +34,9 @@ class TailscaleAutoRulesApplication : Application() {
     @ApplicationScope
     lateinit var scope: CoroutineScope
 
+    @Inject
+    lateinit var foregroundStateTracker: ForegroundStateTracker
+
     override fun onCreate() {
         super.onCreate()
 
@@ -40,6 +44,10 @@ class TailscaleAutoRulesApplication : Application() {
             Timber.plant(Timber.DebugTree())
         }
         Timber.i("Processus démarré")
+
+        // Avant l'observation des réglages : la garde de l'armement interroge
+        // ce traqueur, il doit voir la toute première activité.
+        registerActivityLifecycleCallbacks(foregroundStateTracker)
 
         scope.launch {
             settingsRepository.observeAppSettings()

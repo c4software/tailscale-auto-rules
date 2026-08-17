@@ -1,5 +1,6 @@
 package fr.vbrosseau.tailscaleautorules.di
 
+import android.os.SystemClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,5 +15,12 @@ object TimeModule {
 
     @Provides
     @Singleton
-    fun provideClock(): Clock = Clock { System.currentTimeMillis() }
+    fun provideClock(): Clock = object : Clock {
+        override fun nowEpochMillis(): Long = System.currentTimeMillis()
+
+        // `elapsedRealtime` court depuis le boot, veille profonde comprise :
+        // la soustraction redonne l'instant du démarrage en temps d'époque.
+        override fun bootEpochMillis(): Long =
+            System.currentTimeMillis() - SystemClock.elapsedRealtime()
+    }
 }

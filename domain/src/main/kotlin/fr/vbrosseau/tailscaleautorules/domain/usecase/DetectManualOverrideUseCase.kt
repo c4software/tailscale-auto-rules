@@ -89,10 +89,17 @@ class DetectManualOverrideUseCase(
         lastChange: JournalEntry?,
     ): ManualOverride? {
         // Sans journal, aucune décision n'a jamais été appliquée : rien ne
-        // permet d'attribuer l'état constaté à qui que ce soit. Et une entrée
-        // trop fraîche non plus : le tunnel n'a pas encore eu le temps de
-        // suivre la commande.
-        if (tunnelState == TunnelState.UNKNOWN || lastChange == null || isStillSettling(lastChange)) {
+        // permet d'attribuer l'état constaté à qui que ce soit. Une entrée
+        // trop fraîche n'atteste de rien non plus, le tunnel n'ayant pas
+        // encore eu le temps de suivre la commande. Ni une entrée d'avant le
+        // dernier boot : un redémarrage remet le tunnel dans son état par
+        // défaut sans qu'aucune main n'y touche, et la prendre au mot
+        // transformait ce simple fait en « geste » qui écrasait la préférence
+        // apprise (constaté sur appareil : « toujours actif » redevenait
+        // « toujours coupé » à chaque reboot). Le premier cycle de la session
+        // réatteste la décision au journal, et la détection reprend sur cette
+        // entrée-là.
+        if (tunnelState == TunnelState.UNKNOWN || lastChange == null || !attests(lastChange)) {
             return null
         }
 
@@ -110,8 +117,15 @@ class DetectManualOverrideUseCase(
         }
     }
 
-    private fun isStillSettling(lastChange: JournalEntry): Boolean =
-        clock.nowEpochMillis() - lastChange.epochMillis < CommandSettleGrace.inWholeMilliseconds
+    /**
+     * L'entrée prouve qu'une décision a été appliquée **dans cette session**,
+     * et depuis assez longtemps pour que le tunnel ait suivi.
+     */
+    private fun attests(lastChange: JournalEntry): Boolean {
+        val isSettled =
+            clock.nowEpochMillis() - lastChange.epochMillis >= CommandSettleGrace.inWholeMilliseconds
+        return isSettled && lastChange.epochMillis >= clock.bootEpochMillis()
+    }
 
     companion object {
         /**
