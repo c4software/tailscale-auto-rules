@@ -102,6 +102,8 @@
     <string name="settings_learning_summary">Remembers when you turn the tunnel on or off by hand, network by network, and replays it. Preferences already learned keep applying until you delete them.</string>
     <string name="settings_boot_title">Start on boot</string>
     <string name="settings_boot_summary">Re-arms the automation after the phone restarts.</string>
+    <string name="settings_background_location_summary">To restart on its own after a reboot, the app needs location access set to "Allow all the time": Android treats the Wi-Fi network name as location data, and only that level lets the app read it without being opened. Without it, a notification will invite you to open the app after each restart. No position is ever read — only the network name.</string>
+    <string name="settings_background_location_action">Allow all the time</string>
     <string name="settings_notification_notice">A permanent notification shows the tunnel state and the applied rule. Android imposes it: continuously watching the network requires a visible service.</string>
     <string name="settings_notification_permission">Notification permission required.</string>
     <string name="settings_notification_grant">Allow</string>
@@ -127,6 +129,10 @@
     <string name="notification_no_reason">No rule applied yet</string>
     <string name="notification_manual_override">Changed manually — the rules will take over at the next network change</string>
     <string name="notification_disable_automation">Turn off automation</string>
+    <string name="notification_reminders_channel_name">Reminders</string>
+    <string name="notification_reminders_channel_description">One-off invitations to open the app when the automation cannot start on its own.</string>
+    <string name="notification_startup_reminder_title">Automation is waiting</string>
+    <string name="notification_startup_reminder_text">Open the app to start the synchronisation.</string>
 
     <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
     <string name="rule_airplane_mode">Airplane mode</string>

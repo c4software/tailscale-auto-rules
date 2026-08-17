@@ -26,6 +26,7 @@ class SettingsScreenTest {
 
     private val toggles = mutableListOf<Pair<String, Boolean>>()
     private var permissionRequests = 0
+    private var backgroundLocationRequests = 0
     private var batteryClicks = 0
     private var replayClicks = 0
 
@@ -39,6 +40,7 @@ class SettingsScreenTest {
                     onStartOnBootChange = { toggles += "boot" to it },
                     onVerboseLoggingChange = { toggles += "logging" to it },
                     onRequestNotificationPermission = { permissionRequests++ },
+                    onRequestBackgroundLocation = { backgroundLocationRequests++ },
                     onOpenBatterySettings = { batteryClicks++ },
                     onReplayOnboarding = { replayClicks++ },
                 )
@@ -148,6 +150,72 @@ class SettingsScreenTest {
         )
 
         composeRule.onNodeWithTag(SettingsTestTags.NOTIFICATION_PERMISSION).assertDoesNotExist()
+    }
+
+    @Test
+    fun theBackgroundLocationIsOfferedWhenTheBootStartWouldBeBlocked() {
+        // Localisation accordée « pendant l'utilisation » seulement et
+        // démarrage au boot demandé : Android refusera le service au boot,
+        // la carte propose de passer en « Toujours autoriser ».
+        show(
+            SettingsUiState(
+                settings = AppSettings(isServiceEnabled = true, startOnBoot = true),
+                canReadSsid = true,
+                canReadSsidInBackground = false,
+            ),
+        )
+
+        composeRule.onNodeWithTag(SettingsTestTags.BACKGROUND_LOCATION)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule.onNodeWithTag("${SettingsTestTags.BACKGROUND_LOCATION}:action")
+            .performClick()
+
+        assertEquals(1, backgroundLocationRequests)
+    }
+
+    @Test
+    fun nothingIsOfferedOnceTheBackgroundLocationIsGranted() {
+        show(
+            SettingsUiState(
+                settings = AppSettings(isServiceEnabled = true, startOnBoot = true),
+                canReadSsid = true,
+                canReadSsidInBackground = true,
+            ),
+        )
+
+        composeRule.onNodeWithTag(SettingsTestTags.BACKGROUND_LOCATION).assertDoesNotExist()
+    }
+
+    @Test
+    fun nothingIsOfferedWithoutTheForegroundLocation() {
+        // Sans localisation de premier plan, le service part sans le type en
+        // cause : rien ne bloque le boot, et la permission d'arrière-plan ne
+        // s'accorde de toute façon qu'au-dessus de celle de premier plan.
+        show(
+            SettingsUiState(
+                settings = AppSettings(isServiceEnabled = true, startOnBoot = true),
+                canReadSsid = false,
+                canReadSsidInBackground = false,
+            ),
+        )
+
+        composeRule.onNodeWithTag(SettingsTestTags.BACKGROUND_LOCATION).assertDoesNotExist()
+    }
+
+    @Test
+    fun nothingIsOfferedWhenTheBootStartIsOff() {
+        // La permission ne sert qu'au redémarrage du terminal : sans
+        // démarrage automatique, la demander serait un droit sans usage.
+        show(
+            SettingsUiState(
+                settings = AppSettings(isServiceEnabled = true, startOnBoot = false),
+                canReadSsid = true,
+                canReadSsidInBackground = false,
+            ),
+        )
+
+        composeRule.onNodeWithTag(SettingsTestTags.BACKGROUND_LOCATION).assertDoesNotExist()
     }
 
     @Test

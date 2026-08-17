@@ -860,3 +860,32 @@ sur les petits écrans. La demande passe sur le bouton du bas
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès ; `:app:verifyRoborazziDebug` → succès, références inchangées (les
 deux pages capturées ne portaient pas de bouton d'autorisation).
+
+---
+
+## 31. Démarrage au boot : rappel et localisation d'arrière-plan `[x]`
+
+Constaté sur appareil : après un redémarrage du téléphone, le service ne
+repartait pas. Une localisation « pendant l'utilisation » est une permission
+de premier plan ; Android refuse alors de démarrer depuis `BOOT_COMPLETED` le
+service de type « localisation » qu'impose la lecture du SSID — il mourait à
+la naissance sur une `SecurityException` ([SPECS.md](./SPECS.md) §8,
+décision n°33).
+
+- [x] `AutomationCoordinator.applySettingsAfterBoot` : quand le démarrage
+      serait rejeté, une notification « ouvrez l'application pour démarrer la
+      synchronisation » remplace la tentative (SPECS.md §7.2) ; canal
+      « Rappels » dédié, d'importance normale, retirée dès que le service
+      démarre
+- [x] `ACCESS_BACKGROUND_LOCATION` en option : carte d'explication aux
+      paramètres, visible seulement quand elle servirait (localisation fine
+      accordée, démarrage au boot actif) ; `SystemStatus` expose
+      `canReadSsidInBackground()`
+- [x] Dossier store : déclarations §2/§3 réécrites — l'application demande
+      désormais la permission, facultative, et le dit
+- [x] Tests coordinateur, notifier, écran et ViewModel ; référence
+      `parametres-avertissements` réenregistrée et relue
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 377 tests, 0 échec ; `:app:verifyRoborazziDebug` → seule la capture
+attendue divergeait, réenregistrée puis relue en clair et sombre.

@@ -86,6 +86,10 @@ class TunnelWatchService : Service() {
         // qui suivent son démarrage.
         startInForeground()
 
+        // Le rappel « ouvrir l'application » n'a plus d'objet : le service
+        // tourne, c'est précisément ce que le rappel demandait d'obtenir.
+        notifier.dismissStartupReminder()
+
         // Hors de la garde ci-dessous, et c'est le point : [startInForeground]
         // vient de publier un état indéterminé. Quand l'observation tourne
         // déjà — redémarrage `START_STICKY`, octroi tardif de la localisation —

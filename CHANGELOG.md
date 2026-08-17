@@ -3,6 +3,26 @@
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Corrigé
+
+- **Le service ne redémarrait pas au boot quand la localisation était
+  accordée.** Une localisation « pendant l'utilisation » est une permission de
+  premier plan : Android refusait de démarrer depuis `BOOT_COMPLETED` le
+  service de type « localisation » qu'impose la lecture du SSID, et il mourait
+  à la naissance. Désormais, une notification invite à ouvrir l'application
+  pour démarrer la synchronisation, au lieu d'une tentative vouée à l'échec.
+
+### Ajouté
+
+- **Localisation « Toujours autoriser », en option.** Une carte des paramètres
+  l'explique et la propose quand elle servirait : avec elle, l'automatisation
+  redémarre seule après un redémarrage du téléphone, sans ouvrir
+  l'application. Aucune position n'est lue — seulement le nom du réseau.
+- **Canal de notification « Rappels »**, distinct du canal d'état : le rappel
+  de démarrage attend un geste, il ne se contente pas de se consulter.
+
 ## [1.1.0] — 2026-08-13
 
 ### Modifié

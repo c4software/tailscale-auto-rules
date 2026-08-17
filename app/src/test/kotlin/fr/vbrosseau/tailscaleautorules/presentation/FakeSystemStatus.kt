@@ -10,6 +10,7 @@ package fr.vbrosseau.tailscaleautorules.presentation
 class FakeSystemStatus(
     var notificationsAllowed: Boolean = true,
     var ssidReadable: Boolean = true,
+    var ssidReadableInBackground: Boolean = true,
     var batteryExempted: Boolean = true,
     override var versionName: String = "0.1.0",
 ) : SystemStatus {
@@ -17,6 +18,8 @@ class FakeSystemStatus(
     override fun canNotify(): Boolean = notificationsAllowed
 
     override fun canReadSsid(): Boolean = ssidReadable
+
+    override fun canReadSsidInBackground(): Boolean = ssidReadableInBackground
 
     override fun isIgnoringBatteryOptimizations(): Boolean = batteryExempted
 }

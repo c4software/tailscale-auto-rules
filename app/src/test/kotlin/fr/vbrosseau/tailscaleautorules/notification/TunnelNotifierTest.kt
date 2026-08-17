@@ -136,6 +136,57 @@ class TunnelNotifierTest {
         assertNull(postedNotification())
     }
 
+    private fun postedReminder() = Shadows.shadowOf(
+        context.getSystemService(NotificationManager::class.java),
+    ).getNotification(TunnelNotifier.STARTUP_REMINDER_ID)
+
+    @Test
+    fun theStartupReminderIsAOneOffInvitation() {
+        // Contrairement à la notification d'état, il décrit un geste à faire :
+        // il doit se rejeter d'un glissement et disparaître une fois honoré.
+        notifier.showStartupReminder()
+
+        val reminder = assertNotNull(postedReminder())
+        assertEquals(NotificationChannels.REMINDERS, reminder.channelId)
+        assertTrue(
+            reminder.flags and android.app.Notification.FLAG_AUTO_CANCEL != 0,
+            "Le rappel disparaît de lui-même une fois touché.",
+        )
+        assertTrue(
+            reminder.flags and android.app.Notification.FLAG_ONGOING_EVENT == 0,
+            "Le rappel n'est pas persistant.",
+        )
+    }
+
+    @Test
+    fun theRemindersChannelAlerts() {
+        // Un rappel silencieux passerait inaperçu — précisément quand il est
+        // le seul signe que l'automatisation ne tourne pas.
+        NotificationChannels.ensureCreated(context)
+
+        val channel = context.getSystemService(NotificationManager::class.java)
+            .getNotificationChannel(NotificationChannels.REMINDERS)
+        assertEquals(NotificationManager.IMPORTANCE_DEFAULT, channel.importance)
+    }
+
+    @Test
+    fun dismissingRemovesTheStartupReminder() {
+        notifier.showStartupReminder()
+
+        notifier.dismissStartupReminder()
+
+        assertNull(postedReminder())
+    }
+
+    @Test
+    fun noReminderIsPostedWithoutThePermission() {
+        denyNotificationPermission()
+
+        notifier.showStartupReminder()
+
+        assertNull(postedReminder())
+    }
+
     @Test
     fun everyTunnelStateHasATitle() {
         // Le `when` interne est exhaustif ; ce test garantit qu'aucun état ne

@@ -284,6 +284,7 @@ absents de la liste suivent l'automatisme.
 | Démarrage automatique au boot | interrupteur | activé |
 | Notification persistante | interrupteur | désactivé |
 | Journalisation détaillée | interrupteur | désactivé |
+| Localisation « Toujours autoriser » (§8) | action | — |
 | Exemption d'optimisation de batterie | action | — |
 | Revoir le premier lancement (§6.5) | action | — |
 | Version de l'application | information | — |
@@ -376,6 +377,15 @@ Un interrupteur, fût-il grisé, laisserait croire à un choix qui n'existe pas 
 et un interrupteur coché puis désactivé se lit presque comme un interrupteur
 éteint.
 
+### 7.2 Le rappel de démarrage
+
+Au redémarrage du terminal, si le service ne peut pas repartir seul — la
+localisation est accordée sans l'être « toujours » (§8) — une notification
+ponctuelle invite à ouvrir l'application pour démarrer la synchronisation.
+Elle vit sur un canal « Rappels » distinct, d'importance normale : elle attend
+un geste, là où la notification d'état se consulte. Rejetable, à disparition
+automatique au toucher, elle est retirée dès que le service démarre.
+
 ---
 
 ## 8. Permissions
@@ -388,6 +398,7 @@ et un interrupteur coché puis désactivé se lit presque comme un interrupteur
 | `FOREGROUND_SERVICE_SPECIAL_USE` | Observation continue du réseau | Indispensable |
 | `FOREGROUND_SERVICE_LOCATION` | Lire le SSID depuis le service : Android le classe comme donnée de localisation, et un service n'y accède que de ce type | Employée uniquement si la localisation est accordée |
 | `ACCESS_FINE_LOCATION` | Lecture du SSID courant | Demandée **uniquement** lorsqu'une règle Wi-Fi est activée, avec écran d'explication préalable |
+| `ACCESS_BACKGROUND_LOCATION` | Redémarrer seul au boot quand la localisation est accordée : une permission « pendant l'utilisation » est de premier plan, et Android refuse alors de démarrer depuis `BOOT_COMPLETED` un service de type « localisation » | **Facultative.** Proposée aux paramètres quand elle servirait ; sans elle, une notification invite à ouvrir l'application après chaque redémarrage |
 | `FOREGROUND_SERVICE` + type | Service d'observation | Selon l'architecture retenue à l'étape correspondante |
 
 Règle transverse : **aucune permission n'est demandée tant que la fonctionnalité

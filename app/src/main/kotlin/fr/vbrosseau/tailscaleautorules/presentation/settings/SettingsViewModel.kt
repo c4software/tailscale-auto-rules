@@ -24,6 +24,8 @@ import javax.inject.Inject
 data class SettingsUiState(
     val settings: AppSettings = AppSettings.Defaults,
     val canNotify: Boolean = true,
+    val canReadSsid: Boolean = false,
+    val canReadSsidInBackground: Boolean = true,
     val isIgnoringBatteryOptimizations: Boolean = true,
     val versionName: String = "",
     val isLoading: Boolean = false,
@@ -36,6 +38,20 @@ data class SettingsUiState(
      */
     val needsNotificationPermission: Boolean
         get() = settings.notificationIsVisible && !canNotify
+
+    /**
+     * Le démarrage au boot est demandé, mais la localisation n'est accordée
+     * que « pendant l'utilisation » : Android refusera alors de démarrer le
+     * service depuis l'arrière-plan, et l'automatisation attendra l'ouverture
+     * de l'application. Sans localisation du tout, rien à proposer — la
+     * permission d'arrière-plan ne s'accorde qu'au-dessus de celle de premier
+     * plan, que seules les règles Wi-Fi justifient.
+     */
+    val needsBackgroundLocation: Boolean
+        get() = settings.isServiceEnabled &&
+            settings.startOnBoot &&
+            canReadSsid &&
+            !canReadSsidInBackground
 }
 
 /**
@@ -67,6 +83,8 @@ class SettingsViewModel @Inject constructor(
         SettingsUiState(
             settings = settings,
             canNotify = system.canNotify,
+            canReadSsid = system.canReadSsid,
+            canReadSsidInBackground = system.canReadSsidInBackground,
             isIgnoringBatteryOptimizations = system.isIgnoringBatteryOptimizations,
             versionName = system.versionName,
         )
@@ -86,6 +104,8 @@ class SettingsViewModel @Inject constructor(
     fun refreshSystemStatus() {
         systemState.value = SystemState(
             canNotify = systemStatus.canNotify(),
+            canReadSsid = systemStatus.canReadSsid(),
+            canReadSsidInBackground = systemStatus.canReadSsidInBackground(),
             isIgnoringBatteryOptimizations = systemStatus.isIgnoringBatteryOptimizations(),
             versionName = systemStatus.versionName,
         )
@@ -129,6 +149,8 @@ class SettingsViewModel @Inject constructor(
     /** Ce que seule la plateforme sait, reconstaté à chaque reprise d'écran. */
     private data class SystemState(
         val canNotify: Boolean = true,
+        val canReadSsid: Boolean = false,
+        val canReadSsidInBackground: Boolean = true,
         val isIgnoringBatteryOptimizations: Boolean = true,
         val versionName: String = "",
     )

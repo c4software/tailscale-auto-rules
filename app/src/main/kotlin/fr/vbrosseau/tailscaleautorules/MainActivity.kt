@@ -98,6 +98,15 @@ private fun AppRoot(
         }
     }
 
+    // La demande d'arrière-plan ne s'empile pas sur celle de premier plan :
+    // depuis Android 11, le système n'ouvre plus de boîte de dialogue et
+    // renvoie vers les réglages de l'application — le résultat arrive donc au
+    // retour à l'écran, que les paramètres reconstatent déjà. Aucun octroi à
+    // compter ici : la carte qui la propose vit hors du premier lancement.
+    val backgroundLocationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { }
+
     val requestNotificationPermission = {
         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
@@ -108,6 +117,9 @@ private fun AppRoot(
                 Manifest.permission.ACCESS_COARSE_LOCATION,
             ),
         )
+    }
+    val requestBackgroundLocation = {
+        backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     // Le parcours de premier lancement remplace l'ossature entière tant qu'il
@@ -133,6 +145,7 @@ private fun AppRoot(
         else -> MainScaffold(
             onRequestNotificationPermission = requestNotificationPermission,
             onRequestLocationPermission = requestLocationPermission,
+            onRequestBackgroundLocation = requestBackgroundLocation,
             modifier = modifier,
         )
     }
@@ -149,6 +162,7 @@ private fun AppRoot(
 private fun MainScaffold(
     onRequestNotificationPermission: () -> Unit,
     onRequestLocationPermission: () -> Unit,
+    onRequestBackgroundLocation: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -177,6 +191,7 @@ private fun MainScaffold(
             navController = navController,
             onRequestNotificationPermission = onRequestNotificationPermission,
             onRequestLocationPermission = onRequestLocationPermission,
+            onRequestBackgroundLocation = onRequestBackgroundLocation,
         )
     }
 }

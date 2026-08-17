@@ -35,6 +35,7 @@ fun SettingsScreen(
     onStartOnBootChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
     onRequestNotificationPermission: () -> Unit,
+    onRequestBackgroundLocation: () -> Unit,
     onOpenBatterySettings: () -> Unit,
     onReplayOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
@@ -65,6 +66,11 @@ fun SettingsScreen(
             onServiceEnabledChange = onServiceEnabledChange,
             onLearningEnabledChange = onLearningEnabledChange,
             onStartOnBootChange = onStartOnBootChange,
+        )
+
+        BackgroundLocationSection(
+            uiState = uiState,
+            onRequestBackgroundLocation = onRequestBackgroundLocation,
         )
 
         NotificationSection(
@@ -141,6 +147,31 @@ private fun MainSwitches(
             testTag = SettingsTestTags.START_ON_BOOT,
         )
     }
+}
+
+/**
+ * Propose la localisation « Toujours autoriser » quand le boot serait bloqué.
+ *
+ * Placée sous les bascules car elle prolonge celle du démarrage au boot : dès
+ * qu'une localisation de premier plan est accordée, Android interdit au
+ * service — de type « localisation », imposé par la lecture du SSID — de
+ * partir du redémarrage du terminal sans cette extension.
+ */
+@Composable
+private fun BackgroundLocationSection(
+    uiState: SettingsUiState,
+    onRequestBackgroundLocation: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!uiState.needsBackgroundLocation) return
+
+    ActionCard(
+        message = stringResource(R.string.settings_background_location_summary),
+        actionLabel = stringResource(R.string.settings_background_location_action),
+        onAction = onRequestBackgroundLocation,
+        testTag = SettingsTestTags.BACKGROUND_LOCATION,
+        modifier = modifier,
+    )
 }
 
 /**
@@ -272,6 +303,7 @@ private fun SettingsScreenPreview() {
             onStartOnBootChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
+            onRequestBackgroundLocation = {},
             onOpenBatterySettings = {},
             onReplayOnboarding = {},
         )

@@ -98,6 +98,8 @@
     <string name="settings_learning_summary">Mémorise vos activations et coupures manuelles du tunnel, réseau par réseau, et les rejoue. Les préférences déjà apprises restent appliquées tant qu\'elles ne sont pas supprimées.</string>
     <string name="settings_boot_title">Démarrage automatique</string>
     <string name="settings_boot_summary">Réarme l\'automatisation après un redémarrage du téléphone.</string>
+    <string name="settings_background_location_summary">Pour redémarrer seule après un redémarrage du téléphone, l\'application a besoin de la localisation en « Toujours autoriser » : Android classe le nom du réseau Wi-Fi comme donnée de localisation, et seul ce niveau permet de le lire sans que l\'application soit ouverte. Sans lui, une notification vous invitera à ouvrir l\'application après chaque redémarrage. Aucune position n\'est jamais lue — seulement le nom du réseau.</string>
+    <string name="settings_background_location_action">Toujours autoriser</string>
     <string name="settings_notification_notice">Une notification permanente affiche l\'état du tunnel et la règle appliquée. Android l\'impose : observer le réseau en continu demande un service visible.</string>
     <string name="settings_notification_permission">Autorisation de notification requise.</string>
     <string name="settings_notification_grant">Autoriser</string>
@@ -123,6 +125,10 @@
     <string name="notification_no_reason">Aucune règle appliquée pour l\'instant</string>
     <string name="notification_manual_override">Modifié manuellement — les règles reprendront la main au prochain changement de réseau</string>
     <string name="notification_disable_automation">Désactiver l\'automatisation</string>
+    <string name="notification_reminders_channel_name">Rappels</string>
+    <string name="notification_reminders_channel_description">Invitations ponctuelles à ouvrir l\'application quand l\'automatisation ne peut pas démarrer seule.</string>
+    <string name="notification_startup_reminder_title">Automatisation en attente</string>
+    <string name="notification_startup_reminder_text">Ouvrez l\'application pour démarrer la synchronisation.</string>
 
     <!-- Règles : libellés lisibles, dérivés de l'identifiant technique -->
     <string name="rule_airplane_mode">Mode avion</string>

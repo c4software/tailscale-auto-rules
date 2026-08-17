@@ -352,7 +352,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 28 complètes. 362 tests, 0 échec.
+Étapes 1 à 31 complètes. 377 tests, 0 échec.
 
 ```
 .
@@ -500,3 +500,4 @@ lui — là où un réveil par diffusion ne survivait pas d'un processus à l'au
 | 32 | Blacklist et gestes fusionnés en préférences de réseau | Deux notions disaient la même chose en deux endroits ; une seule table, une seule règle, la dernière volonté gagne quelle que soit son origine |
 | 30 | Un nouveau geste **remplace** l'exception, jamais de suppression implicite | La mémoire d'un réseau est son dernier geste ; le retour au comportement automatique est un acte explicite sur l'écran des réseaux |
 | 31 | Capture et cycles sérialisés par un mutex du coordinateur | Un battement concurrent ne doit pas basculer le tunnel entre le constat d'un geste et sa mémorisation |
+| 33 | Au boot, rappel plutôt que démarrage voué à l'échec | Une localisation « pendant l'utilisation » fait rejeter par Android le service de type « localisation » démarré depuis `BOOT_COMPLETED` : il mourrait à la naissance ; la notification « ouvrir l'application » est le seul recours, et `ACCESS_BACKGROUND_LOCATION` — proposée en option — le lève |

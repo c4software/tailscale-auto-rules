@@ -312,6 +312,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onStartOnBootChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
+            onRequestBackgroundLocation = {},
             onOpenBatterySettings = {},
             onReplayOnboarding = {},
         )
@@ -320,7 +321,8 @@ class ScreensScreenshotTest : ScreenshotTest() {
     @Test
     fun parametresAvecAvertissements() = capture("parametres-avertissements") {
         // Les cartes conditionnelles réunies : explication de la notification,
-        // permission manquante, exemption de batterie.
+        // permission manquante, localisation d'arrière-plan, exemption de
+        // batterie.
         //
         // L'automatisation reste active, et c'est nécessaire : une permission
         // de notification ne manque que si une notification doit être affichée.
@@ -328,6 +330,8 @@ class ScreensScreenshotTest : ScreenshotTest() {
             uiState = SettingsUiState(
                 settings = AppSettings(isServiceEnabled = true),
                 canNotify = false,
+                canReadSsid = true,
+                canReadSsidInBackground = false,
                 isIgnoringBatteryOptimizations = false,
                 versionName = "0.1.0",
             ),
@@ -336,6 +340,7 @@ class ScreensScreenshotTest : ScreenshotTest() {
             onStartOnBootChange = {},
             onVerboseLoggingChange = {},
             onRequestNotificationPermission = {},
+            onRequestBackgroundLocation = {},
             onOpenBatterySettings = {},
             onReplayOnboarding = {},
         )

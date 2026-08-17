@@ -82,6 +82,32 @@ class AutomationCoordinator @Inject constructor(
     }
 
     /**
+     * Réarme l'automatisation après un redémarrage du terminal — ou explique
+     * pourquoi elle ne peut pas repartir seule.
+     *
+     * Une localisation limitée à « pendant l'utilisation » est une permission
+     * de premier plan : Android rejette alors le démarrage, depuis
+     * l'arrière-plan, d'un service de type « localisation » — celui-là même
+     * que la lecture du SSID impose. Tenter quand même ferait mourir le
+     * service à la naissance ; à la place, une notification invite à ouvrir
+     * l'application, seul geste qui rende le démarrage à nouveau permis.
+     *
+     * @param isStartableFromBackground faux uniquement quand la localisation
+     *   est accordée sans l'être « toujours » : sans localisation du tout, le
+     *   service part sans le type en cause et rien ne le bloque.
+     */
+    suspend fun applySettingsAfterBoot(settings: AppSettings, isStartableFromBackground: Boolean) {
+        if (settings.isServiceEnabled && !isStartableFromBackground) {
+            Timber.i("Service non démarrable depuis le boot : rappel publié")
+            notifier.showStartupReminder()
+            return
+        }
+
+        applySettings(settings)
+        synchronize()
+    }
+
+    /**
      * Redémarre l'observation continue après l'octroi de la localisation.
      *
      * Les types du service de premier plan — dont « localisation », qui

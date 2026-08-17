@@ -85,7 +85,13 @@ class TunnelNotifier @Inject constructor(
         return NotificationCompat.Builder(context, NotificationChannels.TUNNEL_STATE)
             .setSmallIcon(R.drawable.ic_notification_tunnel)
             .setContentTitle(context.getString(state.notificationTitleRes()))
-            .setContentText(if (isManuallyOverridden) manualOverrideText() else reasonText(ruleId))
+            .setContentText(
+                if (isManuallyOverridden) {
+                    context.getString(R.string.notification_manual_override)
+                } else {
+                    reasonText(ruleId)
+                },
+            )
             .setContentIntent(openApplicationIntent())
             // Persistante : elle décrit un état continu, pas un événement.
             .setOngoing(true)
@@ -107,8 +113,45 @@ class TunnelNotifier @Inject constructor(
         manager.cancel(NOTIFICATION_ID)
     }
 
-    private fun manualOverrideText(): String =
-        context.getString(R.string.notification_manual_override)
+    /**
+     * Invite à ouvrir l'application quand le service ne peut pas partir seul.
+     *
+     * Au redémarrage du terminal, une localisation limitée à « pendant
+     * l'utilisation » interdit de démarrer le service depuis l'arrière-plan
+     * (SPECS.md §8) : ce rappel est alors le seul signe que l'automatisation
+     * attend. Rejetable et à disparition automatique — il décrit un geste à
+     * faire, pas un état.
+     */
+    fun showStartupReminder() {
+        if (!canNotify()) {
+            Timber.w("Rappel de démarrage non publié : permission absente")
+            return
+        }
+
+        NotificationChannels.ensureCreated(context)
+
+        val notification = NotificationCompat.Builder(context, NotificationChannels.REMINDERS)
+            .setSmallIcon(R.drawable.ic_notification_tunnel)
+            .setContentTitle(context.getString(R.string.notification_startup_reminder_title))
+            .setContentText(context.getString(R.string.notification_startup_reminder_text))
+            .setContentIntent(openApplicationIntent())
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .build()
+
+        try {
+            manager.notify(STARTUP_REMINDER_ID, notification)
+            Timber.i("Rappel de démarrage publié")
+        } catch (ignored: SecurityException) {
+            // Même course qu'au-dessus : la permission peut tomber entre la
+            // garde et l'appel, et perdre un rappel ne justifie pas un plantage.
+        }
+    }
+
+    /** Retire le rappel : le service démarré, il n'a plus d'objet. */
+    fun dismissStartupReminder() {
+        manager.cancel(STARTUP_REMINDER_ID)
+    }
 
     private fun reasonText(ruleId: RuleId?): String = if (ruleId == null) {
         context.getString(R.string.notification_no_reason)
@@ -139,5 +182,6 @@ class TunnelNotifier @Inject constructor(
 
     companion object {
         const val NOTIFICATION_ID = 1
+        const val STARTUP_REMINDER_ID = 2
     }
 }

@@ -125,6 +125,10 @@ class AutomationCoordinatorTest {
         context.getSystemService(NotificationManager::class.java),
     ).getNotification(TunnelNotifier.NOTIFICATION_ID)
 
+    private fun postedReminder() = Shadows.shadowOf(
+        context.getSystemService(NotificationManager::class.java),
+    ).getNotification(TunnelNotifier.STARTUP_REMINDER_ID)
+
     @Test
     fun anEnabledServiceArmsTheTrigger() = runTest {
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
@@ -304,6 +308,47 @@ class AutomationCoordinatorTest {
         coordinator.onTunnelStateSettled()
 
         assertTrue(exceptions.observeAll().first().isEmpty())
+    }
+
+    @Test
+    fun aBootThatCanStartTheServiceArmsItWithoutReminder() = runTest {
+        coordinator.applySettingsAfterBoot(
+            AppSettings(isServiceEnabled = true),
+            isStartableFromBackground = true,
+        )
+
+        assertTrue(trigger.isArmed)
+        assertNull(postedReminder())
+    }
+
+    @Test
+    fun aBlockedBootPostsAReminderInsteadOfArming() = runTest {
+        // Une localisation « pendant l'utilisation » interdit de démarrer le
+        // service depuis le boot : tenter quand même le ferait mourir à la
+        // naissance. Le rappel est alors le seul signe que l'automatisation
+        // attend l'ouverture de l'application.
+        coordinator.applySettingsAfterBoot(
+            AppSettings(isServiceEnabled = true),
+            isStartableFromBackground = false,
+        )
+
+        assertTrue(!trigger.isArmed)
+        assertNotNull(postedReminder())
+    }
+
+    @Test
+    fun aBlockedBootStaysSilentWhenTheAutomationIsOff() = runTest {
+        // Sans automatisation, il n'y a rien à démarrer : inviter à ouvrir
+        // l'application promettrait une synchronisation qui n'aura pas lieu.
+        settings.updateAppSettings { it.copy(isServiceEnabled = false) }
+
+        coordinator.applySettingsAfterBoot(
+            AppSettings(isServiceEnabled = false),
+            isStartableFromBackground = false,
+        )
+
+        assertTrue(!trigger.isArmed)
+        assertNull(postedReminder())
     }
 
     @Test

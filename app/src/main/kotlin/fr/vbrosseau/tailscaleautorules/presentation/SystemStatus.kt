@@ -3,6 +3,7 @@ package fr.vbrosseau.tailscaleautorules.presentation
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,6 +36,16 @@ interface SystemStatus {
     fun canReadSsid(): Boolean
 
     /**
+     * Vrai lorsque le SSID reste lisible sans que l'application soit ouverte.
+     *
+     * Une localisation « pendant l'utilisation » est une permission de premier
+     * plan : Android refuse alors de démarrer depuis un redémarrage du
+     * terminal un service de type « localisation ». Seule l'autorisation
+     * « Toujours autoriser » lève cette restriction.
+     */
+    fun canReadSsidInBackground(): Boolean
+
+    /**
      * Vrai lorsque l'application est exemptée des restrictions de batterie.
      *
      * Sans exemption, Android peut différer les réveils de plusieurs minutes,
@@ -58,6 +69,15 @@ class AndroidSystemStatus @Inject constructor(
         context,
         Manifest.permission.ACCESS_FINE_LOCATION,
     ) == PackageManager.PERMISSION_GRANTED
+
+    override fun canReadSsidInBackground(): Boolean =
+        // Avant Android 10, la permission d'arrière-plan n'existe pas :
+        // l'octroi de premier plan vaut pour tout moment.
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
 
     override fun isIgnoringBatteryOptimizations(): Boolean =
         context.getSystemService(PowerManager::class.java)
