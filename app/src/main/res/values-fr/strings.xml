@@ -99,7 +99,7 @@
     <string name="settings_boot_title">Démarrage automatique</string>
     <string name="settings_boot_summary">Réarme l\'automatisation après un redémarrage du téléphone.</string>
     <string name="settings_background_location_title">Redémarrer sans ouvrir l\'application</string>
-    <string name="settings_background_location_summary">Demande la localisation en « Toujours autoriser » — seul le nom du réseau Wi-Fi est lu, jamais votre position.</string>
+    <string name="settings_background_location_summary">Demande la localisation en « Toujours autoriser ». Seul le nom du réseau Wi-Fi est lu, jamais votre position.</string>
     <string name="settings_background_location_action">Toujours autoriser</string>
     <string name="settings_notification_notice">Une notification permanente affiche l\'état du tunnel et la règle appliquée. Android l\'impose : observer le réseau en continu demande un service visible.</string>
     <string name="settings_notification_permission">Autorisation de notification requise.</string>

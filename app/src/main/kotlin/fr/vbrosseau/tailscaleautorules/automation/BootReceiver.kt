@@ -6,7 +6,6 @@ import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
 import fr.vbrosseau.tailscaleautorules.di.ApplicationScope
 import fr.vbrosseau.tailscaleautorules.domain.repository.SettingsRepository
-import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,9 +27,6 @@ class BootReceiver : BroadcastReceiver() {
     lateinit var settingsRepository: SettingsRepository
 
     @Inject
-    lateinit var systemStatus: SystemStatus
-
-    @Inject
     @ApplicationScope
     lateinit var scope: CoroutineScope
 
@@ -46,16 +42,12 @@ class BootReceiver : BroadcastReceiver() {
                 // ici évite de réarmer une automatisation que l'utilisateur a
                 // volontairement laissée au repos.
                 if (settings.startOnBoot) {
-                    coordinator.applySettingsAfterBoot(
-                        settings = settings,
-                        // Le blocage ne vient que d'une localisation accordée
-                        // sans l'être « toujours » : elle impose au service le
-                        // type « localisation », qu'Android refuse de démarrer
-                        // depuis l'arrière-plan à une permission de premier
-                        // plan. Sans localisation du tout, rien ne bloque.
-                        isStartableFromBackground = !systemStatus.canReadSsid() ||
-                            systemStatus.canReadSsidInBackground(),
-                    )
+                    // La garde du démarrage en arrière-plan vit dans
+                    // applySettings : elle doit couvrir aussi l'armement fait
+                    // par l'observation des réglages au démarrage du
+                    // processus, qui précède ce receveur.
+                    coordinator.applySettings(settings)
+                    coordinator.synchronize()
                 }
             } finally {
                 pendingResult.finish()

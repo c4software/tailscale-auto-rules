@@ -8,6 +8,7 @@ import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
 import fr.vbrosseau.tailscaleautorules.domain.settings.AppSettings
+import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
@@ -29,6 +30,7 @@ class AutomationCoordinator @Inject constructor(
     private val captureManualOverride: CaptureManualOverrideUseCase,
     private val describeTunnelStatus: DescribeTunnelStatusUseCase,
     private val notifier: TunnelNotifier,
+    private val systemStatus: SystemStatus,
 ) : NotificationRefresher {
 
     /**
@@ -43,14 +45,59 @@ class AutomationCoordinator @Inject constructor(
     /**
      * Aligne la plateforme sur les préférences courantes.
      *
-     * Appelée au démarrage de l'application, après un redémarrage du terminal,
-     * et à chaque modification des paramètres.
+     * Appelée au démarrage de chaque processus, après un redémarrage du
+     * terminal, et à chaque modification des paramètres.
+     *
+     * L'armement est conditionné ici, et seulement ici : une localisation
+     * limitée à « pendant l'utilisation » fait rejeter par Android le service
+     * de type « localisation », celui qu'impose la lecture du SSID, dès qu'il
+     * part de l'arrière-plan. Tenter quand même le ferait mourir à la
+     * naissance (constaté au boot sur appareil). À la place, une notification
+     * invite à ouvrir l'application, seul geste qui rende le démarrage à
+     * nouveau permis. La garde ne peut pas vivre dans le receveur de boot :
+     * l'observation des réglages arme depuis n'importe quel démarrage de
+     * processus, y compris celui créé pour livrer le boot, avant même que le
+     * receveur s'exécute.
      */
     suspend fun applySettings(settings: AppSettings) {
-        if (settings.isServiceEnabled) trigger.arm() else trigger.disarm()
+        when {
+            !settings.isServiceEnabled -> trigger.disarm()
+            isWatchStartableNow -> trigger.arm()
+            else -> {
+                Timber.i("Service non démarrable depuis l'arrière-plan : rappel publié")
+                notifier.showStartupReminder()
+            }
+        }
 
         applyNotification(settings)
     }
+
+    /**
+     * Réarme au retour de l'application au premier plan.
+     *
+     * C'est la contrepartie du rappel : l'observation des réglages ne réémet
+     * pas au simple retour à l'écran (`distinctUntilChanged`), donc personne
+     * d'autre n'honorerait l'invitation quand le processus a survécu. Sans
+     * effet si l'observation tourne déjà : démarrer un service démarré ne fait
+     * que lui transmettre une commande de plus.
+     */
+    suspend fun onApplicationForeground() {
+        if (!settingsRepository.currentAppSettings().isServiceEnabled) return
+        if (!isWatchStartableNow) return
+
+        trigger.arm()
+    }
+
+    /**
+     * Le blocage ne vient que d'une localisation accordée sans l'être
+     * « toujours », depuis l'arrière-plan : sans localisation du tout, le
+     * service part sans le type en cause, et au premier plan le démarrage est
+     * éligible quelle que soit la permission.
+     */
+    private val isWatchStartableNow: Boolean
+        get() = !systemStatus.canReadSsid() ||
+            systemStatus.canReadSsidInBackground() ||
+            systemStatus.isAppInForeground()
 
     /**
      * Aligne la seule notification, sans toucher au réveil.
@@ -79,32 +126,6 @@ class AutomationCoordinator @Inject constructor(
             // que ne rien afficher.
             notifier.hide()
         }
-    }
-
-    /**
-     * Réarme l'automatisation après un redémarrage du terminal — ou explique
-     * pourquoi elle ne peut pas repartir seule.
-     *
-     * Une localisation limitée à « pendant l'utilisation » est une permission
-     * de premier plan : Android rejette alors le démarrage, depuis
-     * l'arrière-plan, d'un service de type « localisation » — celui-là même
-     * que la lecture du SSID impose. Tenter quand même ferait mourir le
-     * service à la naissance ; à la place, une notification invite à ouvrir
-     * l'application, seul geste qui rende le démarrage à nouveau permis.
-     *
-     * @param isStartableFromBackground faux uniquement quand la localisation
-     *   est accordée sans l'être « toujours » : sans localisation du tout, le
-     *   service part sans le type en cause et rien ne le bloque.
-     */
-    suspend fun applySettingsAfterBoot(settings: AppSettings, isStartableFromBackground: Boolean) {
-        if (settings.isServiceEnabled && !isStartableFromBackground) {
-            Timber.i("Service non démarrable depuis le boot : rappel publié")
-            notifier.showStartupReminder()
-            return
-        }
-
-        applySettings(settings)
-        synchronize()
     }
 
     /**

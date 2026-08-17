@@ -160,7 +160,7 @@ class TunnelNotifierTest {
 
     @Test
     fun theRemindersChannelAlerts() {
-        // Un rappel silencieux passerait inaperçu — précisément quand il est
+        // Un rappel silencieux passerait inaperçu, précisément quand il est
         // le seul signe que l'automatisation ne tourne pas.
         NotificationChannels.ensureCreated(context)
 

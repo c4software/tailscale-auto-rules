@@ -119,8 +119,8 @@ class TunnelNotifier @Inject constructor(
      * Au redémarrage du terminal, une localisation limitée à « pendant
      * l'utilisation » interdit de démarrer le service depuis l'arrière-plan
      * (SPECS.md §8) : ce rappel est alors le seul signe que l'automatisation
-     * attend. Rejetable et à disparition automatique — il décrit un geste à
-     * faire, pas un état.
+     * attend. Rejetable et à disparition automatique, car il décrit un geste
+     * à faire, pas un état.
      */
     fun showStartupReminder() {
         if (!canNotify()) {

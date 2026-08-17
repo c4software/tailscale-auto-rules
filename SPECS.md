@@ -379,8 +379,8 @@ et un interrupteur coché puis désactivé se lit presque comme un interrupteur
 
 ### 7.2 Le rappel de démarrage
 
-Au redémarrage du terminal, si le service ne peut pas repartir seul — la
-localisation est accordée sans l'être « toujours » (§8) — une notification
+Au redémarrage du terminal, si le service ne peut pas repartir seul (la
+localisation est accordée sans l'être « toujours », voir §8), une notification
 ponctuelle invite à ouvrir l'application pour démarrer la synchronisation.
 Elle vit sur un canal « Rappels » distinct, d'importance normale : elle attend
 un geste, là où la notification d'état se consulte. Rejetable, à disparition

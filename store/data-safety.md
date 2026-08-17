@@ -29,7 +29,7 @@ l'appareil, ce que Play qualifie de traitement local et non de collecte.
 - **Localisation.** L'application déclare `ACCESS_FINE_LOCATION`,
   `ACCESS_COARSE_LOCATION` et `ACCESS_BACKGROUND_LOCATION` **sans collecter de
   position** : Android n'expose le SSID courant qu'aux applications titulaires
-  de cette permission, et l'arrière-plan — facultatif — ne sert qu'à
+  de cette permission, et l'arrière-plan (facultatif) ne sert qu'à
   redémarrer l'automatisation après un reboot. Cette justification est reprise
   mot pour mot dans
   [`permissions-declarations.md`](./permissions-declarations.md).

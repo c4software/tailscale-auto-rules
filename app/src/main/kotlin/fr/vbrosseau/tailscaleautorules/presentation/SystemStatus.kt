@@ -1,6 +1,7 @@
 package fr.vbrosseau.tailscaleautorules.presentation
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -39,11 +40,20 @@ interface SystemStatus {
      * Vrai lorsque le SSID reste lisible sans que l'application soit ouverte.
      *
      * Une localisation « pendant l'utilisation » est une permission de premier
-     * plan : Android refuse alors de démarrer depuis un redémarrage du
-     * terminal un service de type « localisation ». Seule l'autorisation
-     * « Toujours autoriser » lève cette restriction.
+     * plan : Android refuse alors de démarrer depuis l'arrière-plan un service
+     * de type « localisation ». Seule l'autorisation « Toujours autoriser »
+     * lève cette restriction.
      */
     fun canReadSsidInBackground(): Boolean
+
+    /**
+     * Vrai lorsque le processus est au premier plan aux yeux du système.
+     *
+     * C'est ce qui rend un démarrage de service de type « localisation »
+     * acceptable malgré une permission limitée au premier plan : la décision
+     * d'armer doit donc le savoir.
+     */
+    fun isAppInForeground(): Boolean
 
     /**
      * Vrai lorsque l'application est exemptée des restrictions de batterie.
@@ -78,6 +88,12 @@ class AndroidSystemStatus @Inject constructor(
                 context,
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION,
             ) == PackageManager.PERMISSION_GRANTED
+
+    override fun isAppInForeground(): Boolean {
+        val state = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(state)
+        return state.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+    }
 
     override fun isIgnoringBatteryOptimizations(): Boolean =
         context.getSystemService(PowerManager::class.java)

@@ -19,7 +19,7 @@ Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 - **Localisation « Toujours autoriser », en option.** Une carte des paramètres
   l'explique et la propose quand elle servirait : avec elle, l'automatisation
   redémarre seule après un redémarrage du téléphone, sans ouvrir
-  l'application. Aucune position n'est lue — seulement le nom du réseau.
+  l'application. Aucune position n'est lue, seulement le nom du réseau.
 - **Canal de notification « Rappels »**, distinct du canal d'état : le rappel
   de démarrage attend un geste, il ne se contente pas de se consulter.
 

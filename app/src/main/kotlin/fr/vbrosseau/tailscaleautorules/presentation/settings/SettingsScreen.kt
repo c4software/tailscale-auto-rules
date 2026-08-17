@@ -154,8 +154,8 @@ private fun MainSwitches(
  *
  * Placée sous les bascules car elle prolonge celle du démarrage au boot : dès
  * qu'une localisation de premier plan est accordée, Android interdit au
- * service — de type « localisation », imposé par la lecture du SSID — de
- * partir du redémarrage du terminal sans cette extension.
+ * service (de type « localisation », imposé par la lecture du SSID) de partir
+ * du redémarrage du terminal sans cette extension.
  */
 @Composable
 private fun BackgroundLocationSection(

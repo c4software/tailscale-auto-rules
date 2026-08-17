@@ -195,14 +195,31 @@ class TunnelWatchService : Service() {
      */
     private fun startInForeground() {
         val notification = notifier.build(TunnelState.UNKNOWN, ruleId = null)
+        val types = foregroundServiceTypes()
 
-        ServiceCompat.startForeground(
-            this,
-            TunnelNotifier.NOTIFICATION_ID,
-            notification,
-            foregroundServiceTypes(),
-        )
+        try {
+            ServiceCompat.startForeground(this, TunnelNotifier.NOTIFICATION_ID, notification, types)
+        } catch (error: SecurityException) {
+            // Filet de sécurité : un démarrage depuis l'arrière-plan, tel un
+            // redémarrage START_STICKY après une mort sous pression mémoire,
+            // n'est pas éligible au type « localisation » quand la permission
+            // se limite au premier plan. Plutôt que de mourir à la naissance,
+            // le service repart sans lire le SSID ; le réarmement au retour de
+            // l'application au premier plan restaure le type complet.
+            val fallback = fallbackServiceTypes()
+            if (types == fallback) throw error
+
+            Timber.w(error, "Type « localisation » rejeté : repli sans lecture du SSID")
+            ServiceCompat.startForeground(this, TunnelNotifier.NOTIFICATION_ID, notification, fallback)
+        }
     }
+
+    private fun fallbackServiceTypes(): Int =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        } else {
+            0
+        }
 
     /**
      * Types déclarés au démarrage, dont « localisation » **seulement** si la

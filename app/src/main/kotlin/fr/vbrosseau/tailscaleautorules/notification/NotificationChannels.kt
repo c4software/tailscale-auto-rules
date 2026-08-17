@@ -17,7 +17,7 @@ object NotificationChannels {
     const val TUNNEL_STATE = "tunnel-state"
 
     /**
-     * Canal des rappels ponctuels — « ouvrir l'application pour démarrer ».
+     * Canal des rappels ponctuels, tel « ouvrir l'application pour démarrer ».
      *
      * Distinct du canal d'état, et d'importance normale : un rappel est un
      * événement qui attend un geste, pas un état qu'on consulte. Le fondre

@@ -43,7 +43,7 @@ data class SettingsUiState(
      * Le démarrage au boot est demandé, mais la localisation n'est accordée
      * que « pendant l'utilisation » : Android refusera alors de démarrer le
      * service depuis l'arrière-plan, et l'automatisation attendra l'ouverture
-     * de l'application. Sans localisation du tout, rien à proposer — la
+     * de l'application. Sans localisation du tout, rien à proposer : la
      * permission d'arrière-plan ne s'accorde qu'au-dessus de celle de premier
      * plan, que seules les règles Wi-Fi justifient.
      */

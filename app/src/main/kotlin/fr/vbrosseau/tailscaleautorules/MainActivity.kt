@@ -55,6 +55,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Réarme l'observation à chaque passage au premier plan.
+     *
+     * C'est ce qui honore le rappel « ouvrez l'application » : au premier
+     * plan, le démarrage du service redevient éligible au type
+     * « localisation », et une observation dégradée par un repli reprend la
+     * lecture du SSID à la commande suivante. Sans effet quand tout tourne
+     * déjà.
+     */
+    override fun onStart() {
+        super.onStart()
+        lifecycleScope.launch { coordinator.onApplicationForeground() }
+    }
+
     private fun onLocationPermissionGranted() {
         lifecycleScope.launch { coordinator.onLocationPermissionGranted() }
     }
@@ -100,7 +114,7 @@ private fun AppRoot(
 
     // La demande d'arrière-plan ne s'empile pas sur celle de premier plan :
     // depuis Android 11, le système n'ouvre plus de boîte de dialogue et
-    // renvoie vers les réglages de l'application — le résultat arrive donc au
+    // renvoie vers les réglages de l'application ; le résultat arrive donc au
     // retour à l'écran, que les paramètres reconstatent déjà. Aucun octroi à
     // compter ici : la carte qui la propose vit hors du premier lancement.
     val backgroundLocationLauncher = rememberLauncherForActivityResult(

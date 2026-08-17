@@ -867,21 +867,27 @@ deux pages capturées ne portaient pas de bouton d'autorisation).
 
 Constaté sur appareil : après un redémarrage du téléphone, le service ne
 repartait pas. Une localisation « pendant l'utilisation » est une permission
-de premier plan ; Android refuse alors de démarrer depuis `BOOT_COMPLETED` le
-service de type « localisation » qu'impose la lecture du SSID — il mourait à
+de premier plan ; Android refuse alors de démarrer depuis l'arrière-plan le
+service de type « localisation » qu'impose la lecture du SSID : il mourait à
 la naissance sur une `SecurityException` ([SPECS.md](./SPECS.md) §8,
-décision n°33).
+décision n°33). Une première garde posée dans le receveur de boot s'est
+révélée inopérante, constaté au reboot suivant : l'observation des réglages
+arme dès la création du processus, avant que le receveur s'exécute.
 
-- [x] `AutomationCoordinator.applySettingsAfterBoot` : quand le démarrage
-      serait rejeté, une notification « ouvrez l'application pour démarrer la
-      synchronisation » remplace la tentative (SPECS.md §7.2) ; canal
-      « Rappels » dédié, d'importance normale, retirée dès que le service
-      démarre
+- [x] La garde vit dans `AutomationCoordinator.applySettings`, seul point
+      d'armement : quand le démarrage serait rejeté, une notification
+      « ouvrez l'application pour démarrer la synchronisation » remplace
+      l'armement (SPECS.md §7.2) ; canal « Rappels » dédié, d'importance
+      normale, retirée dès que le service démarre ;
+      `onApplicationForeground()` honore le rappel au retour à l'écran
+- [x] Filet dans le service : un `startForeground` rejeté sur le type
+      « localisation », tel un redémarrage `START_STICKY`, repart en
+      `specialUse` seul au lieu de tuer le processus
 - [x] `ACCESS_BACKGROUND_LOCATION` en option : carte d'explication aux
       paramètres, visible seulement quand elle servirait (localisation fine
       accordée, démarrage au boot actif) ; `SystemStatus` expose
-      `canReadSsidInBackground()`
-- [x] Dossier store : déclarations §2/§3 réécrites — l'application demande
+      `canReadSsidInBackground()` et `isAppInForeground()`
+- [x] Dossier store : déclarations §2/§3 réécrites, l'application demande
       désormais la permission, facultative, et le dit
 - [x] Tests coordinateur, notifier, écran et ViewModel ; référence
       `parametres-avertissements` réenregistrée et relue
