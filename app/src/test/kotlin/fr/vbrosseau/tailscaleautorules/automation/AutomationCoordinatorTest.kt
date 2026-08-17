@@ -321,7 +321,6 @@ class AutomationCoordinatorTest {
         // ce chemin court aussi à l'ouverture à froid, quelques instants
         // avant la première activité, et le rappel y clignoterait.
         systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = false
 
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
@@ -335,7 +334,6 @@ class AutomationCoordinatorTest {
         // Au boot, personne ne viendra armer ensuite : le rappel est le seul
         // signe que l'automatisation attend l'ouverture de l'application.
         systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = false
 
         coordinator.applySettingsAfterBoot(AppSettings(isServiceEnabled = true))
@@ -346,8 +344,9 @@ class AutomationCoordinatorTest {
 
     @Test
     fun aStartableBootArmsWithoutReminder() = runTest {
-        systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = true
+        // Sans localisation accordée, le service part sans le type en cause :
+        // le boot arme normalement et le rappel n'a pas lieu d'être.
+        systemStatus.ssidReadable = false
         systemStatus.appInForeground = false
 
         coordinator.applySettingsAfterBoot(AppSettings(isServiceEnabled = true))
@@ -362,7 +361,6 @@ class AutomationCoordinatorTest {
         // l'application promettrait une synchronisation qui n'aura pas lieu.
         settings.updateAppSettings { it.copy(isServiceEnabled = false) }
         systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = false
 
         coordinator.applySettingsAfterBoot(AppSettings(isServiceEnabled = false))
@@ -376,7 +374,6 @@ class AutomationCoordinatorTest {
         // Au premier plan, le démarrage est éligible quelle que soit la
         // permission : c'est précisément le geste que le rappel demande.
         systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = true
 
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
@@ -390,19 +387,6 @@ class AutomationCoordinatorTest {
         // Sans localisation, le service part sans le type en cause : rien ne
         // bloque, et un rappel serait une fausse alerte.
         systemStatus.ssidReadable = false
-        systemStatus.ssidReadableInBackground = false
-        systemStatus.appInForeground = false
-
-        coordinator.applySettings(AppSettings(isServiceEnabled = true))
-
-        assertTrue(trigger.isArmed)
-        assertNull(postedReminder())
-    }
-
-    @Test
-    fun aBackgroundStartWithAlwaysAllowedLocationArms() = runTest {
-        systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = true
         systemStatus.appInForeground = false
 
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
@@ -416,7 +400,6 @@ class AutomationCoordinatorTest {
         // Sans automatisation, il n'y a rien à démarrer : inviter à ouvrir
         // l'application promettrait une synchronisation qui n'aura pas lieu.
         systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = false
 
         coordinator.applySettings(AppSettings(isServiceEnabled = false))
@@ -431,7 +414,6 @@ class AutomationCoordinatorTest {
         // réémet pas au retour à l'écran, personne d'autre n'honorerait
         // l'invitation quand le processus a survécu.
         systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
         systemStatus.appInForeground = false
         coordinator.applySettings(AppSettings(isServiceEnabled = true))
         assertTrue(!trigger.isArmed)

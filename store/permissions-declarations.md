@@ -1,9 +1,8 @@
 # Déclarations de permissions et de services de premier plan
 
-Textes à coller dans **Play Console → Contenu de l'application**. Trois
+Textes à coller dans **Play Console → Contenu de l'application**. Deux
 déclarations sont obligatoires et font l'objet d'un examen manuel : le type de
-service de premier plan `specialUse`, l'usage de la localisation, et la
-localisation en arrière-plan (§3).
+service de premier plan `specialUse`, et l'usage de la localisation.
 
 Le formulaire de la Play Console et son examen manuel sont en anglais : **les
 textes cités ci-dessous sont en anglais**, la prose qui les entoure reste en
@@ -63,52 +62,31 @@ que pour lire le SSID.
 > order to enable or disable the Tailscale VPN tunnel.
 >
 > No position is ever read: no GPS, no triangulation, no geofencing. No
-> coordinates are stored or transmitted. The service reads the SSID only, and
-> only if the user has granted the location permission. Background location
-> ("Allow all the time") is offered as a strictly optional upgrade, for the
-> sole purpose of letting the service restart by itself after the device
-> reboots (see the background location declaration).
+> coordinates are stored or transmitted, and the app does not request
+> ACCESS_BACKGROUND_LOCATION. The service reads the SSID only, and only if the
+> user has granted the location permission.
 
 ---
 
-## 3. Localisation en arrière-plan : `ACCESS_BACKGROUND_LOCATION`
+## 3. Localisation en arrière-plan
 
-L'application demande `ACCESS_BACKGROUND_LOCATION`, **facultative et jamais
-exigée** : elle n'est proposée que depuis une carte d'explication des
-paramètres, quand la localisation de premier plan est déjà accordée et que le
-démarrage au boot est activé. Cette déclaration fait l'objet d'un examen
-manuel spécifique (« Location permissions » dans Play Console).
+L'application ne demande **pas** `ACCESS_BACKGROUND_LOCATION`. La permission
+aurait permis à l'automatisation de redémarrer seule après un reboot ; elle a
+été écartée, trop invasive pour ce seul scénario. À la place, une notification
+invite à ouvrir l'application après chaque redémarrage. Si le formulaire
+interroge malgré tout sur l'usage de la localisation :
 
-**Fonctionnalité principale à déclarer :** redémarrage automatique de
-l'automatisation après un redémarrage de l'appareil.
-
-> The app requests background location for a single, optional purpose:
-> restarting its automation by itself after the device reboots.
+> The location permission is used exclusively to read the name (SSID) of the
+> Wi-Fi network the device is connected to. Android classifies this piece of
+> information as location data and grants access to it on that basis only. The
+> SSID is used to recognise the networks the user has marked as trusted, in
+> order to turn the VPN tunnel off on those.
 >
-> The app never accesses any geographic position: no GPS, no triangulation,
-> no geofencing. Android classifies the Wi-Fi network name (SSID) as location
-> data: the app reads the SSID, and nothing else, to recognise the networks
-> the user has marked as trusted, and enables or disables the Tailscale VPN
-> tunnel accordingly. The comparison happens entirely on the device; no
-> location data is ever stored or transmitted.
->
-> Background access serves one scenario only: the device rebooting. Because
-> the SSID counts as location data, the service watching the network must
-> declare the "location" foreground service type; and because a "while in
-> use" grant is a foreground-only permission, Android refuses to start such a
-> service from the BOOT_COMPLETED broadcast. "Allow all the time" is the only
-> level that lets the automation resume on its own after a reboot.
->
-> The permission is strictly optional. It is offered, never required, from
-> the app's settings screen, next to an explanation of this trade-off. If the
-> user declines, every feature keeps working: after each reboot, the app
-> simply posts a notification inviting the user to open it, which restarts
-> the automation.
-
-**Vidéo :** la déclaration de localisation en arrière-plan exige elle aussi une
-démonstration. Compléter le scénario du §4 d'une prise montrant la carte
-« Toujours autoriser » des paramètres, puis un redémarrage de l'appareil suivi
-de la notification d'état qui revient sans ouvrir l'application.
+> No coordinates are ever read, no location data is stored or transmitted:
+> nothing leaves the device. The permission is optional; if denied, the app
+> keeps working, without recognising Wi-Fi networks by name. The app does not
+> request ACCESS_BACKGROUND_LOCATION: after the device reboots, it posts a
+> notification inviting the user to open it, which restarts the automation.
 
 ---
 
@@ -163,7 +141,6 @@ le lien entre le SSID et la permission de localisation rejette la déclaration.
 | `ACCESS_NETWORK_STATE` | Observer le transport réseau courant | Non |
 | `ACCESS_WIFI_STATE` | Lire l'état du Wi-Fi | Non |
 | `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` | Lire le SSID courant (classé donnée de localisation par Android) | Oui |
-| `ACCESS_BACKGROUND_LOCATION` | Redémarrer l'automatisation seule après un reboot : sans « Toujours autoriser », Android refuse de démarrer le service de type « localisation » depuis `BOOT_COMPLETED` | Oui ; à défaut, une notification invite à ouvrir l'application |
 | `POST_NOTIFICATIONS` | Notification d'état imposée au service de premier plan | Oui (API 33+) |
 | `RECEIVE_BOOT_COMPLETED` | Réarmer l'automatisation après un redémarrage | Oui (réglage) |
 | `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_SPECIAL_USE` | Observation continue du réseau | Non |

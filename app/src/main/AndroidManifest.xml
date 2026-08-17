@@ -14,15 +14,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!--
-      Lecture du SSID au redémarrage du terminal. Une localisation « pendant
-      l'utilisation » est une permission de premier plan : Android refuse alors
-      de démarrer depuis BOOT_COMPLETED un service de type « localisation ».
-      Facultative : sans elle, une notification invite à ouvrir l'application
-      (SPECS.md §8).
-    -->
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-
-    <!--
       Notification d'état. Demandée à l'utilisateur uniquement s'il active
       l'option correspondante (SPECS.md §7 et §8) : l'application n'emploie pas
       de service de premier plan, qui l'aurait rendue obligatoire.

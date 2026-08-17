@@ -38,7 +38,6 @@ fun AppNavHost(
     navController: NavHostController = rememberNavController(),
     onRequestNotificationPermission: () -> Unit = {},
     onRequestLocationPermission: () -> Unit = {},
-    onRequestBackgroundLocation: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -85,7 +84,6 @@ fun AppNavHost(
                 onStartOnBootChange = viewModel::setStartOnBoot,
                 onVerboseLoggingChange = viewModel::setVerboseLogging,
                 onRequestNotificationPermission = onRequestNotificationPermission,
-                onRequestBackgroundLocation = onRequestBackgroundLocation,
                 onOpenBatterySettings = { context.openBatterySettings() },
                 onReplayOnboarding = viewModel::replayOnboarding,
             )

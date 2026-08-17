@@ -921,3 +921,27 @@ Deux constats du reboot d'essai sur appareil (décisions n°34 et n°35).
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 390 tests, 0 échec (interface intacte, captures inchangées).
+
+---
+
+## 33. Retrait de la localisation d'arrière-plan `[x]`
+
+Décision produit : `ACCESS_BACKGROUND_LOCATION` est trop invasive pour son
+seul bénéfice, redémarrer sans ouvrir l'application. Au boot, le rappel
+« ouvrez l'application » devient l'unique comportement quand la localisation
+est accordée (décision n°33 amendée).
+
+- [x] Permission retirée du manifeste ; carte, chaînes, lanceur et repère de
+      test retirés ; `SystemStatus.canReadSsidInBackground()` supprimé et la
+      garde de l'armement réduite à « localisation accordée et application en
+      arrière-plan »
+- [x] Conservés, car indépendants : rappel au boot et canal « Rappels »,
+      attestation bornée au boot (n°35), traqueur de premier plan (n°34),
+      repli du service
+- [x] Dossier store revenu à « ne demande pas la permission », SPECS §7.2 et
+      §8, CHANGELOG et déclarations réalignés
+- [x] Référence `parametres-avertissements` réenregistrée et relue, la carte
+      disparue
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 383 tests, 0 échec.

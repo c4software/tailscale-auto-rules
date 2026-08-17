@@ -102,9 +102,6 @@
     <string name="settings_learning_summary">Remembers when you turn the tunnel on or off by hand, network by network, and replays it. Preferences already learned keep applying until you delete them.</string>
     <string name="settings_boot_title">Start on boot</string>
     <string name="settings_boot_summary">Re-arms the automation after the phone restarts.</string>
-    <string name="settings_background_location_title">Restart without opening the app</string>
-    <string name="settings_background_location_summary">Requires location set to "Allow all the time". Only the Wi-Fi network name is read, never your position.</string>
-    <string name="settings_background_location_action">Allow all the time</string>
     <string name="settings_notification_notice">A permanent notification shows the tunnel state and the applied rule. Android imposes it: continuously watching the network requires a visible service.</string>
     <string name="settings_notification_permission">Notification permission required.</string>
     <string name="settings_notification_grant">Allow</string>

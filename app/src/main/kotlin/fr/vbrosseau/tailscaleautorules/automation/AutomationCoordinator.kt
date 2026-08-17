@@ -110,15 +110,13 @@ class AutomationCoordinator @Inject constructor(
     }
 
     /**
-     * Le blocage ne vient que d'une localisation accordée sans l'être
-     * « toujours », depuis l'arrière-plan : sans localisation du tout, le
-     * service part sans le type en cause, et au premier plan le démarrage est
-     * éligible quelle que soit la permission.
+     * Le blocage ne vient que d'une localisation accordée, depuis
+     * l'arrière-plan : sans localisation du tout, le service part sans le type
+     * en cause, et au premier plan le démarrage est éligible quelle que soit
+     * la permission.
      */
     private val isWatchStartableNow: Boolean
-        get() = !systemStatus.canReadSsid() ||
-            systemStatus.canReadSsidInBackground() ||
-            systemStatus.isAppInForeground()
+        get() = !systemStatus.canReadSsid() || systemStatus.isAppInForeground()
 
     /**
      * Aligne la seule notification, sans toucher au réveil.

@@ -168,36 +168,6 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun theBackgroundLocationIsOnlyNeededWhenItWouldServe() = runTest {
-        // Elle ne sert qu'au démarrage depuis le boot, et seulement quand la
-        // localisation de premier plan est déjà accordée sans son extension.
-        systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
-        val model = viewModel()
-
-        assertTrue(model.uiState.value.needsBackgroundLocation)
-
-        model.setStartOnBoot(false)
-
-        assertTrue(!model.uiState.value.needsBackgroundLocation)
-    }
-
-    @Test
-    fun aBackgroundLocationGrantedOutsideIsPickedUpOnRefresh() = runTest {
-        // « Toujours autoriser » se choisit dans les réglages système : sans
-        // reconstat au retour, la carte resterait affichée après l'octroi.
-        systemStatus.ssidReadable = true
-        systemStatus.ssidReadableInBackground = false
-        val model = viewModel()
-        assertTrue(model.uiState.value.needsBackgroundLocation)
-
-        systemStatus.ssidReadableInBackground = true
-        model.refreshSystemStatus()
-
-        assertTrue(!model.uiState.value.needsBackgroundLocation)
-    }
-
-    @Test
     fun theBatteryExemptionIsRereadOnRefresh() = runTest {
         systemStatus.batteryExempted = false
         val model = viewModel()
