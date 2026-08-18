@@ -21,6 +21,11 @@ Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
   restait morte jusqu'au redémarrage suivant. Ce constat sans changement vaut
   désormais attestation, retenue en mémoire pour la session.
 
+- **L'instant du dernier boot est figé au démarrage du processus.** Recalculé
+  à chaque lecture, il dérivait avec les corrections d'horloge (NTP après un
+  boot à l'heure fausse) et pouvait rejeter les attestations de la session,
+  ou réadmettre celles d'avant le boot.
+
 ## [1.2.0] — 2026-08-17
 
 ### Corrigé

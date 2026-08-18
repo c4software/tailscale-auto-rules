@@ -16,11 +16,16 @@ object TimeModule {
     @Provides
     @Singleton
     fun provideClock(): Clock = object : Clock {
-        override fun nowEpochMillis(): Long = System.currentTimeMillis()
-
         // `elapsedRealtime` court depuis le boot, veille profonde comprise :
         // la soustraction redonne l'instant du démarrage en temps d'époque.
-        override fun bootEpochMillis(): Long =
-            System.currentTimeMillis() - SystemClock.elapsedRealtime()
+        // Figé à la création du singleton : recalculé à chaque appel, le
+        // repère dérivait avec les corrections d'horloge (NTP après un boot à
+        // l'heure fausse), et pouvait alors rejeter les attestations de la
+        // session, ou réadmettre celles d'avant le boot.
+        private val bootMillis = System.currentTimeMillis() - SystemClock.elapsedRealtime()
+
+        override fun nowEpochMillis(): Long = System.currentTimeMillis()
+
+        override fun bootEpochMillis(): Long = bootMillis
     }
 }
