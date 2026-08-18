@@ -197,9 +197,18 @@ dont l'**absence** vaut « automatique ».
   de bordure ; elle ne dépend pas de la validation Internet — la confiance
   accordée à un réseau ne dépend pas de son accès Internet, et le VPN qui
   monte fait fugacement perdre sa validation au réseau porteur.
-- Un SSID indisponible (permission absente, SSID masqué) ne correspond à
-  aucune clé : la règle s'abstient et laisse la règle « Wi-Fi » activer le
-  tunnel. En cas de doute, on protège la connexion.
+- Un SSID indisponible ne correspond à aucune clé : la règle s'abstient. La
+  suite dépend du **pourquoi** :
+  - **Permission absente, SSID masqué** : l'utilisateur a renoncé à identifier
+    ses réseaux ; la règle « Wi-Fi » active le tunnel. En cas de doute, on
+    protège la connexion.
+  - **Lecture expurgée** (permission accordée, mais exécution hors des
+    conditions du système : typiquement l'arrière-plan au boot, sans service
+    de type « localisation ») : l'identité du réseau existe et une préférence
+    « toujours coupé » peut la viser ; la règle « Wi-Fi » s'abstient **aussi**,
+    et le tunnel reste en l'état jusqu'à une lecture complète. Sans cela,
+    chaque redémarrage activait le tunnel sur le réseau de confiance de
+    l'utilisateur.
 - Priorité 150 : sous le mode avion — jamais d'application en avion — mais
   au-dessus des règles par défaut.
 - Supprimer la préférence (glissement, §6.2) rend le réseau à l'automatisme.

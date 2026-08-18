@@ -19,6 +19,7 @@ import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
 import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.network.stabilized
+import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -51,6 +52,7 @@ import kotlin.time.Duration.Companion.seconds
 class AndroidNetworkObserver @Inject constructor(
     @param:ApplicationContext private val context: Context,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val systemStatus: SystemStatus,
 ) : NetworkObserver {
 
     private val connectivityManager: ConnectivityManager?
@@ -151,13 +153,15 @@ class AndroidNetworkObserver @Inject constructor(
             .maxWithOrNull(PreferredNetwork)
 
         val transport = physical.toTransport()
+        val ssid = if (transport == NetworkTransport.WIFI) readSsid(physical) else null
 
         return NetworkContext(
             transport = transport,
             isAirplaneModeOn = isAirplaneModeOn(),
             isInternetValidated = physical
                 ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true,
-            ssid = if (transport == NetworkTransport.WIFI) readSsid(physical) else null,
+            ssid = ssid,
+            isSsidRedacted = isRedacted(transport, ssid),
         )
     }
 
@@ -171,14 +175,24 @@ class AndroidNetworkObserver @Inject constructor(
     private fun redactedContext(): NetworkContext {
         val manager = connectivityManager
         val capabilities = manager?.activeNetwork?.let(manager::getNetworkCapabilities)
+        val transport = capabilities.toTransport()
 
         return NetworkContext(
-            transport = capabilities.toTransport(),
+            transport = transport,
             isAirplaneModeOn = isAirplaneModeOn(),
             isInternetValidated = capabilities
                 ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true,
+            isSsidRedacted = isRedacted(transport, ssid = null),
         )
     }
+
+    /**
+     * Permission accordée mais aucun SSID livré : la lecture a été expurgée par
+     * le contexte d'exécution, pas refusée par l'utilisateur. Les règles Wi-Fi
+     * s'abstiennent alors plutôt que de décider sans identité (SPECS.md §4.2).
+     */
+    private fun isRedacted(transport: NetworkTransport, ssid: String?): Boolean =
+        transport == NetworkTransport.WIFI && ssid == null && systemStatus.canReadSsid()
 
     private fun NetworkCapabilities?.toTransport(): NetworkTransport = when {
         this == null -> NetworkTransport.NONE

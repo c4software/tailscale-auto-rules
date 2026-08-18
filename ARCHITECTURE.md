@@ -352,7 +352,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 33 complètes. 383 tests, 0 échec.
+Étapes 1 à 34 complètes. 387 tests, 0 échec.
 
 ```
 .
@@ -372,7 +372,7 @@ est une mesure, pas un objectif.
 │       │   │                 DetectManualOverrideUseCase
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
 │       ├── testFixtures/…/  les 6 Fakes + fabriques Contexts
-│       └── test/…/          146 tests JVM
+│       └── test/…/          149 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/
@@ -384,7 +384,7 @@ est une mesure, pas un objectif.
 │       │   │   ├── data/repository/      Room…Repository, DataStoreSettingsRepository
 │       │   │   ├── data/tailscale/       AndroidTailscaleController
 │       │   │   ├── notification/         NotificationChannels, TunnelNotifier
-│       │   │   ├── di/                   10 modules Hilt
+│       │   │   ├── di/                   11 modules Hilt
 │       │   │   └── presentation/         SystemStatus, ForegroundStateTracker, libellés
 │       │   │       ├── theme/           AppTheme, Color, Spacing
 │       │   │       ├── navigation/      AppNavHost, AppNavigationBar, AppDestination

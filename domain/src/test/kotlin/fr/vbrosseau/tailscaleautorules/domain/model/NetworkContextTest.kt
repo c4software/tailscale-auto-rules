@@ -95,6 +95,22 @@ class NetworkContextTest {
     }
 
     @Test
+    fun aRedactedSsidOnlyMakesSenseOnAWifiWithoutReadableSsid() {
+        // L'expurgation dit « l'identité existe mais est illisible ici » : hors
+        // Wi-Fi il n'y a pas d'identité à expurger, et avec un SSID lu il n'y a
+        // rien d'expurgé.
+        assertTrue(
+            NetworkContext(transport = NetworkTransport.WIFI, isSsidRedacted = true).isSsidRedacted,
+        )
+        assertFailsWith<IllegalArgumentException> {
+            NetworkContext(transport = NetworkTransport.CELLULAR, isSsidRedacted = true)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            NetworkContext(transport = NetworkTransport.WIFI, ssid = "Maison", isSsidRedacted = true)
+        }
+    }
+
+    @Test
     fun copyRevalidatesTheInvariants() {
         val wifi = NetworkContext(transport = NetworkTransport.WIFI, ssid = "Maison")
 

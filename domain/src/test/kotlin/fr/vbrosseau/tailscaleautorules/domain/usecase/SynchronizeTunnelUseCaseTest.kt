@@ -106,6 +106,26 @@ class SynchronizeTunnelUseCaseTest {
         }
 
     @Test
+    fun aRedactedSsidLeavesTheTunnelUntouched() =
+        runTest {
+            // Le boot en dégradé lit un SSID expurgé : décider quand même
+            // activait le tunnel sur le réseau « toujours coupé » de
+            // l'utilisateur, à chaque redémarrage.
+            preferences.upsert(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
+            val redacted =
+                NetworkContext(
+                    transport = NetworkTransport.WIFI,
+                    isInternetValidated = true,
+                    isSsidRedacted = true,
+                )
+
+            val outcome = useCase(redacted)
+
+            assertEquals(SynchronizationOutcome.NoDecision, outcome)
+            assertEquals(0, controller.enableCount)
+        }
+
+    @Test
     fun anAbstentionLeavesEverythingUntouched() =
         runTest {
             controller.enable()

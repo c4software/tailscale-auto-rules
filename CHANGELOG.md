@@ -3,6 +3,17 @@
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Corrigé
+
+- **Au boot, le tunnel s'activait sur le réseau « toujours coupé ».** Le cycle
+  du chemin de boot lit un SSID expurgé (permission accordée, mais exécution
+  en arrière-plan sans service de type « localisation ») et la règle « Wi-Fi »
+  décidait quand même sur le seul transport. Les règles Wi-Fi s'abstiennent
+  désormais quand le SSID est expurgé ; un SSID indisponible faute de
+  permission continue en revanche d'activer le tunnel.
+
 ## [1.2.0] — 2026-08-17
 
 ### Corrigé

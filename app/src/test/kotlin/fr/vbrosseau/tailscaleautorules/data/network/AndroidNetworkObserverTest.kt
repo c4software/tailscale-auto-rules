@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkContext
 import fr.vbrosseau.tailscaleautorules.domain.model.NetworkTransport
+import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -54,6 +55,8 @@ class AndroidNetworkObserverTest {
     private val connectivityManager: ConnectivityManager
         get() = context.getSystemService(ConnectivityManager::class.java)
 
+    private val systemStatus = FakeSystemStatus()
+
     /**
      * L'observateur partage l'ordonnanceur du test.
      *
@@ -61,7 +64,7 @@ class AndroidNetworkObserverTest {
      * que rien ne fait avancer : le test se bloquerait au lieu d'échouer.
      */
     private fun TestScope.observer() =
-        AndroidNetworkObserver(context, UnconfinedTestDispatcher(testScheduler))
+        AndroidNetworkObserver(context, UnconfinedTestDispatcher(testScheduler), systemStatus)
 
     private fun capabilities(transport: Int, validated: Boolean): NetworkCapabilities =
         ShadowNetworkCapabilities.newInstance().also {
@@ -156,12 +159,33 @@ class AndroidNetworkObserverTest {
     fun anUnknownSsidIsReportedAsUnavailableRatherThanAsAValue() = runTest {
         // Sans permission de localisation, le système renvoie une valeur de
         // repli qui ne doit jamais être prise pour un vrai SSID.
+        systemStatus.ssidReadable = false
+
         val networkContext = captureAfterDelivering(
             observer(),
             capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = true),
         ).await()
 
         assertNull(networkContext.ssid)
+        assertFalse(
+            networkContext.isSsidRedacted,
+            "Sans permission, rien n'est expurgé : l'utilisateur a renoncé à identifier ses réseaux.",
+        )
+    }
+
+    @Test
+    fun aMissingSsidDespiteThePermissionIsReportedAsRedacted() = runTest {
+        // Permission accordée mais lecture expurgée par le contexte
+        // d'exécution, typiquement l'arrière-plan au boot : les règles Wi-Fi
+        // doivent le savoir pour s'abstenir plutôt que de décider sans
+        // identité (SPECS.md §4.2).
+        val networkContext = captureAfterDelivering(
+            observer(),
+            capabilities(NetworkCapabilities.TRANSPORT_WIFI, validated = true),
+        ).await()
+
+        assertNull(networkContext.ssid)
+        assertTrue(networkContext.isSsidRedacted)
     }
 
     @Test
@@ -242,6 +266,10 @@ class AndroidNetworkObserverTest {
         val networkContext = capture.await()
         assertEquals(NetworkTransport.WIFI, networkContext.transport)
         assertNull(networkContext.ssid, "Les capacités relues sont expurgées du SSID.")
+        assertTrue(
+            networkContext.isSsidRedacted,
+            "Permission accordée : l'absence de SSID est une expurgation, pas un renoncement.",
+        )
     }
 
     private companion object {

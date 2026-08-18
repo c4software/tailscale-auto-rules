@@ -39,6 +39,23 @@ object Contexts {
         networkPreferences = preferences,
     )
 
+    /**
+     * Wi-Fi dont le SSID existe mais a été expurgé de la lecture : permission
+     * accordée, exécution hors des conditions du système (SPECS.md §4.2).
+     */
+    fun redactedWifi(
+        validated: Boolean = true,
+        preferences: Map<NetworkPreferenceKey, TunnelState> = emptyMap(),
+    ) = RuleContext(
+        network =
+            NetworkContext(
+                transport = NetworkTransport.WIFI,
+                isInternetValidated = validated,
+                isSsidRedacted = true,
+            ),
+        networkPreferences = preferences,
+    )
+
     /** Réseau mobile. */
     fun cellular(
         validated: Boolean = true,

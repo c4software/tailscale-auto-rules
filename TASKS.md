@@ -945,3 +945,27 @@ est accordée (décision n°33 amendée).
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 383 tests, 0 échec.
+
+---
+
+## 34. Les règles Wi-Fi s'abstiennent sur un SSID expurgé `[x]`
+
+Relevé en revue de l'étape 33 : au boot avec l'armement décliné (le cas
+nominal depuis le retrait de la localisation d'arrière-plan), le cycle lit un
+SSID expurgé, la règle des préférences s'abstient faute de clé, et la règle
+« Wi-Fi » décidait sur le seul transport : le tunnel s'activait sur le réseau
+« toujours coupé » de l'utilisateur, à chaque redémarrage, puis à chaque
+battement tant que le service restait en repli `specialUse`.
+
+- [x] `NetworkContext.isSsidRedacted` distingue la lecture expurgée
+      (permission accordée, exécution en arrière-plan) de la permission
+      absente ; posé par `AndroidNetworkObserver` d'après
+      `SystemStatus.canReadSsid()`
+- [x] `OtherWifiRule` s'abstient quand le SSID est expurgé ; le comportement
+      « permission absente → tunnel activé » demeure (SPECS.md §4.2 précise
+      les deux cas)
+- [x] Tests règle, modèle, cycle et observateur ; fabrique
+      `Contexts.redactedWifi`
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 387 tests, 0 échec.

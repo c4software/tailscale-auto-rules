@@ -36,6 +36,15 @@ class OtherWifiRuleTest {
     }
 
     @Test
+    fun aRedactedSsidMakesTheRuleAbstain() {
+        // La permission est accordée : une préférence « toujours coupé » peut
+        // viser ce réseau, mais la lecture expurgée ne permet pas de le savoir.
+        // Décider ici activait le tunnel sur le Wi-Fi de confiance à chaque
+        // boot, contre le choix de l'utilisateur.
+        assertEquals(RuleDecision.NO_DECISION, rule.evaluate(Contexts.redactedWifi()))
+    }
+
+    @Test
     fun anUnvalidatedWifiAbstains() {
         // Activer un tunnel sur un réseau inexploitable n'a aucun effet utile.
         assertEquals(
