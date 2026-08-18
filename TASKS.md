@@ -969,3 +969,27 @@ battement tant que le service restait en repli `specialUse`.
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 387 tests, 0 échec.
+
+---
+
+## 35. Le constat sans changement vaut attestation `[x]`
+
+Relevé en revue de l'étape 32 : la détection du geste manuel exige une
+attestation postérieure au boot, mais `SynchronizeTunnelUseCase` n'écrit rien
+quand le tunnel est déjà dans l'état visé. Après un reboot où le client
+revient de lui-même dans l'état voulu, aucune entrée de la session n'existait
+et la détection restait morte jusqu'au redémarrage suivant : le geste n'était
+ni appris, ni même reconnu, et le battement recommandait le tunnel contre
+l'utilisateur.
+
+- [x] `SessionAttestation` (domaine, portée par la session en mémoire) :
+      `confirm(state)` au constat « déjà dans l'état visé », `attests(target)`
+      avec la même grâce que le journal et comparaison de l'état confirmé
+- [x] `SynchronizeTunnelUseCase` confirme sur `AlreadyInTargetState` ;
+      `DetectManualOverrideUseCase` accepte l'une ou l'autre preuve
+- [x] SPECS.md §3.3 précise que la réattestation ne passe pas forcément par
+      le journal
+- [x] Tests attestation, détection et cycle
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 396 tests, 0 échec.

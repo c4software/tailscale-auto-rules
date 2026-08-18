@@ -26,6 +26,7 @@ import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCas
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.RecordManualOverrideUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.SessionAttestation
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizationOutcome
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
@@ -89,10 +90,12 @@ class AutomationCoordinatorTest {
 
         val engine = RuleEngine(setOf(NetworkPreferenceRule(), MobileNetworkRule()))
         val evaluateRules = EvaluateRulesUseCase(exceptions, settings, engine)
+        val sessionAttestation = SessionAttestation(clock)
         val detectManualOverride = DetectManualOverrideUseCase(
             networkObserver = observer,
             evaluateRules = evaluateRules,
             clock = clock,
+            sessionAttestation = sessionAttestation,
         )
 
         coordinator = AutomationCoordinator(
@@ -104,6 +107,7 @@ class AutomationCoordinatorTest {
                 evaluateRules = evaluateRules,
                 controller = controller,
                 journalRepository = journal,
+                sessionAttestation = sessionAttestation,
             ),
             captureManualOverride = CaptureManualOverrideUseCase(
                 networkObserver = observer,

@@ -16,6 +16,7 @@ import fr.vbrosseau.tailscaleautorules.domain.usecase.DescribeTunnelStatusUseCas
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.RecordManualOverrideUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.SessionAttestation
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import javax.inject.Singleton
 
@@ -41,6 +42,12 @@ object UseCaseModule {
         engine = engine,
     )
 
+    // Singleton indispensable : c'est la même attestation que le cycle
+    // confirme et que la détection consulte.
+    @Provides
+    @Singleton
+    fun provideSessionAttestation(clock: Clock): SessionAttestation = SessionAttestation(clock)
+
     @Provides
     @Singleton
     fun provideSynchronizeTunnelUseCase(
@@ -49,12 +56,14 @@ object UseCaseModule {
         evaluateRules: EvaluateRulesUseCase,
         controller: TailscaleController,
         journalRepository: JournalRepository,
+        sessionAttestation: SessionAttestation,
     ): SynchronizeTunnelUseCase = SynchronizeTunnelUseCase(
         networkObserver = networkObserver,
         settingsRepository = settingsRepository,
         evaluateRules = evaluateRules,
         controller = controller,
         journalRepository = journalRepository,
+        sessionAttestation = sessionAttestation,
     )
 
     @Provides
@@ -63,10 +72,12 @@ object UseCaseModule {
         networkObserver: NetworkObserver,
         evaluateRules: EvaluateRulesUseCase,
         clock: Clock,
+        sessionAttestation: SessionAttestation,
     ): DetectManualOverrideUseCase = DetectManualOverrideUseCase(
         networkObserver = networkObserver,
         evaluateRules = evaluateRules,
         clock = clock,
+        sessionAttestation = sessionAttestation,
     )
 
     @Provides

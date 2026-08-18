@@ -14,6 +14,13 @@ Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
   désormais quand le SSID est expurgé ; un SSID indisponible faute de
   permission continue en revanche d'activer le tunnel.
 
+- **Après un redémarrage, un geste manuel pouvait rester invisible toute la
+  session.** La détection exige une attestation postérieure au boot, mais le
+  journal ne consigne que les changements effectifs : quand le premier cycle
+  trouvait le tunnel déjà dans l'état visé, rien n'était écrit et la détection
+  restait morte jusqu'au redémarrage suivant. Ce constat sans changement vaut
+  désormais attestation, retenue en mémoire pour la session.
+
 ## [1.2.0] — 2026-08-17
 
 ### Corrigé

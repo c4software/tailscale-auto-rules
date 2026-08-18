@@ -16,6 +16,7 @@ import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.SessionAttestation
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
 import fr.vbrosseau.tailscaleautorules.presentation.keepCollecting
@@ -35,6 +36,7 @@ class HomeViewModelTest {
     private val controller = FakeTailscaleController()
     private val observer = FakeNetworkObserver()
     private val clock = FakeClock(1_000)
+    private val sessionAttestation = SessionAttestation(clock)
     private val journal = FakeJournalRepository(clock)
     private val settings = FakeSettingsRepository()
     private val preferences = FakeNetworkPreferenceRepository().apply {
@@ -53,11 +55,13 @@ class HomeViewModelTest {
             evaluateRules = evaluateRules,
             controller = controller,
             journalRepository = journal,
+            sessionAttestation = sessionAttestation,
         ),
         detectManualOverride = DetectManualOverrideUseCase(
             networkObserver = observer,
             evaluateRules = evaluateRules,
             clock = clock,
+            sessionAttestation = sessionAttestation,
         ),
         settingsRepository = settings,
     ).also { keepCollecting(it.uiState) }

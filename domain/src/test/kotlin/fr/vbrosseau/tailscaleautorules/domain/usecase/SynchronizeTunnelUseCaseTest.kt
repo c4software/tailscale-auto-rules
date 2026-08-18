@@ -37,6 +37,7 @@ class SynchronizeTunnelUseCaseTest {
     private val preferences = FakeNetworkPreferenceRepository(clock)
     private val settings = FakeSettingsRepository()
     private val observer = FakeNetworkObserver()
+    private val sessionAttestation = SessionAttestation(clock)
 
     private val useCase =
         SynchronizeTunnelUseCase(
@@ -53,6 +54,7 @@ class SynchronizeTunnelUseCaseTest {
                 ),
             controller = controller,
             journalRepository = journal,
+            sessionAttestation = sessionAttestation,
         )
 
     private val cellular = NetworkContext(NetworkTransport.CELLULAR, isInternetValidated = true)
@@ -103,6 +105,21 @@ class SynchronizeTunnelUseCaseTest {
             // saturer l'historique sur un réseau stable.
             assertEquals(1, controller.enableCount)
             assertTrue(journal.observeRecent().first().isEmpty())
+        }
+
+    @Test
+    fun aNoChangeCycleStillAttestsTheDecisionForTheSession() =
+        runTest {
+            // Après un boot, le premier cycle peut trouver le tunnel déjà dans
+            // l'état visé : rien n'est journalisé, et sans cette attestation en
+            // mémoire la détection du geste manuel restait morte toute la
+            // session.
+            controller.enable()
+
+            useCase(cellular)
+            clock.advanceBy(60_000)
+
+            assertTrue(sessionAttestation.attests(TunnelState.ENABLED))
         }
 
     @Test

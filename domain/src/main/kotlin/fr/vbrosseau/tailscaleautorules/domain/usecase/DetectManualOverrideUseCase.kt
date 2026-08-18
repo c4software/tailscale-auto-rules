@@ -29,8 +29,9 @@ data class ManualOverride(
  * pas : elle est **normale** pendant les quelques secondes qui séparent un
  * changement de réseau de l'application de la décision. La signature d'un
  * geste manuel est plus précise : la décision courante **a déjà été
- * appliquée** — le journal en atteste — et le tunnel est pourtant dans l'état
- * opposé. Seule une main extérieure a pu l'y mettre.
+ * appliquée** (le journal en atteste, ou [SessionAttestation] quand le cycle
+ * n'a rien eu à changer) et le tunnel est pourtant dans l'état opposé. Seule
+ * une main extérieure a pu l'y mettre.
  *
  * Le journal consigne la commande **à l'envoi**, or le client met quelques
  * secondes à l'exécuter : pendant ce court délai, l'état constaté contredit une
@@ -46,6 +47,7 @@ class DetectManualOverrideUseCase(
     private val networkObserver: NetworkObserver,
     private val evaluateRules: EvaluateRulesUseCase,
     private val clock: Clock,
+    private val sessionAttestation: SessionAttestation,
 ) {
     /**
      * Constat sur le contexte réseau courant — la forme qu'emploie la
@@ -88,29 +90,32 @@ class DetectManualOverrideUseCase(
         tunnelState: TunnelState,
         lastChange: JournalEntry?,
     ): ManualOverride? {
-        // Sans journal, aucune décision n'a jamais été appliquée : rien ne
-        // permet d'attribuer l'état constaté à qui que ce soit. Une entrée
-        // trop fraîche n'atteste de rien non plus, le tunnel n'ayant pas
-        // encore eu le temps de suivre la commande. Ni une entrée d'avant le
-        // dernier boot : un redémarrage remet le tunnel dans son état par
-        // défaut sans qu'aucune main n'y touche, et la prendre au mot
-        // transformait ce simple fait en « geste » qui écrasait la préférence
-        // apprise (constaté sur appareil : « toujours actif » redevenait
-        // « toujours coupé » à chaque reboot). Le premier cycle de la session
-        // réatteste la décision au journal, et la détection reprend sur cette
-        // entrée-là.
-        if (tunnelState == TunnelState.UNKNOWN || lastChange == null || !attests(lastChange)) {
-            return null
-        }
-
         val ruleId = evaluation.ruleId
         val targetState = evaluation.decision.asTunnelState()
 
-        // Tant que le journal ne confirme pas que la décision courante a été
-        // appliquée, la divergence est un cycle en attente, pas un geste de
-        // l'utilisateur. Une abstention (`targetState` nul) échoue d'elle-même
-        // à la comparaison avec le journal : rien à contredire.
-        return if (ruleId != null && targetState != tunnelState && lastChange.newState == targetState) {
+        // Une abstention ne laisse rien à contredire.
+        if (ruleId == null || targetState == null) return null
+
+        // Un état indéterminé n'est attribuable à personne, et un tunnel
+        // aligné sur la décision n'accuse personne.
+        val isDivergent = tunnelState != TunnelState.UNKNOWN && targetState != tunnelState
+
+        // La divergence n'est un geste que si la décision courante a déjà été
+        // **appliquée** ; sinon c'est un cycle en attente. Deux preuves en
+        // témoignent : une entrée de journal de la session qui consigne cette
+        // décision, ou le constat mémorisé d'un cycle qui a trouvé le tunnel
+        // déjà dans l'état visé, seul cas où le journal reste muet. Une preuve
+        // trop fraîche ne compte pas, le tunnel n'ayant pas eu le temps de
+        // suivre. Ni une entrée d'avant le dernier boot : un redémarrage remet
+        // le tunnel dans son état par défaut sans qu'aucune main n'y touche,
+        // et la prendre au mot transformait ce simple fait en « geste » qui
+        // écrasait la préférence apprise (constaté sur appareil : « toujours
+        // actif » redevenait « toujours coupé » à chaque reboot).
+        val journalAttests =
+            lastChange != null && attests(lastChange) && lastChange.newState == targetState
+        val decisionWasApplied = journalAttests || sessionAttestation.attests(targetState)
+
+        return if (isDivergent && decisionWasApplied) {
             ManualOverride(observedState = tunnelState, ruleId = ruleId)
         } else {
             null

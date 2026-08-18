@@ -57,6 +57,7 @@ class DescribeTunnelStatusUseCaseTest {
                     networkObserver = observer,
                     evaluateRules = evaluateRules,
                     clock = clock,
+                    sessionAttestation = SessionAttestation(clock),
                 ),
             journalRepository = journal,
             controller = controller,

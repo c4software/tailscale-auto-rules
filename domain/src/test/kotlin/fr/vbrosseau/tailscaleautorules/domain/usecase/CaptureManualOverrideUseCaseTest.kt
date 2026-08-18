@@ -57,7 +57,8 @@ class CaptureManualOverrideUseCaseTest {
             networkObserver = observer,
             controller = controller,
             journalRepository = journal,
-            detectManualOverride = DetectManualOverrideUseCase(observer, evaluateRules, clock),
+            detectManualOverride =
+                DetectManualOverrideUseCase(observer, evaluateRules, clock, SessionAttestation(clock)),
             recordManualOverride = RecordManualOverrideUseCase(settings, preferences, journal),
         )
 

@@ -352,7 +352,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 34 complètes. 387 tests, 0 échec.
+Étapes 1 à 35 complètes. 396 tests, 0 échec.
 
 ```
 .
@@ -369,10 +369,10 @@ est une mesure, pas un objectif.
 │       │   ├── settings/    AppSettings
 │       │   ├── time/        Clock
 │       │   ├── usecase/     SynchronizeTunnelUseCase, SynchronizationOutcome,
-│       │   │                 DetectManualOverrideUseCase
+│       │   │                 DetectManualOverrideUseCase, SessionAttestation
 │       │   └── tailscale/   TailscaleController, TailscaleUnavailableException
 │       ├── testFixtures/…/  les 6 Fakes + fabriques Contexts
-│       └── test/…/          149 tests JVM
+│       └── test/…/          158 tests JVM
 ├── app/                     module application Android
 │   └── src/
 │       ├── main/

@@ -125,7 +125,11 @@ Un redémarrage du terminal ne vaut jamais geste : il remet le tunnel dans son
 précédente n'atteste plus de rien. La détection ne reprend qu'une fois la
 décision réattestée par le premier cycle de la nouvelle session ; sans quoi
 une préférence « toujours actif » se voyait remplacée par « toujours coupé »
-à chaque redémarrage.
+à chaque redémarrage. La réattestation ne passe pas forcément par le
+journal : un cycle qui trouve le tunnel déjà dans l'état visé n'y écrit rien
+(le journal ne consigne que les changements effectifs), et son constat vaut
+alors attestation pour la session ; sans lui, la détection restait morte
+jusqu'au redémarrage suivant dès que le premier cycle n'avait rien à changer.
 
 La mémorisation se coupe par le réglage « Apprendre mes gestes » (§6.3).
 Coupée, le geste redevient éphémère : aucun cycle ne le combat tant que le

@@ -22,6 +22,7 @@ class SynchronizeTunnelUseCase(
     private val evaluateRules: EvaluateRulesUseCase,
     private val controller: TailscaleController,
     private val journalRepository: JournalRepository,
+    private val sessionAttestation: SessionAttestation,
 ) {
     /** Cycle sur le contexte réseau courant. */
     suspend operator fun invoke(): SynchronizationOutcome = invoke(networkObserver.current())
@@ -61,8 +62,14 @@ class SynchronizeTunnelUseCase(
             null -> SynchronizationOutcome.TailscaleUnavailable
 
             // Ne rien faire quand l'état visé est déjà le sien : c'est ce qui évite
-            // de saturer le journal et de solliciter le client sans raison.
-            targetState -> SynchronizationOutcome.AlreadyInTargetState(ruleId, currentState)
+            // de saturer le journal et de solliciter le client sans raison. Le
+            // constat vaut pourtant attestation, retenue en mémoire : après un
+            // boot, le journal ne recevrait sinon jamais d'entrée de la session
+            // et la détection du geste manuel resterait morte (SPECS.md §3.3).
+            targetState -> {
+                sessionAttestation.confirm(currentState)
+                SynchronizationOutcome.AlreadyInTargetState(ruleId, currentState)
+            }
 
             else ->
                 command(targetState).fold(

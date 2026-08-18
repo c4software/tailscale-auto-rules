@@ -19,6 +19,7 @@ import fr.vbrosseau.tailscaleautorules.domain.rule.RuleSettings
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.FakeTailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.time.FakeClock
 import fr.vbrosseau.tailscaleautorules.domain.usecase.EvaluateRulesUseCase
+import fr.vbrosseau.tailscaleautorules.domain.usecase.SessionAttestation
 import fr.vbrosseau.tailscaleautorules.domain.usecase.SynchronizeTunnelUseCase
 import fr.vbrosseau.tailscaleautorules.presentation.FakeSystemStatus
 import fr.vbrosseau.tailscaleautorules.presentation.MainDispatcherRule
@@ -63,6 +64,7 @@ class NetworksViewModelTest {
             evaluateRules = EvaluateRulesUseCase(preferences, settings, engine),
             controller = controller,
             journalRepository = journal,
+            sessionAttestation = SessionAttestation(FakeClock()),
         ),
         systemStatus = systemStatus,
         networkObserver = networkObserver,

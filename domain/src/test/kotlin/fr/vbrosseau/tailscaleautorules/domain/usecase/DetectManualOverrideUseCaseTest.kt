@@ -32,6 +32,8 @@ class DetectManualOverrideUseCaseTest {
             seed(NetworkPreferenceKey.forWifi("Maison"), "Maison", TunnelState.DISABLED)
         }
 
+    private val sessionAttestation = SessionAttestation(clock)
+
     private val detect =
         DetectManualOverrideUseCase(
             networkObserver = observer,
@@ -42,6 +44,7 @@ class DetectManualOverrideUseCaseTest {
                     engine = RuleEngine(setOf(NetworkPreferenceRule(), MobileNetworkRule())),
                 ),
             clock = clock,
+            sessionAttestation = sessionAttestation,
         )
 
     private val trustedWifi =
@@ -187,6 +190,70 @@ class DetectManualOverrideUseCaseTest {
                     applied(TunnelState.DISABLED, "network-preference"),
                 ),
             )
+        }
+
+    @Test
+    fun aSessionConfirmationRevivesDetectionWhenTheJournalStaysMute() =
+        runTest {
+            // Premier cycle d'après le boot : le tunnel est déjà dans l'état
+            // visé, rien n'est journalisé, mais le constat vaut attestation.
+            // Sans lui, la détection restait morte toute la session dès que le
+            // premier cycle n'avait rien à changer.
+            clock.bootMillis = 30_000
+            sessionAttestation.confirm(TunnelState.DISABLED)
+            clock.advanceBy(60_000)
+
+            assertEquals(
+                ManualOverride(TunnelState.ENABLED, RuleId("network-preference")),
+                detect(
+                    trustedWifi,
+                    TunnelState.ENABLED,
+                    applied(TunnelState.DISABLED, "network-preference"),
+                ),
+            )
+        }
+
+    @Test
+    fun aSessionConfirmationAlsoProvesWithoutAnyJournalEntry() =
+        runTest {
+            sessionAttestation.confirm(TunnelState.DISABLED)
+            clock.advanceBy(60_000)
+
+            assertEquals(
+                ManualOverride(TunnelState.ENABLED, RuleId("network-preference")),
+                detect(trustedWifi, TunnelState.ENABLED, lastChange = null),
+            )
+        }
+
+    @Test
+    fun aFreshSessionConfirmationProvesNothingYet() =
+        runTest {
+            // Même grâce que pour le journal : un client encore en train de
+            // restaurer son état ne doit pas passer pour une main humaine.
+            clock.bootMillis = 30_000
+            sessionAttestation.confirm(TunnelState.DISABLED)
+            clock.advanceBy(2_000)
+
+            assertNull(
+                detect(
+                    trustedWifi,
+                    TunnelState.ENABLED,
+                    applied(TunnelState.DISABLED, "network-preference"),
+                ),
+            )
+        }
+
+    @Test
+    fun aConfirmationForAnotherDecisionDoesNotVouch() =
+        runTest {
+            // Le constat mémorisé vaut pour la décision confirmée, pas pour
+            // celle d'un autre réseau : pendant une transition, la divergence
+            // est un cycle en attente, pas un geste.
+            clock.bootMillis = 30_000
+            sessionAttestation.confirm(TunnelState.DISABLED)
+            clock.advanceBy(60_000)
+
+            assertNull(detect(cellular, TunnelState.DISABLED, lastChange = null))
         }
 
     @Test
