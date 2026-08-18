@@ -3,7 +3,7 @@
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit le [versionnage sémantique](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [1.2.1] — 2026-08-18
 
 ### Corrigé
 
