@@ -1,15 +1,12 @@
 package fr.vbrosseau.tailscaleautorules.automation
 
-import android.Manifest
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
-import androidx.core.content.ContextCompat
 import dagger.hilt.android.AndroidEntryPoint
 import fr.vbrosseau.tailscaleautorules.di.IoDispatcher
 import fr.vbrosseau.tailscaleautorules.domain.model.TunnelState
@@ -17,6 +14,7 @@ import fr.vbrosseau.tailscaleautorules.domain.network.NetworkObserver
 import fr.vbrosseau.tailscaleautorules.domain.tailscale.TailscaleController
 import fr.vbrosseau.tailscaleautorules.domain.usecase.DetectManualOverrideUseCase
 import fr.vbrosseau.tailscaleautorules.notification.TunnelNotifier
+import fr.vbrosseau.tailscaleautorules.presentation.SystemStatus
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -63,6 +61,9 @@ class TunnelWatchService : Service() {
 
     @Inject
     lateinit var notifier: TunnelNotifier
+
+    @Inject
+    lateinit var systemStatus: SystemStatus
 
     @Inject
     @IoDispatcher
@@ -222,30 +223,29 @@ class TunnelWatchService : Service() {
         }
 
     /**
-     * Types déclarés au démarrage, dont « localisation » **seulement** si la
-     * permission est accordée.
+     * Types déclarés au démarrage : le repli, plus « localisation »
+     * **seulement** si la permission est accordée.
      *
      * Le type conditionne l'accès au SSID : sans lui, le nom du réseau revient
      * vide en arrière-plan et la règle des réseaux de confiance ne s'applique
      * jamais. Mais le déclarer sans détenir la permission fait rejeter le
      * démarrage du service — l'automatisation ne partirait alors pas du tout,
      * pour un réglage dont l'utilisateur n'a peut-être aucun besoin.
+     *
+     * Dérivé de [fallbackServiceTypes] et de [SystemStatus] plutôt que réécrit :
+     * deux jeux de types ou deux prédicats de permission qui divergeraient
+     * feraient mourir la relance du repli, ou taire les règles Wi-Fi sans bruit.
      */
     private fun foregroundServiceTypes(): Int {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return 0
-
-        val canReadSsid = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED
-
+        val canReadSsid = systemStatus.canReadSsid()
         Timber.i("Service démarré (lecture du SSID : %b)", canReadSsid)
 
-        return if (canReadSsid) {
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        val fallback = fallbackServiceTypes()
+
+        return if (canReadSsid && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            fallback or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
         } else {
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            fallback
         }
     }
 
