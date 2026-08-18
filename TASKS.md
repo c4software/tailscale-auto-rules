@@ -886,7 +886,9 @@ arme dès la création du processus, avant que le receveur s'exécute.
 - [x] `ACCESS_BACKGROUND_LOCATION` en option : carte d'explication aux
       paramètres, visible seulement quand elle servirait (localisation fine
       accordée, démarrage au boot actif) ; `SystemStatus` expose
-      `canReadSsidInBackground()` et `isAppInForeground()`
+      `canReadSsidInBackground()` et `isAppInForeground()` (l'étape 33 a
+      ensuite retiré l'option et `canReadSsidInBackground()` avec elle,
+      seule `isAppInForeground()` demeure)
 - [x] Dossier store : déclarations §2/§3 réécrites, l'application demande
       désormais la permission, facultative, et le dit
 - [x] Tests coordinateur, notifier, écran et ViewModel ; référence
@@ -990,6 +992,32 @@ l'utilisateur.
 - [x] SPECS.md §3.3 précise que la réattestation ne passe pas forcément par
       le journal
 - [x] Tests attestation, détection et cycle
+
+**Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
+→ succès, 396 tests, 0 échec.
+
+---
+
+## 36. Reliquats de la passe de revue `[x]`
+
+Suite de la revue des étapes 31 à 33, en plus des étapes 34 et 35 : trois
+reliquats de moindre gravité, un commit chacun, puis la documentation
+réalignée.
+
+- [x] L'instant de boot de `Clock` est figé à la création du singleton :
+      recalculé à chaque appel, il dérivait avec les corrections d'horloge
+      (NTP) et pouvait invalider les attestations de la session, ou
+      réadmettre celles d'avant le boot
+- [x] `TunnelWatchService` : les types complets se dérivent de
+      `fallbackServiceTypes()` et la permission se lit via
+      `SystemStatus.canReadSsid()`, au lieu de deux copies qui pouvaient
+      diverger
+- [x] KDoc réalignés : `AutomationCoordinator.applySettings` nomme
+      `isWatchStartableNow` comme garde commune des trois points d'armement ;
+      `TunnelNotifier` ne prétend plus que la permission n'est demandée que
+      si l'option est activée ; l'étape 31 note le retrait ultérieur de
+      `canReadSsidInBackground()` ; le §9 d'ARCHITECTURE.md compte 11 modules
+      Hilt
 
 **Vérifié :** `./gradlew ktlintCheck detekt lint test :domain:koverVerify assembleDebug`
 → succès, 396 tests, 0 échec.

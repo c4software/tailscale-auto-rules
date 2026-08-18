@@ -352,7 +352,7 @@ est une mesure, pas un objectif.
 
 ## 9. État actuel du dépôt
 
-Étapes 1 à 35 complètes. 396 tests, 0 échec.
+Étapes 1 à 36 complètes. 396 tests, 0 échec.
 
 ```
 .

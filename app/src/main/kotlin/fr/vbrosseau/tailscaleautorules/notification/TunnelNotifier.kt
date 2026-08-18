@@ -28,8 +28,9 @@ import javax.inject.Singleton
  * notification permanente depuis la version 8 (SPECS.md §7).
  *
  * Toutes les opérations sont sans effet lorsque la permission de notification
- * n'a pas été accordée : c'est un cas nominal, pas une erreur, puisque
- * l'application ne la demande que si l'option est activée.
+ * n'a pas été accordée : c'est un cas nominal, pas une erreur. Le parcours de
+ * premier lancement la demande systématiquement, mais l'utilisateur reste
+ * libre de la refuser ou de la retirer ensuite.
  */
 @Singleton
 class TunnelNotifier @Inject constructor(

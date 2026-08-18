@@ -48,11 +48,14 @@ class AutomationCoordinator @Inject constructor(
      * Appelée au démarrage de chaque processus, après un redémarrage du
      * terminal, et à chaque modification des paramètres.
      *
-     * L'armement est conditionné ici, et seulement ici : une localisation
-     * limitée à « pendant l'utilisation » fait rejeter par Android le service
-     * de type « localisation », celui qu'impose la lecture du SSID, dès qu'il
-     * part de l'arrière-plan. Tenter quand même le ferait mourir à la
-     * naissance (constaté au boot sur appareil). La garde ne peut pas vivre
+     * L'armement est conditionné par [isWatchStartableNow], la garde commune
+     * à tous les points d'armement : ici, et au retour à l'écran dans
+     * [onApplicationForeground] ; [onLocationPermissionGranted] réarme depuis
+     * un écran, donc toujours au premier plan, et la satisfait d'office. Une
+     * localisation limitée à « pendant l'utilisation » fait rejeter par
+     * Android le service de type « localisation », celui qu'impose la lecture
+     * du SSID, dès qu'il part de l'arrière-plan. Tenter quand même le ferait
+     * mourir à la naissance (constaté au boot sur appareil). La garde ne peut pas vivre
      * dans le receveur de boot : l'observation des réglages arme depuis
      * n'importe quel démarrage de processus, y compris celui créé pour livrer
      * le boot, avant même que le receveur s'exécute.
